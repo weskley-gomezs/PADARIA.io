@@ -2,7 +2,7 @@ console.log("[SERVER] Entry point called (/server.ts)");
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import app from './api/index.js';
+import app from './api/index';
 
 async function startServer() {
   console.log("[SERVER] Starting dev/prod server...");
