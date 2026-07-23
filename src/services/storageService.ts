@@ -14,6 +14,12 @@ const KEYS = {
   ADMIN_PASSWORD: 'padarias_admin_password',
 };
 
+const EXCLUDED_CODES = ['AB12CD34', 'PAD8X92M', 'DEMO9999', '6SSHQQTZ', '8FM8XCN6', 'CAVU5FKP'];
+const DEMO_PROD_IDS = [
+  'prod-101', 'prod-102', 'prod-103', 'prod-104', 'prod-105', 'prod-106', 'prod-107',
+  'prod-201', 'prod-202', 'prod-203'
+];
+
 function getItem<T>(key: string, defaultValue: T): T {
   try {
     const item = localStorage.getItem(key);
@@ -72,7 +78,12 @@ export class StorageService {
         snapshot.forEach((d) => {
           const data = d.data() as BakeryCompany;
           if (data && data.codigoAtivacao) {
-            companies.push(data);
+            const cleanCode = data.codigoAtivacao.trim().toUpperCase();
+            if (EXCLUDED_CODES.includes(cleanCode)) {
+              deleteDoc(doc(db, 'companies', d.id)).catch(() => {});
+            } else {
+              companies.push(data);
+            }
           }
         });
         setItem(KEYS.COMPANIES, companies);
@@ -91,13 +102,20 @@ export class StorageService {
         snapshot.forEach((d) => {
           const p = d.data() as Product;
           if (p && p.id) {
-            const daysRemaining = calculateDaysRemaining(p.dataValidade);
-            const status = getProductStatus(daysRemaining);
-            products.push({
-              ...p,
-              diasParaVencer: daysRemaining,
-              status,
-            });
+            if (
+              (p.bakeryCode && EXCLUDED_CODES.includes(p.bakeryCode.trim().toUpperCase())) ||
+              DEMO_PROD_IDS.includes(p.id)
+            ) {
+              deleteDoc(doc(db, 'products', d.id)).catch(() => {});
+            } else {
+              const daysRemaining = calculateDaysRemaining(p.dataValidade);
+              const status = getProductStatus(daysRemaining);
+              products.push({
+                ...p,
+                diasParaVencer: daysRemaining,
+                status,
+              });
+            }
           }
         });
         setItem(KEYS.PRODUCTS, products);
@@ -122,7 +140,11 @@ export class StorageService {
         snapshot.forEach((d) => {
           const s = d.data() as SaleHistoryItem;
           if (s && s.id) {
-            sales.push(s);
+            if (s.bakeryCode && EXCLUDED_CODES.includes(s.bakeryCode.trim().toUpperCase())) {
+              deleteDoc(doc(db, 'sales', d.id)).catch(() => {});
+            } else {
+              sales.push(s);
+            }
           }
         });
         setItem(KEYS.SALES_HISTORY, sales);
@@ -147,7 +169,11 @@ export class StorageService {
         snapshot.forEach((d) => {
           const t = d.data() as SupportTicket;
           if (t && t.id) {
-            tickets.push(t);
+            if (t.bakeryCode && EXCLUDED_CODES.includes(t.bakeryCode.trim().toUpperCase())) {
+              deleteDoc(doc(db, 'tickets', d.id)).catch(() => {});
+            } else {
+              tickets.push(t);
+            }
           }
         });
         setItem(KEYS.TICKETS, tickets);
@@ -164,40 +190,37 @@ export class StorageService {
   }
 
   static purgeDemoDataFromLocal(): void {
-    const demoCodes = ['AB12CD34', 'PAD8X92M', 'DEMO9999'];
-    const demoProdIds = [
-      'prod-101', 'prod-102', 'prod-103', 'prod-104', 'prod-105', 'prod-106', 'prod-107',
-      'prod-201', 'prod-202', 'prod-203'
-    ];
-
     let companies = getItem<BakeryCompany[]>(KEYS.COMPANIES, []);
-    companies = companies.filter(c => !demoCodes.includes(c.codigoAtivacao.toUpperCase()));
+    companies = companies.filter(c => !EXCLUDED_CODES.includes(c.codigoAtivacao.trim().toUpperCase()));
     setItem(KEYS.COMPANIES, companies);
 
     let products = getItem<Product[]>(KEYS.PRODUCTS, []);
-    products = products.filter(p => !demoCodes.includes(p.bakeryCode.toUpperCase()) && !demoProdIds.includes(p.id));
+    products = products.filter(p => !EXCLUDED_CODES.includes(p.bakeryCode.trim().toUpperCase()) && !DEMO_PROD_IDS.includes(p.id));
     setItem(KEYS.PRODUCTS, products);
 
     let sales = getItem<SaleHistoryItem[]>(KEYS.SALES_HISTORY, []);
-    sales = sales.filter(s => !demoCodes.includes(s.bakeryCode.toUpperCase()));
+    sales = sales.filter(s => !EXCLUDED_CODES.includes(s.bakeryCode.trim().toUpperCase()));
     setItem(KEYS.SALES_HISTORY, sales);
 
-    if (StorageService.getActiveBakeryCode() && demoCodes.includes(StorageService.getActiveBakeryCode()!.toUpperCase())) {
+    let tickets = getItem<SupportTicket[]>(KEYS.TICKETS, []);
+    tickets = tickets.filter(t => !EXCLUDED_CODES.includes(t.bakeryCode.trim().toUpperCase()));
+    setItem(KEYS.TICKETS, tickets);
+
+    if (StorageService.getActiveBakeryCode() && EXCLUDED_CODES.includes(StorageService.getActiveBakeryCode()!.trim().toUpperCase())) {
       StorageService.setActiveBakeryCode(null);
+    }
+
+    // Proactively clean up Firestore docs for excluded codes
+    for (const code of EXCLUDED_CODES) {
+      deleteDoc(doc(db, 'companies', code)).catch(() => {});
     }
   }
 
   static async clearAllSystemData(): Promise<void> {
-    const demoCodes = ['AB12CD34', 'PAD8X92M', 'DEMO9999'];
-    const demoProdIds = [
-      'prod-101', 'prod-102', 'prod-103', 'prod-104', 'prod-105', 'prod-106', 'prod-107',
-      'prod-201', 'prod-202', 'prod-203'
-    ];
-
-    for (const code of demoCodes) {
+    for (const code of EXCLUDED_CODES) {
       await deleteDoc(doc(db, 'companies', code)).catch(() => {});
     }
-    for (const pid of demoProdIds) {
+    for (const pid of DEMO_PROD_IDS) {
       await deleteDoc(doc(db, 'products', pid)).catch(() => {});
     }
 
@@ -228,11 +251,15 @@ export class StorageService {
         const compSnap = await getDocs(collection(db, 'companies'));
         if (!compSnap.empty) {
           const remoteCompanies: BakeryCompany[] = [];
-          const demoCodes = ['AB12CD34', 'PAD8X92M', 'DEMO9999'];
           compSnap.forEach((d) => {
             const data = d.data() as BakeryCompany;
-            if (data && data.codigoAtivacao && !demoCodes.includes(data.codigoAtivacao.toUpperCase())) {
-              remoteCompanies.push(data);
+            if (data && data.codigoAtivacao) {
+              const cleanCode = data.codigoAtivacao.trim().toUpperCase();
+              if (EXCLUDED_CODES.includes(cleanCode)) {
+                deleteDoc(doc(db, 'companies', d.id)).catch(() => {});
+              } else {
+                remoteCompanies.push(data);
+              }
             }
           });
           setItem(KEYS.COMPANIES, remoteCompanies);
@@ -246,20 +273,15 @@ export class StorageService {
         const prodSnap = await getDocs(collection(db, 'products'));
         if (!prodSnap.empty) {
           const remoteProducts: Product[] = [];
-          const demoCodes = ['AB12CD34', 'PAD8X92M', 'DEMO9999'];
-          const demoProdIds = [
-            'prod-101', 'prod-102', 'prod-103', 'prod-104', 'prod-105', 'prod-106', 'prod-107',
-            'prod-201', 'prod-202', 'prod-203'
-          ];
           prodSnap.forEach((d) => {
             const data = d.data() as Product;
-            if (
-              data &&
-              data.bakeryCode &&
-              !demoCodes.includes(data.bakeryCode.toUpperCase()) &&
-              !demoProdIds.includes(data.id)
-            ) {
-              remoteProducts.push(data);
+            if (data && data.bakeryCode) {
+              const cleanCode = data.bakeryCode.trim().toUpperCase();
+              if (EXCLUDED_CODES.includes(cleanCode) || DEMO_PROD_IDS.includes(data.id)) {
+                deleteDoc(doc(db, 'products', d.id)).catch(() => {});
+              } else {
+                remoteProducts.push(data);
+              }
             }
           });
           setItem(KEYS.PRODUCTS, remoteProducts);

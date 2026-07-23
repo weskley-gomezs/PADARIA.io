@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, getDocFromServer, setLogLevel } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
@@ -8,6 +8,9 @@ const app = initializeApp(firebaseConfig);
 // CRITICAL: Must include firestoreDatabaseId parameter
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
+
+// Silence non-fatal internal warnings like BloomFilter
+setLogLevel('error');
 
 export async function testFirestoreConnection(): Promise<boolean> {
   try {
