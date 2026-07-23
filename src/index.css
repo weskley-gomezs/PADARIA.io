@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --primary: #D4A574;
+  --secondary: #F5E6D3;
+  --accent: #E8571A;
+  --bg: #FAFAF8;
+  --text: #2C2C2C;
+  --line: #E0E0E0;
+  --success: #27AE60;
+  --warning: #F39C12;
+  --danger: #E74C3C;
+}
+
+@layer base {
+  body {
+    font-family: 'Inter', 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+  }
+}
+
+/* Status Pill Helpers for Sleek Interface */
+.status-pill {
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.status-green {
+  background-color: #E8F5E9;
+  color: #27AE60;
+}
+
+.status-yellow {
+  background-color: #FFF3E0;
+  color: #F39C12;
+}
+
+.status-red {
+  background-color: #FFEBEE;
+  color: #E74C3C;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
