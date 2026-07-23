@@ -71,9 +71,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
   useEffect(() => {
     const authStatus = StorageService.isAdminAuthenticated();
     setIsAuthenticated(authStatus);
-    if (authStatus) {
-      loadAdminData();
-    }
+    
+    const unsubCompanies = StorageService.subscribeCompanies((comps) => {
+      setCompanies(comps);
+      setStats(StorageService.getAdminStats());
+      setFinancialStats(StorageService.getFinancialStats());
+    });
+
+    return () => unsubCompanies();
   }, []);
 
   const loadAdminData = () => {
@@ -94,7 +99,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
     }
   };
 
-  const handleCreateCompany = (e: React.FormEvent) => {
+  const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     if (!empresaName.trim() || !emailInput.trim()) {
@@ -103,13 +108,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
     }
 
     try {
-      const newComp = StorageService.addCompany(empresaName, emailInput, telefoneInput, cnpjInput);
+      const newComp = await StorageService.addCompany(empresaName, emailInput, telefoneInput, cnpjInput);
       setGeneratedCompany(newComp);
       setEmpresaName('');
       setEmailInput('');
       setTelefoneInput('');
       setCnpjInput('');
-      loadAdminData();
 
       // Trigger confetti
       confetti({
@@ -128,18 +132,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const handleToggleStatus = (code: string) => {
-    StorageService.toggleCompanyStatus(code);
-    loadAdminData();
+  const handleToggleStatus = async (code: string) => {
+    await StorageService.toggleCompanyStatus(code);
   };
 
-  const handleDeleteCompany = (code: string, name: string) => {
+  const handleDeleteCompany = async (code: string, name: string) => {
     if (confirm(`Tem certeza que deseja excluir a padaria "${name}"? Todos os produtos vinculados também serão removidos.`)) {
-      StorageService.deleteCompany(code);
+      await StorageService.deleteCompany(code);
       if (generatedCompany?.codigoAtivacao === code) {
         setGeneratedCompany(null);
       }
-      loadAdminData();
     }
   };
 

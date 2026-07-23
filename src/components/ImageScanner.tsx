@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Camera, X, Loader2 } from 'lucide-react';
 
 interface ImageScannerProps {
+  bakeryCode?: string;
   onScanResult: (result: { nome: string; dataFabricacao?: string; dataValidade?: string; valorKg?: number; valorTotal?: number }) => void;
   onClose: () => void;
 }
 
-export const ImageScanner: React.FC<ImageScannerProps> = ({ onScanResult, onClose }) => {
+export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanResult, onClose }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string>('');
@@ -63,7 +64,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ onScanResult, onClos
       const response = await fetch('/api/analyze-product-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64 }),
+        body: JSON.stringify({ imageBase64, bakeryCode }),
       });
       
       const data = await response.json();

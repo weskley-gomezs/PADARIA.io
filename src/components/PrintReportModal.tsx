@@ -30,17 +30,23 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
   const filteredExpiredList = expiredList.filter((item) => {
     if (periodFilter === 'todos') return true;
     if (periodFilter === 'dia') {
-      return item.dataValidade === todayStr;
+      return item.dataValidade === todayStr || item.dataCadastro === todayStr;
     }
     if (periodFilter === 'mes') {
-      return item.dataValidade && item.dataValidade.startsWith(currentYearMonth);
+      return (
+        (item.dataValidade && item.dataValidade.startsWith(currentYearMonth)) ||
+        (item.dataCadastro && item.dataCadastro.startsWith(currentYearMonth)) ||
+        item.status === 'vencido'
+      );
     }
     if (periodFilter === 'semana') {
-      if (!item.dataValidade) return false;
-      const itemDate = new Date(item.dataValidade).getTime();
+      if (item.dataValidade === todayStr || item.dataCadastro === todayStr) return true;
+      const refDate = item.dataCadastro || item.dataValidade;
+      if (!refDate) return false;
+      const itemDate = new Date(refDate).getTime();
       const now = new Date().getTime();
-      const diffDays = (now - itemDate) / (1000 * 3600 * 24);
-      return diffDays >= 0 && diffDays <= 7;
+      const diffDays = Math.abs((now - itemDate) / (1000 * 3600 * 24));
+      return diffDays <= 7 || item.status === 'vencido';
     }
     return true;
   });

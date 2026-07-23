@@ -1,8 +1,7 @@
 import { BakeryCompany, Product, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo } from '../types';
-import { INITIAL_COMPANIES, INITIAL_PRODUCTS } from '../data/initialData';
 import { calculateDaysRemaining, getProductStatus, formatDateToISO, generateActivationCode } from '../utils/dateUtils';
 import { db, testFirestoreConnection } from './firebase';
-import { collection, doc, getDocs, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 
 const KEYS = {
@@ -63,6 +62,107 @@ export class StorageService {
     }
   }
 
+  // Real-time Subscriptions using Firestore onSnapshot
+  static subscribeCompanies(callback: (companies: BakeryCompany[]) => void): Unsubscribe {
+    const colRef = collection(db, 'companies');
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const companies: BakeryCompany[] = [];
+        snapshot.forEach((d) => {
+          const data = d.data() as BakeryCompany;
+          if (data && data.codigoAtivacao) {
+            companies.push(data);
+          }
+        });
+        setItem(KEYS.COMPANIES, companies);
+        callback(companies);
+      },
+      (err) => console.error('Error subscribing to companies:', err)
+    );
+  }
+
+  static subscribeProducts(callback: (products: Product[]) => void, bakeryCode?: string): Unsubscribe {
+    const colRef = collection(db, 'products');
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const products: Product[] = [];
+        snapshot.forEach((d) => {
+          const p = d.data() as Product;
+          if (p && p.id) {
+            const daysRemaining = calculateDaysRemaining(p.dataValidade);
+            const status = getProductStatus(daysRemaining);
+            products.push({
+              ...p,
+              diasParaVencer: daysRemaining,
+              status,
+            });
+          }
+        });
+        setItem(KEYS.PRODUCTS, products);
+
+        if (bakeryCode) {
+          const cleanCode = bakeryCode.trim().toUpperCase();
+          callback(products.filter((p) => p.bakeryCode.toUpperCase() === cleanCode));
+        } else {
+          callback(products);
+        }
+      },
+      (err) => console.error('Error subscribing to products:', err)
+    );
+  }
+
+  static subscribeSalesHistory(callback: (sales: SaleHistoryItem[]) => void, bakeryCode?: string): Unsubscribe {
+    const colRef = collection(db, 'sales');
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const sales: SaleHistoryItem[] = [];
+        snapshot.forEach((d) => {
+          const s = d.data() as SaleHistoryItem;
+          if (s && s.id) {
+            sales.push(s);
+          }
+        });
+        setItem(KEYS.SALES_HISTORY, sales);
+
+        if (bakeryCode) {
+          const cleanCode = bakeryCode.trim().toUpperCase();
+          callback(sales.filter((s) => s.bakeryCode.toUpperCase() === cleanCode));
+        } else {
+          callback(sales);
+        }
+      },
+      (err) => console.error('Error subscribing to sales:', err)
+    );
+  }
+
+  static subscribeTickets(callback: (tickets: SupportTicket[]) => void, bakeryCode?: string): Unsubscribe {
+    const colRef = collection(db, 'tickets');
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const tickets: SupportTicket[] = [];
+        snapshot.forEach((d) => {
+          const t = d.data() as SupportTicket;
+          if (t && t.id) {
+            tickets.push(t);
+          }
+        });
+        setItem(KEYS.TICKETS, tickets);
+
+        if (bakeryCode) {
+          const cleanCode = bakeryCode.trim().toUpperCase();
+          callback(tickets.filter((t) => t.bakeryCode.toUpperCase() === cleanCode));
+        } else {
+          callback(tickets);
+        }
+      },
+      (err) => console.error('Error subscribing to tickets:', err)
+    );
+  }
+
   static purgeDemoDataFromLocal(): void {
     const demoCodes = ['AB12CD34', 'PAD8X92M', 'DEMO9999'];
     const demoProdIds = [
@@ -95,10 +195,10 @@ export class StorageService {
     ];
 
     for (const code of demoCodes) {
-      deleteDoc(doc(db, 'companies', code)).catch(() => {});
+      await deleteDoc(doc(db, 'companies', code)).catch(() => {});
     }
     for (const pid of demoProdIds) {
-      deleteDoc(doc(db, 'products', pid)).catch(() => {});
+      await deleteDoc(doc(db, 'products', pid)).catch(() => {});
     }
 
     setItem(KEYS.COMPANIES, []);
@@ -201,11 +301,11 @@ export class StorageService {
     return getItem(KEYS.ADMIN_PASSWORD, 'admin123');
   }
 
-  static setAdminPassword(newPass: string): void {
+  static async setAdminPassword(newPass: string): Promise<void> {
     const trimmed = newPass.trim();
     setItem(KEYS.ADMIN_PASSWORD, trimmed);
 
-    setDoc(doc(db, 'settings', 'admin'), {
+    await setDoc(doc(db, 'settings', 'admin'), {
       adminPassword: trimmed,
       updatedAt: new Date().toISOString(),
     }).catch((err) => {
@@ -245,7 +345,7 @@ export class StorageService {
     return companies.find((c) => c.codigoAtivacao.toUpperCase() === cleanCode);
   }
 
-  static addCompany(empresa: string, email: string, telefone?: string, cnpj?: string): BakeryCompany {
+  static async addCompany(empresa: string, email: string, telefone?: string, cnpj?: string): Promise<BakeryCompany> {
     const companies = StorageService.getCompanies();
     let code = generateActivationCode();
     while (companies.some((c) => c.codigoAtivacao === code)) {
@@ -301,21 +401,21 @@ export class StorageService {
     companies.unshift(newCompany);
     setItem(KEYS.COMPANIES, companies);
 
-    setDoc(doc(db, 'companies', code), newCompany).catch((e) => {
+    await setDoc(doc(db, 'companies', code), newCompany).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `companies/${code}`);
     });
 
     return newCompany;
   }
 
-  static toggleCompanyStatus(code: string): boolean {
+  static async toggleCompanyStatus(code: string): Promise<boolean> {
     const companies = StorageService.getCompanies();
     const company = companies.find((c) => c.codigoAtivacao === code);
     if (company) {
       company.ativo = !company.ativo;
       setItem(KEYS.COMPANIES, companies);
 
-      setDoc(doc(db, 'companies', code), company).catch((e) => {
+      await setDoc(doc(db, 'companies', code), company).catch((e) => {
         handleFirestoreError(e, OperationType.WRITE, `companies/${code}`);
       });
 
@@ -324,7 +424,7 @@ export class StorageService {
     return false;
   }
 
-  static updateCompanyCode(oldCode: string, newCode: string): boolean {
+  static async updateCompanyCode(oldCode: string, newCode: string): Promise<boolean> {
     const companies = StorageService.getCompanies();
     const company = companies.find((c) => c.codigoAtivacao === oldCode);
     if (!company) return false;
@@ -338,27 +438,27 @@ export class StorageService {
     company.codigoAtivacao = cleanNewCode;
     setItem(KEYS.COMPANIES, companies);
 
-    deleteDoc(doc(db, 'companies', oldCode)).catch(() => {});
-    setDoc(doc(db, 'companies', cleanNewCode), company).catch((e) => {
+    await deleteDoc(doc(db, 'companies', oldCode)).catch(() => {});
+    await setDoc(doc(db, 'companies', cleanNewCode), company).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `companies/${cleanNewCode}`);
     });
 
     const products = getItem<Product[]>(KEYS.PRODUCTS, []);
-    products.forEach((p) => {
+    for (const p of products) {
       if (p.bakeryCode === oldCode) {
         p.bakeryCode = cleanNewCode;
-        setDoc(doc(db, 'products', p.id), p).catch(() => {});
+        await setDoc(doc(db, 'products', p.id), p).catch(() => {});
       }
-    });
+    }
     setItem(KEYS.PRODUCTS, products);
 
     const history = getItem<SaleHistoryItem[]>(KEYS.SALES_HISTORY, []);
-    history.forEach((h) => {
+    for (const h of history) {
       if (h.bakeryCode === oldCode) {
         h.bakeryCode = cleanNewCode;
-        setDoc(doc(db, 'sales', h.id), h).catch(() => {});
+        await setDoc(doc(db, 'sales', h.id), h).catch(() => {});
       }
-    });
+    }
     setItem(KEYS.SALES_HISTORY, history);
 
     if (StorageService.getActiveBakeryCode() === oldCode) {
@@ -368,36 +468,40 @@ export class StorageService {
     return true;
   }
 
-  static deleteCompany(code: string): void {
+  static async deleteCompany(code: string): Promise<void> {
     let companies = StorageService.getCompanies();
     companies = companies.filter((c) => c.codigoAtivacao !== code);
     setItem(KEYS.COMPANIES, companies);
 
-    deleteDoc(doc(db, 'companies', code)).catch((e) => {
+    await deleteDoc(doc(db, 'companies', code)).catch((e) => {
       handleFirestoreError(e, OperationType.DELETE, `companies/${code}`);
     });
 
     let products = getItem<Product[]>(KEYS.PRODUCTS, []);
     const productsToRemove = products.filter((p) => p.bakeryCode === code);
-    productsToRemove.forEach((p) => deleteDoc(doc(db, 'products', p.id)).catch(() => {}));
+    for (const p of productsToRemove) {
+      await deleteDoc(doc(db, 'products', p.id)).catch(() => {});
+    }
     products = products.filter((p) => p.bakeryCode !== code);
     setItem(KEYS.PRODUCTS, products);
 
     let history = getItem<SaleHistoryItem[]>(KEYS.SALES_HISTORY, []);
     const salesToRemove = history.filter((h) => h.bakeryCode === code);
-    salesToRemove.forEach((h) => deleteDoc(doc(db, 'sales', h.id)).catch(() => {}));
+    for (const h of salesToRemove) {
+      await deleteDoc(doc(db, 'sales', h.id)).catch(() => {});
+    }
     history = history.filter((h) => h.bakeryCode !== code);
     setItem(KEYS.SALES_HISTORY, history);
   }
 
-  static updateCompanyCNPJ(code: string, cnpj: string): BakeryCompany | undefined {
+  static async updateCompanyCNPJ(code: string, cnpj: string): Promise<BakeryCompany | undefined> {
     const companies = StorageService.getCompanies();
     const comp = companies.find((c) => c.codigoAtivacao === code);
     if (!comp) return undefined;
 
     comp.cnpj = cnpj.trim();
     setItem(KEYS.COMPANIES, companies);
-    setDoc(doc(db, 'companies', code), comp).catch(() => {});
+    await setDoc(doc(db, 'companies', code), comp).catch(() => {});
     return comp;
   }
 
@@ -406,7 +510,6 @@ export class StorageService {
     const companies = StorageService.getCompanies();
     const activeClients = companies.filter((c) => c.ativo && c.financeiro?.statusAssinatura === 'ativo').length;
     
-    // MRR = Sum of monthly fees of active clients
     const mrr = companies.reduce((acc, c) => {
       if (c.ativo && c.financeiro?.statusAssinatura === 'ativo') {
         return acc + (c.financeiro.valorMensalidade || 199);
@@ -414,7 +517,6 @@ export class StorageService {
       return acc;
     }, 0);
 
-    // Pending implementation fees
     const pendingImp = companies.reduce((acc, c) => {
       if (!c.financeiro?.implementacaoPaga) {
         return acc + (c.financeiro?.valorImplementacao || 1500);
@@ -422,7 +524,6 @@ export class StorageService {
       return acc;
     }, 0);
 
-    // Upcoming renewals within 30 days
     const upcomingRenewals = companies.filter((c) => c.ativo && c.financeiro?.statusAssinatura !== 'cancelado').length;
 
     return {
@@ -433,7 +534,7 @@ export class StorageService {
     };
   }
 
-  static updateCompanyBilling(code: string, updates: Partial<BillingInfo>): BakeryCompany | undefined {
+  static async updateCompanyBilling(code: string, updates: Partial<BillingInfo>): Promise<BakeryCompany | undefined> {
     const companies = StorageService.getCompanies();
     const comp = companies.find((c) => c.codigoAtivacao === code);
     if (!comp) return undefined;
@@ -452,16 +553,15 @@ export class StorageService {
     };
 
     setItem(KEYS.COMPANIES, companies);
-    setDoc(doc(db, 'companies', code), comp).catch(() => {});
+    await setDoc(doc(db, 'companies', code), comp).catch(() => {});
     return comp;
   }
 
-  static sendImplementationInvoice(code: string, link: string): string {
+  static async sendImplementationInvoice(code: string, link: string): Promise<string> {
     const comp = StorageService.getCompanyByCode(code);
     if (!comp) return '';
     
-    // Update invoice status
-    StorageService.updateCompanyBilling(code, {
+    await StorageService.updateCompanyBilling(code, {
       ultimoLinkPagamento: link,
       tipoUltimoLink: 'implementacao',
       historicoCobrancas: [
@@ -480,11 +580,11 @@ export class StorageService {
     return link;
   }
 
-  static generateRecurringBoleto(code: string, link: string): string {
+  static async generateRecurringBoleto(code: string, link: string): Promise<string> {
     const comp = StorageService.getCompanyByCode(code);
     if (!comp) return '';
 
-    StorageService.updateCompanyBilling(code, {
+    await StorageService.updateCompanyBilling(code, {
       ultimoLinkPagamento: link,
       tipoUltimoLink: 'mensalidade',
       historicoCobrancas: [
@@ -503,24 +603,23 @@ export class StorageService {
     return link;
   }
 
-  static toggleCompanyBillingSuspension(code: string): BillingStatus {
+  static async toggleCompanyBillingSuspension(code: string): Promise<BillingStatus> {
     const comp = StorageService.getCompanyByCode(code);
     if (!comp) return 'cancelado';
 
     const currentStatus = comp.financeiro?.statusAssinatura || 'pendente';
     const newStatus: BillingStatus = currentStatus === 'suspenso' ? 'ativo' : 'suspenso';
 
-    // Also toggle active status of company access
     comp.ativo = newStatus === 'ativo';
 
-    StorageService.updateCompanyBilling(code, {
+    await StorageService.updateCompanyBilling(code, {
       statusAssinatura: newStatus,
     });
 
     return newStatus;
   }
 
-  static updateCompanyContract(code: string, updates: Partial<ContractInfo>): BakeryCompany | undefined {
+  static async updateCompanyContract(code: string, updates: Partial<ContractInfo>): Promise<BakeryCompany | undefined> {
     const companies = StorageService.getCompanies();
     const comp = companies.find((c) => c.codigoAtivacao === code);
     if (!comp) return undefined;
@@ -539,15 +638,15 @@ export class StorageService {
     }
 
     setItem(KEYS.COMPANIES, companies);
-    setDoc(doc(db, 'companies', code), comp).catch(() => {});
+    await setDoc(doc(db, 'companies', code), comp).catch(() => {});
     return comp;
   }
 
-  static updateCompanyBillingStatus(
+  static async updateCompanyBillingStatus(
     code: string,
     newStatus: BillingStatus,
     dueDate?: string
-  ): BakeryCompany | undefined {
+  ): Promise<BakeryCompany | undefined> {
     const companies = StorageService.getCompanies();
     const comp = companies.find((c) => c.codigoAtivacao === code);
     if (!comp) return undefined;
@@ -575,7 +674,7 @@ export class StorageService {
     };
 
     setItem(KEYS.COMPANIES, companies);
-    setDoc(doc(db, 'companies', code), comp).catch(() => {});
+    await setDoc(doc(db, 'companies', code), comp).catch(() => {});
     return comp;
   }
 
@@ -589,13 +688,13 @@ export class StorageService {
     return all;
   }
 
-  static createTicket(
+  static async createTicket(
     bakeryCode: string,
     empresaNome: string,
     assunto: string,
     descricao: string,
     prioridade: TicketPriority
-  ): SupportTicket {
+  ): Promise<SupportTicket> {
     const tickets = StorageService.getTickets();
     const newTicket: SupportTicket = {
       id: 'tick_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -611,18 +710,18 @@ export class StorageService {
     tickets.unshift(newTicket);
     setItem(KEYS.TICKETS, tickets);
 
-    setDoc(doc(db, 'tickets', newTicket.id), newTicket).catch((e) => {
+    await setDoc(doc(db, 'tickets', newTicket.id), newTicket).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `tickets/${newTicket.id}`);
     });
 
     return newTicket;
   }
 
-  static updateTicketStatus(
+  static async updateTicketStatus(
     ticketId: string,
     status: TicketStatus,
     respostaSuporte?: string
-  ): SupportTicket | null {
+  ): Promise<SupportTicket | null> {
     const tickets = StorageService.getTickets();
     const ticket = tickets.find((t) => t.id === ticketId);
     if (!ticket) return null;
@@ -637,7 +736,7 @@ export class StorageService {
 
     setItem(KEYS.TICKETS, tickets);
 
-    setDoc(doc(db, 'tickets', ticketId), ticket).catch((e) => {
+    await setDoc(doc(db, 'tickets', ticketId), ticket).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `tickets/${ticketId}`);
     });
 
@@ -658,8 +757,6 @@ export class StorageService {
       };
     });
 
-    setItem(KEYS.PRODUCTS, updatedProducts);
-
     if (bakeryCode) {
       const cleanCode = bakeryCode.trim().toUpperCase();
       return updatedProducts.filter((p) => p.bakeryCode.toUpperCase() === cleanCode);
@@ -668,7 +765,7 @@ export class StorageService {
     return updatedProducts;
   }
 
-  static addProduct(
+  static async addProduct(
     bakeryCode: string,
     nome: string,
     quantidade: number,
@@ -680,7 +777,7 @@ export class StorageService {
     valorTotal?: number,
     motivo?: string,
     notas?: string
-  ): Product {
+  ): Promise<Product> {
     const products = StorageService.getProducts();
     const bakeryProducts = products.filter((p) => p.bakeryCode === bakeryCode);
 
@@ -710,14 +807,14 @@ export class StorageService {
     products.unshift(newProduct);
     setItem(KEYS.PRODUCTS, products);
 
-    setDoc(doc(db, 'products', newProduct.id), newProduct).catch((e) => {
+    await setDoc(doc(db, 'products', newProduct.id), newProduct).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `products/${newProduct.id}`);
     });
 
     return newProduct;
   }
 
-  static updateProduct(
+  static async updateProduct(
     id: string,
     nome: string,
     quantidade: number,
@@ -729,7 +826,7 @@ export class StorageService {
     valorTotal?: number,
     motivo?: string,
     notas?: string
-  ): Product {
+  ): Promise<Product> {
     const products = StorageService.getProducts();
     const index = products.findIndex((p) => p.id === id);
     if (index === -1) {
@@ -754,26 +851,26 @@ export class StorageService {
     };
 
     products[index] = updated;
-    setItem(KEYS.PRODUCTS, updated);
+    setItem(KEYS.PRODUCTS, products);
 
-    setDoc(doc(db, 'products', updated.id), updated).catch((e) => {
+    await setDoc(doc(db, 'products', updated.id), updated).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `products/${updated.id}`);
     });
 
     return updated;
   }
 
-  static deleteProduct(id: string): void {
+  static async deleteProduct(id: string): Promise<void> {
     let products = StorageService.getProducts();
     products = products.filter((p) => p.id !== id);
     setItem(KEYS.PRODUCTS, products);
 
-    deleteDoc(doc(db, 'products', id)).catch((e) => {
+    await deleteDoc(doc(db, 'products', id)).catch((e) => {
       handleFirestoreError(e, OperationType.DELETE, `products/${id}`);
     });
   }
 
-  static markAsSold(id: string): SaleHistoryItem | null {
+  static async markAsSold(id: string): Promise<SaleHistoryItem | null> {
     const products = StorageService.getProducts();
     const product = products.find((p) => p.id === id);
     if (!product) return null;
@@ -792,11 +889,11 @@ export class StorageService {
     history.unshift(historyItem);
     setItem(KEYS.SALES_HISTORY, history);
 
-    setDoc(doc(db, 'sales', historyItem.id), historyItem).catch((e) => {
+    await setDoc(doc(db, 'sales', historyItem.id), historyItem).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `sales/${historyItem.id}`);
     });
 
-    StorageService.deleteProduct(id);
+    await StorageService.deleteProduct(id);
 
     return historyItem;
   }
@@ -807,14 +904,14 @@ export class StorageService {
     return history.filter((h) => h.bakeryCode.toUpperCase() === cleanCode);
   }
 
-  static restoreSoldProduct(historyId: string): Product | null {
+  static async restoreSoldProduct(historyId: string): Promise<Product | null> {
     const history = getItem<SaleHistoryItem[]>(KEYS.SALES_HISTORY, []);
     const saleIndex = history.findIndex((h) => h.id === historyId);
     if (saleIndex === -1) return null;
 
     const item = history[saleIndex];
 
-    const restoredProduct = StorageService.addProduct(
+    const restoredProduct = await StorageService.addProduct(
       item.bakeryCode,
       item.nomeProduto,
       item.quantidade,
@@ -825,16 +922,18 @@ export class StorageService {
     history.splice(saleIndex, 1);
     setItem(KEYS.SALES_HISTORY, history);
 
-    deleteDoc(doc(db, 'sales', historyId)).catch(() => {});
+    await deleteDoc(doc(db, 'sales', historyId)).catch(() => {});
 
     return restoredProduct;
   }
 
-  static clearSalesHistory(bakeryCode: string): void {
+  static async clearSalesHistory(bakeryCode: string): Promise<void> {
     let history = getItem<SaleHistoryItem[]>(KEYS.SALES_HISTORY, []);
     const cleanCode = bakeryCode.trim().toUpperCase();
     const toDelete = history.filter((h) => h.bakeryCode.toUpperCase() === cleanCode);
-    toDelete.forEach((h) => deleteDoc(doc(db, 'sales', h.id)).catch(() => {}));
+    for (const h of toDelete) {
+      await deleteDoc(doc(db, 'sales', h.id)).catch(() => {});
+    }
 
     history = history.filter((h) => h.bakeryCode.toUpperCase() !== cleanCode);
     setItem(KEYS.SALES_HISTORY, history);

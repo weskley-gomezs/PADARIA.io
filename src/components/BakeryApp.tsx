@@ -92,33 +92,51 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
     }
   }, [presetCode]);
 
+  // Real-time subscription to companies and active bakery products/sales
   useEffect(() => {
-    if (activeCode) {
-      const comp = StorageService.getCompanyByCode(activeCode);
-      if (comp && comp.ativo) {
-        setCompany(comp);
-        loadBakeryData(activeCode);
-      } else {
-        // Invalid or deactivated company
-        if (comp && !comp.ativo) {
+    const unsubCompanies = StorageService.subscribeCompanies((companies) => {
+      if (activeCode) {
+        const comp = companies.find(c => c.codigoAtivacao.toUpperCase() === activeCode.trim().toUpperCase());
+        if (comp && comp.ativo) {
+          setCompany(comp);
+          setLoginError('');
+        } else if (comp && !comp.ativo) {
           setLoginError('Empresa inativa. Entre em contato com o suporte/administrador.');
+          setCompany(null);
         } else {
           setLoginError('Código de ativação não encontrado.');
+          setCompany(null);
         }
-        setActiveCode(null);
-        StorageService.setActiveBakeryCode(null);
+      } else {
+        setCompany(null);
       }
-    } else {
-      setCompany(null);
-    }
+    });
+
+    return () => {
+      unsubCompanies();
+    };
   }, [activeCode]);
 
-  const loadBakeryData = (code: string) => {
-    const prods = StorageService.getProducts(code);
-    setProducts(prods);
-    const history = StorageService.getSalesHistory(code);
-    setSalesHistory(history);
-  };
+  useEffect(() => {
+    if (!activeCode) {
+      setProducts([]);
+      setSalesHistory([]);
+      return;
+    }
+
+    const unsubProducts = StorageService.subscribeProducts((prods) => {
+      setProducts(prods);
+    }, activeCode);
+
+    const unsubSales = StorageService.subscribeSalesHistory((sales) => {
+      setSalesHistory(sales);
+    }, activeCode);
+
+    return () => {
+      unsubProducts();
+      unsubSales();
+    };
+  }, [activeCode]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -158,7 +176,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
   };
 
   // Product CRUD
-  const handleSaveProduct = (
+  const handleSaveProduct = async (
     nome: string,
     quantidade: number,
     dataValidade: string,
@@ -174,7 +192,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
 
     try {
       if (productToEdit) {
-        StorageService.updateProduct(
+        await StorageService.updateProduct(
           productToEdit.id,
           nome,
           quantidade,
@@ -189,7 +207,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
         );
         showToast('Descarte atualizado com sucesso!');
       } else {
-        StorageService.addProduct(
+        await StorageService.addProduct(
           company.codigoAtivacao,
           nome,
           quantidade,
@@ -204,23 +222,21 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
         );
         showToast('Descarte registrado com sucesso!');
       }
-      loadBakeryData(company.codigoAtivacao);
       setProductToEdit(null);
     } catch (err: any) {
       alert(err.message || 'Erro ao salvar produto.');
     }
   };
 
-  const handleDeleteProduct = (id: string, name: string) => {
+  const handleDeleteProduct = async (id: string, name: string) => {
     if (!company) return;
     if (confirm(`Deseja realmente excluir o produto "${name}"?`)) {
-      StorageService.deleteProduct(id);
-      loadBakeryData(company.codigoAtivacao);
+      await StorageService.deleteProduct(id);
       showToast('Produto excluído.');
     }
   };
 
-  const handleWasteScanResult = (result: {
+  const handleWasteScanResult = async (result: {
     nome: string;
     dataFabricacao?: string;
     dataValidade?: string;
@@ -237,7 +253,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
     if (bestMatch) {
       const newQty = Math.max(0, bestMatch.quantidade - 1);
       if (newQty > 0) {
-        StorageService.updateProduct(
+        await StorageService.updateProduct(
           bestMatch.id,
           bestMatch.nome,
           newQty,
@@ -249,34 +265,23 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           result.valorTotal !== undefined ? result.valorTotal : bestMatch.valorTotal
         );
       } else {
-        StorageService.deleteProduct(bestMatch.id);
+        await StorageService.deleteProduct(bestMatch.id);
       }
       showToast(`Descarte registrado! 1 unidade de "${bestMatch.nome}" removida do estoque.`);
     } else {
-      StorageService.addProduct(
-        company.codigoAtivacao,
-        result.nome || 'Produto Vencido',
-        1,
-        result.dataValidade || new Date().toISOString().split('T')[0],
-        'Descarte',
-        undefined,
-        result.valorKg,
-        result.dataFabricacao,
-        result.valorTotal
-      );
+      // If backend already created product, onSnapshot will pick it up automatically; otherwise create here
       showToast(`Descarte registrado: "${result.nome || 'Produto'}" adicionado ao registro de perdas.`);
     }
 
-    loadBakeryData(company.codigoAtivacao);
     setIsWasteScannerOpen(false);
   };
 
-  const handleRegenerateCode = () => {
+  const handleRegenerateCode = async () => {
     if (!company) return;
     const newCode = generateActivationCode();
     if (confirm(`Deseja gerar um novo código de ativação? O novo código será: ${newCode}`)) {
       try {
-        StorageService.updateCompanyCode(company.codigoAtivacao, newCode);
+        await StorageService.updateCompanyCode(company.codigoAtivacao, newCode);
         setActiveCode(newCode);
         showToast('Código de ativação atualizado!');
       } catch (err: any) {
@@ -293,14 +298,27 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
   const todayStr = new Date().toISOString().split('T')[0];
   const currentYearMonth = todayStr.substring(0, 7);
 
-  const expiredTodayProducts = expiredProducts.filter((p) => p.dataValidade === todayStr);
-  const expiredMonthProducts = expiredProducts.filter((p) => p.dataValidade && p.dataValidade.startsWith(currentYearMonth));
+  const expiredTodayProducts = expiredProducts.filter(
+    (p) => p.dataValidade === todayStr || p.dataCadastro === todayStr
+  );
+  const expiredMonthProducts = expiredProducts.filter(
+    (p) =>
+      (p.dataValidade && p.dataValidade.startsWith(currentYearMonth)) ||
+      (p.dataCadastro && p.dataCadastro.startsWith(currentYearMonth)) ||
+      p.status === 'vencido'
+  );
 
   const expiredTodayCount = expiredTodayProducts.reduce((acc, p) => acc + p.quantidade, 0);
-  const expiredTodayValue = expiredTodayProducts.reduce((acc, p) => acc + (p.valorTotal || (p.quantidade * (p.valorKg || 12))), 0);
+  const expiredTodayValue = expiredTodayProducts.reduce(
+    (acc, p) => acc + (p.valorTotal || p.quantidade * (p.valorKg || 12.0)),
+    0
+  );
 
   const expiredMonthCount = expiredMonthProducts.reduce((acc, p) => acc + p.quantidade, 0);
-  const expiredMonthValue = expiredMonthProducts.reduce((acc, p) => acc + (p.valorTotal || (p.quantidade * (p.valorKg || 12))), 0);
+  const expiredMonthValue = expiredMonthProducts.reduce(
+    (acc, p) => acc + (p.valorTotal || p.quantidade * (p.valorKg || 12.0)),
+    0
+  );
 
   // Filtered Table Data
   const filteredProducts = products.filter((p) => {
@@ -1135,6 +1153,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
       
       {isWasteScannerOpen && (
         <ImageScanner
+          bakeryCode={company?.codigoAtivacao}
           onScanResult={handleWasteScanResult}
           onClose={() => setIsWasteScannerOpen(false)}
         />

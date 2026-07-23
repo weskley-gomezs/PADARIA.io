@@ -17,36 +17,38 @@ interface AdminSupportTicketsProps {
 }
 
 export const AdminSupportTickets: React.FC<AdminSupportTicketsProps> = ({ onRefresh }) => {
-  const [tickets, setTickets] = useState<SupportTicket[]>(() => StorageService.getTickets());
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | TicketStatus>('all');
   const [replyingTicketId, setReplyingTicketId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [toast, setToast] = useState<string | null>(null);
 
-  const refreshData = () => {
-    setTickets(StorageService.getTickets());
-    onRefresh();
-  };
+  React.useEffect(() => {
+    const unsub = StorageService.subscribeTickets((updatedTickets) => {
+      setTickets(updatedTickets);
+    });
+    return () => unsub();
+  }, []);
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleUpdateStatus = (ticketId: string, newStatus: TicketStatus) => {
-    StorageService.updateTicketStatus(ticketId, newStatus);
-    refreshData();
+  const handleUpdateStatus = async (ticketId: string, newStatus: TicketStatus) => {
+    await StorageService.updateTicketStatus(ticketId, newStatus);
+    onRefresh();
     showToast('Status do chamado atualizado com sucesso!');
   };
 
-  const handleSendReply = (e: React.FormEvent, ticketId: string) => {
+  const handleSendReply = async (e: React.FormEvent, ticketId: string) => {
     e.preventDefault();
     if (!replyText.trim()) return;
 
-    StorageService.updateTicketStatus(ticketId, 'resolvido', replyText.trim());
+    await StorageService.updateTicketStatus(ticketId, 'resolvido', replyText.trim());
     setReplyText('');
     setReplyingTicketId(null);
-    refreshData();
+    onRefresh();
     showToast('Resposta enviada e chamado resolvido!');
   };
 

@@ -91,14 +91,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       return;
     }
 
+    // Validation: Require dataValidade
     if (!dataValidade) {
       setErrorMsg('Por favor, selecione a data de validade.');
-      return;
-    }
-
-    // Validation: Prevent past dates when creating new product
-    if (!productToEdit && dataValidade < todayIso) {
-      setErrorMsg('A data de validade não pode ser no passado ao cadastrar novo produto.');
       return;
     }
 

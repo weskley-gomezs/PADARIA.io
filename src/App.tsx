@@ -27,34 +27,48 @@ export default function App() {
       await StorageService.init();
       if (isMounted) {
         setIsAdminLoggedIn(StorageService.isAdminAuthenticated());
-        refreshData();
+        const code = StorageService.getActiveBakeryCode();
+        setActiveCode(code);
       }
     };
     initApp();
     return () => {
       isMounted = false;
     };
-  }, [currentView, activeCode]);
+  }, []);
 
-  const refreshData = () => {
-    const code = StorageService.getActiveBakeryCode();
-    setActiveCode(code);
-    if (code) {
-      const comp = StorageService.getCompanyByCode(code);
-      if (comp && comp.ativo) {
-        setActiveCompany(comp);
-        const prods = StorageService.getProducts(code);
-        setProducts(prods);
+  // Real-time synchronization for Navbar company & badge counters
+  useEffect(() => {
+    const unsubComp = StorageService.subscribeCompanies((companies) => {
+      const code = StorageService.getActiveBakeryCode();
+      if (code) {
+        const comp = companies.find(c => c.codigoAtivacao.toUpperCase() === code.trim().toUpperCase());
+        if (comp && comp.ativo) {
+          setActiveCompany(comp);
+        } else {
+          setActiveCompany(null);
+        }
       } else {
         setActiveCompany(null);
-        setProducts([]);
       }
-    } else {
-      setActiveCompany(null);
+    });
+
+    return () => unsubComp();
+  }, [activeCode]);
+
+  useEffect(() => {
+    const code = StorageService.getActiveBakeryCode();
+    if (!code) {
       setProducts([]);
+      return;
     }
-    setIsAdminLoggedIn(StorageService.isAdminAuthenticated());
-  };
+
+    const unsubProd = StorageService.subscribeProducts((prods) => {
+      setProducts(prods);
+    }, code);
+
+    return () => unsubProd();
+  }, [activeCode]);
 
   const handleNavigate = (view: 'app' | 'admin') => {
     setCurrentView(view);
@@ -73,7 +87,6 @@ export default function App() {
     StorageService.setActiveBakeryCode(code);
     setActiveCode(code);
     setCurrentView('app');
-    refreshData();
   };
 
   const handleLogoutBakery = () => {
@@ -91,10 +104,9 @@ export default function App() {
   const expiredProducts = products.filter((p) => p.status === 'vencido');
   const expiringProducts = products.filter((p) => p.status === 'vencendo');
 
-  const handleMarkAsSold = (id: string) => {
+  const handleMarkAsSold = async (id: string) => {
     if (!activeCode) return;
-    StorageService.markAsSold(id);
-    refreshData();
+    await StorageService.markAsSold(id);
   };
 
   return (

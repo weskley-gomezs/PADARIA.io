@@ -3,7 +3,7 @@ console.log("[VERCEL] API entry point called (/api/index.ts)");
 import express from 'express';
 import path from 'path';
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import fs from 'fs';
 import { GoogleGenAI, Type } from '@google/genai';
 
@@ -80,7 +80,7 @@ try {
   app.post('/api/analyze-product-image', async (req, res) => {
     console.log("[ROUTE] POST /api/analyze-product-image - Recebido");
     try {
-      const { imageBase64 } = req.body;
+      const { imageBase64, bakeryCode } = req.body;
       
       if (!imageBase64) {
         console.warn("[ROUTE] Falha: Nenhuma imagem fornecida no body.");
@@ -92,7 +92,7 @@ try {
 
       console.log("[GEMINI] Chamando generateContent...");
       const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: "gemini-2.5-flash",
         contents: {
           parts: [
             {
@@ -140,6 +140,49 @@ try {
       console.log("[GEMINI] Resposta recebida.");
       const text = response.text || "{}";
       const result = JSON.parse(text);
+
+      // If bakeryCode is provided and DB is available, save product directly to Firestore
+      if (bakeryCode && db) {
+        console.log(`[FIRESTORE] Salvando produto escaneado diretamente no Firestore para bakeryCode: ${bakeryCode}...`);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const valDate = result.dataValidade || todayStr;
+        
+        // Calculate days remaining
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const target = new Date(valDate + 'T00:00:00');
+        const diffTime = target.getTime() - today.getTime();
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const status = daysRemaining < 0 ? 'vencido' : daysRemaining <= 3 ? 'vencendo' : 'normal';
+
+        const productId = 'prod_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+        const newProduct = {
+          id: productId,
+          bakeryCode: String(bakeryCode).trim().toUpperCase(),
+          nome: result.nome || 'Produto Escaneado',
+          quantidade: 1,
+          dataValidade: valDate,
+          categoria: 'Descarte IA',
+          dataCadastro: todayStr,
+          diasParaVencer: daysRemaining,
+          status: status,
+          barcode: '',
+          valorKg: typeof result.valorKg === 'number' ? result.valorKg : null,
+          dataFabricacao: result.dataFabricacao || null,
+          valorTotal: typeof result.valorTotal === 'number' ? result.valorTotal : null,
+          motivo: 'Vencimento',
+          notas: 'Registrado via Leitura de Etiquetas IA',
+        };
+
+        await setDoc(doc(db, 'products', productId), newProduct);
+        console.log(`[FIRESTORE] Confirmação de gravação do produto ${productId} no Firestore com SUCESSO!`);
+        return res.json({
+          ...result,
+          savedToFirestore: true,
+          product: newProduct,
+        });
+      }
+
       res.json(result);
     } catch (error: any) {
       console.error('[ROUTE] ERRO em /api/analyze-product-image:', error);

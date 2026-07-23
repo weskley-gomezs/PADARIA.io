@@ -12,9 +12,10 @@ export const WasteChartSection: React.FC<WasteChartSectionProps> = ({ products }
   const monthlyDataMap: { [key: string]: { month: string; totalWaste: number; count: number } } = {};
 
   products.forEach((p) => {
-    // Consider expired or all products to show trend
-    if (p.dataValidade) {
-      const parts = p.dataValidade.split('-');
+    // Consider expired or discard products using registration date or validity date
+    const refDate = (p.status === 'vencido' && p.dataCadastro) ? p.dataCadastro : (p.dataValidade || p.dataCadastro);
+    if (refDate) {
+      const parts = refDate.split('-');
       if (parts.length >= 2) {
         const yearMonth = `${parts[0]}-${parts[1]}`;
         // Format month label like "Jan/26", etc.
