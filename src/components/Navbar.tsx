@@ -34,11 +34,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Brand Logo */}
           <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer shrink-0" onClick={() => onNavigate('app')}>
-            <div className="relative flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-[#D4A574] to-[#E8571A] text-white shadow-sm transition-transform active:scale-95 sm:hover:scale-105">
-              <ChefHat className="w-5 h-5 sm:w-6 sm:h-6" />
-              <div className="absolute -bottom-1 -right-1 bg-[#2C2C2C] rounded-full p-0.5 sm:p-1 border-2 border-white">
-                <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#D4A574]" />
-              </div>
+            <div className="relative flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white shadow-xs border border-gray-100 p-1 transition-transform active:scale-95 sm:hover:scale-105 overflow-hidden">
+              <img 
+                src="https://i.imgur.com/WIiDOiP.png" 
+                alt="Padaria.io Logo" 
+                className="w-full h-full object-contain"
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div>
               <div className="flex items-center space-x-1">
