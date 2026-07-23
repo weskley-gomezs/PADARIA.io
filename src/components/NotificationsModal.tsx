@@ -21,8 +21,11 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
   const total = expiredProducts.length + expiringProducts.length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#E0E0E0] space-y-5 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-[#E0E0E0] space-y-4 max-h-[90vh] flex flex-col animate-slide-up-mobile sm:animate-scale-up">
+        {/* Mobile drag handle */}
+        <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto sm:hidden -mt-1 mb-1 shrink-0" />
+
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 pb-3 shrink-0">
           <div className="flex items-center space-x-2">

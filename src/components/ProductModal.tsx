@@ -118,21 +118,24 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#E0E0E0] space-y-6 animate-scale-up">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-[#E0E0E0] space-y-5 max-h-[90vh] overflow-y-auto animate-slide-up-mobile sm:animate-scale-up">
+        {/* Mobile drag pill indicator */}
+        <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto sm:hidden -mt-1 mb-2" />
+
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
           <div className="flex items-center space-x-2">
             <div className="p-2 bg-[#F5E6D3] text-[#E8571A] rounded-xl">
               <Package className="w-5 h-5" />
             </div>
-            <h3 className="text-lg font-extrabold text-[#2C2C2C]">
-              {productToEdit ? 'Editar Produto' : 'Adicionar Novo Produto'}
+            <h3 className="text-base sm:text-lg font-extrabold text-[#2C2C2C]">
+              {productToEdit ? 'Editar Produto' : 'Adicionar Novo Descarte'}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </button>

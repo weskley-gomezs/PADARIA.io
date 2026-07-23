@@ -402,184 +402,186 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
 
   // MAIN DASHBOARD WHEN LOGGED IN
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-8 pb-28 sm:pb-8">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#2C2C2C] text-white font-bold px-4 py-3 rounded-xl shadow-xl text-xs border border-[#D4A574] animate-bounce flex items-center space-x-2">
+        <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 bg-[#2C2C2C] text-white font-bold px-4 py-3 rounded-xl shadow-xl text-xs border border-[#D4A574] animate-bounce flex items-center space-x-2">
           <Sparkles className="w-4 h-4 text-[#D4A574]" />
           <span>{toastMsg}</span>
         </div>
       )}
 
       {/* Top Banner Header */}
-      <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-3">
-            <h1 className="text-2xl font-black text-[#2C2C2C]">{company.empresa}</h1>
-            <span className="px-2.5 py-1 bg-orange-50 text-[#E8571A] border border-orange-200 text-xs font-mono font-bold rounded-lg">
-              CÓDIGO: {company.codigoAtivacao}
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black text-[#2C2C2C]">{company.empresa}</h1>
+            <span className="px-2.5 py-0.5 bg-orange-50 text-[#E8571A] border border-orange-200 text-[11px] font-mono font-bold rounded-lg">
+              CÓD: {company.codigoAtivacao}
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Monitoramento em tempo real de validades e estoque • Responsável: {company.email}
+            Monitoramento em tempo real de validades e estoque • {company.email}
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        {/* Quick Action Buttons Grid on Mobile */}
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
           <button
             onClick={() => setIsSupportOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-orange-50 hover:bg-[#E8571A] hover:text-white text-[#E8571A] text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer border border-orange-200"
+            className="px-3 py-2 rounded-xl bg-orange-50 hover:bg-[#E8571A] hover:text-white text-[#E8571A] text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer border border-orange-200"
             title="Solicitar Suporte Técnico"
           >
-            <LifeBuoy className="w-4 h-4" />
+            <LifeBuoy className="w-3.5 h-3.5" />
             <span>Suporte</span>
           </button>
 
           <button
             onClick={() => setIsPrintReportOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
+            className="px-3 py-2 rounded-xl bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
           >
-            <Printer className="w-4 h-4" />
-            <span>Imprimir Relatório</span>
+            <Printer className="w-3.5 h-3.5" />
+            <span>Relatório</span>
           </button>
 
           <button
             onClick={() => setIsWasteScannerOpen(true)}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:opacity-90 text-white text-xs font-extrabold shadow-sm transition-all flex items-center space-x-1.5"
+            className="px-3 py-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:opacity-90 text-white text-xs font-extrabold shadow-sm transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             <span>Descarte IA</span>
           </button>
+
           <button
             onClick={() => {
               setProductToEdit(null);
               setIsProductModalOpen(true);
             }}
-            className="px-4 py-2 rounded-xl bg-[#D4A574] hover:bg-[#c29363] text-white text-xs font-extrabold shadow-sm transition-all flex items-center space-x-1.5"
+            className="px-3 py-2 rounded-xl bg-[#D4A574] hover:bg-[#c29363] text-white text-xs font-extrabold shadow-sm transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            <span>Registrar Descarte</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Registrar</span>
           </button>
         </div>
       </div>
 
-      {/* Navigation Tabs Bar */}
-      <div className="flex items-center space-x-2 border-b border-gray-200 pb-3 overflow-x-auto">
+      {/* Navigation Tabs Bar (Scrollable on Mobile) */}
+      <div className="flex items-center space-x-2 border-b border-gray-200 pb-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('dashboard')}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
             activeTab === 'dashboard' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          <BarChart3 className="w-4 h-4" />
+          <BarChart3 className="w-3.5 h-3.5" />
           <span>📊 Dashboard</span>
         </button>
         <button
           onClick={() => setActiveTab('analise')}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
             activeTab === 'analise' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          <Filter className="w-4 h-4" />
-          <span>📈 Análise Detalhada</span>
+          <Filter className="w-3.5 h-3.5" />
+          <span>📈 Análise</span>
         </button>
         <button
           onClick={() => setActiveTab('insights')}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
             activeTab === 'insights' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>🤖 Insights com IA</span>
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <span>🤖 Insights IA</span>
         </button>
         <button
           onClick={() => setActiveTab('relatorio')}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
             activeTab === 'relatorio' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          <Printer className="w-4 h-4" />
-          <span>📋 Relatório Executivo</span>
+          <Printer className="w-3.5 h-3.5" />
+          <span>📋 Relatório</span>
         </button>
         <button
           onClick={() => setActiveTab('config')}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
             activeTab === 'config' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          <Settings className="w-4 h-4" />
-          <span>⚙️ Configurações</span>
+          <Settings className="w-3.5 h-3.5" />
+          <span>⚙️ Config</span>
         </button>
       </div>
 
       {activeTab === 'dashboard' && (
         <>
-          {/* 1. RESUMO RÁPIDO CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+          {/* 1. RESUMO RÁPIDO CARDS (Responsive 2x2 grid on mobile) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
             {/* Card 1: Perdas do Mês */}
-            <div className="bg-white border border-[#E0E0E0] rounded-xl p-6 flex flex-col justify-between shadow-xs">
+            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-red-600 uppercase tracking-wider">Perdas do Mês</span>
-                <span className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center font-bold">R$</span>
+                <span className="text-[10px] sm:text-[11px] font-extrabold text-red-600 uppercase tracking-wider">Perdas Mês</span>
+                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center font-bold text-xs">R$</span>
               </div>
-              <div className="mt-4">
-                <div className="text-2xl font-black text-[#1F2937]">R$ {expiredMonthValue.toFixed(2)}</div>
-                <div className="text-xs text-gray-500 mt-1 flex items-center space-x-1">
+              <div className="mt-3 sm:mt-4">
+                <div className="text-xl sm:text-2xl font-black text-[#1F2937]">R$ {expiredMonthValue.toFixed(2)}</div>
+                <div className="text-[10px] sm:text-xs text-gray-500 mt-1 flex items-center space-x-1">
                   <span className="text-red-600 font-bold">↑ 12%</span>
-                  <span>vs. mês anterior</span>
+                  <span className="hidden sm:inline">vs. mês anterior</span>
                 </div>
               </div>
             </div>
 
             {/* Card 2: Quantidade Descartada */}
-            <div className="bg-white border border-[#E0E0E0] rounded-xl p-6 flex flex-col justify-between shadow-xs">
+            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-amber-600 uppercase tracking-wider">Qtd Descartada</span>
-                <span className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">📦</span>
+                <span className="text-[10px] sm:text-[11px] font-extrabold text-amber-600 uppercase tracking-wider">Qtd Descarte</span>
+                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs">📦</span>
               </div>
-              <div className="mt-4">
-                <div className="text-2xl font-black text-[#1F2937]">{expiredMonthCount} un</div>
-                <div className="text-xs text-gray-500 mt-1 flex items-center space-x-1">
+              <div className="mt-3 sm:mt-4">
+                <div className="text-xl sm:text-2xl font-black text-[#1F2937]">{expiredMonthCount} un</div>
+                <div className="text-[10px] sm:text-xs text-gray-500 mt-1 flex items-center space-x-1">
                   <span className="text-emerald-600 font-bold">↓ 5%</span>
-                  <span>eficiência de estoque</span>
+                  <span className="hidden sm:inline">estoque</span>
                 </div>
               </div>
             </div>
 
             {/* Card 3: Categoria Top Perda */}
-            <div className="bg-white border border-[#E0E0E0] rounded-xl p-6 flex flex-col justify-between shadow-xs">
+            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-[#1F2937] uppercase tracking-wider">Categoria Top Perda</span>
-                <span className="w-8 h-8 rounded-lg bg-gray-100 text-[#1F2937] flex items-center justify-center font-bold">🏷️</span>
+                <span className="text-[10px] sm:text-[11px] font-extrabold text-[#1F2937] uppercase tracking-wider">Top Perda</span>
+                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 text-[#1F2937] flex items-center justify-center font-bold text-xs">🏷️</span>
               </div>
-              <div className="mt-4">
-                <div className="text-lg font-black text-[#1F2937] truncate">
-                  {categoriesList[0] || 'Pães e Massas'}
+              <div className="mt-3 sm:mt-4">
+                <div className="text-base sm:text-lg font-black text-[#1F2937] truncate">
+                  {categoriesList[0] || 'Pães'}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  Principal motivo: Vencimento de validade
+                <div className="text-[10px] sm:text-xs text-gray-500 mt-1 truncate">
+                  Vencimento
                 </div>
               </div>
             </div>
 
             {/* Card 4: Economia Potencial */}
-            <div className="bg-white border border-[#E0E0E0] rounded-xl p-6 flex flex-col justify-between shadow-xs border-emerald-200 bg-emerald-50/20">
+            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-xs border-emerald-200 bg-emerald-50/20">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">Economia Potencial</span>
-                <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">💡</span>
+                <span className="text-[10px] sm:text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">Economia IA</span>
+                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">💡</span>
               </div>
-              <div className="mt-4">
-                <div className="text-2xl font-black text-emerald-700">R$ 850,00</div>
-                <div className="text-xs text-emerald-600 font-medium mt-1">
-                  Recomendação IA ativa
+              <div className="mt-3 sm:mt-4">
+                <div className="text-xl sm:text-2xl font-black text-emerald-700">R$ 850,00</div>
+                <div className="text-[10px] sm:text-xs text-emerald-600 font-medium mt-1">
+                  Ativa
                 </div>
               </div>
             </div>
           </div>
 
           {/* Evolution Chart */}
-          <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs">
-            <h2 className="text-lg font-extrabold text-[#1F2937] mb-4">Evolução do Desperdício (Últimos 30 Dias)</h2>
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs">
+            <h2 className="text-base sm:text-lg font-extrabold text-[#1F2937] mb-3">Evolução do Desperdício (Últimos 30 Dias)</h2>
             <WasteChartSection products={products} />
           </div>
         </>
@@ -900,8 +902,118 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           </div>
         </div>
 
-        {/* Products Table */}
-        <div className="overflow-x-auto">
+        {/* Mobile Product Card View (Visible on small screens) */}
+        <div className="md:hidden space-y-3">
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+              <p className="font-bold text-sm text-gray-700">Nenhum registro encontrado.</p>
+              <p className="text-xs text-gray-500 mt-1">Toque em "+ Registrar" para adicionar um descarte.</p>
+            </div>
+          ) : (
+            filteredProducts.map((p) => (
+              <div
+                key={p.id}
+                className={`p-4 rounded-2xl border transition-all space-y-3 ${
+                  p.status === 'vencido'
+                    ? 'bg-red-50/40 border-red-200'
+                    : p.status === 'vencendo'
+                    ? 'bg-amber-50/40 border-amber-200'
+                    : 'bg-white border-gray-200 shadow-xs'
+                }`}
+              >
+                {/* Header: Title, Category & Status Pill */}
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-extrabold text-sm text-[#2C2C2C]">{p.nome}</h3>
+                    <div className="flex items-center space-x-1.5 mt-1">
+                      <span className="text-[10px] font-semibold bg-[#F5E6D3] text-[#2C2C2C] px-2 py-0.5 rounded-full">
+                        {p.categoria || 'Geral'}
+                      </span>
+                      {p.barcode && (
+                        <span className="text-[9px] font-mono text-gray-400">
+                          #{p.barcode.slice(-6)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <span
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                      p.status === 'vencido'
+                        ? 'bg-red-100 text-red-700'
+                        : p.status === 'vencendo'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-emerald-100 text-emerald-800'
+                    }`}
+                  >
+                    {p.status === 'vencido'
+                      ? 'Vencido'
+                      : p.status === 'vencendo'
+                      ? 'Vencendo'
+                      : 'Em dia'}
+                  </span>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-gray-100/80">
+                  <div className="bg-white/80 p-2 rounded-xl border border-gray-100">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase block">Quantidade</span>
+                    <span className="font-black text-[#2C2C2C] text-sm">{p.quantidade} un</span>
+                  </div>
+
+                  <div className="bg-white/80 p-2 rounded-xl border border-gray-100">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase block">Valor Total</span>
+                    <span className="font-black text-[#2C2C2C] text-sm">
+                      {p.valorTotal ? `R$ ${p.valorTotal.toFixed(2)}` : 'Não inf.'}
+                    </span>
+                  </div>
+
+                  <div className="col-span-2 flex items-center justify-between text-[11px] pt-1">
+                    <div className="text-gray-500">
+                      Validade: <strong className="text-[#2C2C2C]">{formatDateToBR(p.dataValidade)}</strong>
+                    </div>
+                    <div
+                      className={`font-bold ${
+                        p.status === 'vencido'
+                          ? 'text-red-600'
+                          : p.status === 'vencendo'
+                          ? 'text-amber-600'
+                          : 'text-gray-500'
+                      }`}
+                    >
+                      {getRelativeExpirationText(p.diasParaVencer)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Mobile Action Buttons */}
+                <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
+                  <button
+                    onClick={() => {
+                      setProductToEdit(p);
+                      setIsProductModalOpen(true);
+                    }}
+                    className="flex-1 py-2 rounded-xl bg-[#F5E6D3] hover:bg-[#D4A574] text-[#2C2C2C] font-bold text-xs transition-colors flex items-center justify-center space-x-1"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Editar</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteProduct(p.id, p.nome)}
+                    className="py-2 px-3 rounded-xl bg-red-100 hover:bg-red-200 text-red-600 font-bold text-xs transition-colors flex items-center justify-center space-x-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Excluir</span>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Products Desktop Table (Hidden on small screens) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#FAFAF8] text-gray-500 text-[11px] font-extrabold uppercase tracking-wider border-b border-gray-200">
@@ -990,7 +1102,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
                           setProductToEdit(p);
                           setIsProductModalOpen(true);
                         }}
-                        className="p-1.5 rounded-lg bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] transition-colors"
+                        className="p-1.5 rounded-lg bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] transition-colors cursor-pointer"
                         title="Editar Produto"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -999,7 +1111,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
                       {/* Deletar */}
                       <button
                         onClick={() => handleDeleteProduct(p.id, p.nome)}
-                        className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition-colors"
+                        className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition-colors cursor-pointer"
                         title="Excluir Produto"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -1054,17 +1166,68 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
         </>
       )}
 
-      {/* Floating Action Button (FAB) */}
+      {/* Floating Action Button (FAB - Positioned safely above mobile dock) */}
       <button
         onClick={() => {
           setProductToEdit(null);
           setIsProductModalOpen(true);
         }}
-        className="fixed bottom-8 right-8 z-40 w-16 h-16 bg-[#E8571A] hover:bg-[#d44e15] text-white rounded-full flex items-center justify-center text-3xl font-light shadow-xl shadow-[#E8571A]/30 transition-all transform hover:scale-110 active:scale-95 cursor-pointer border-2 border-white"
+        className="fixed bottom-20 sm:bottom-8 right-4 sm:right-8 z-30 w-14 h-14 sm:w-16 sm:h-16 bg-[#E8571A] hover:bg-[#d44e15] text-white rounded-full flex items-center justify-center text-2xl sm:text-3xl font-light shadow-xl shadow-[#E8571A]/30 transition-all transform hover:scale-105 active:scale-95 cursor-pointer border-2 border-white"
         title="Adicionar Novo Produto"
       >
         +
       </button>
+
+      {/* FIXED MOBILE BOTTOM APP TAB BAR (DOCK) */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 px-3 py-1.5 flex justify-around items-center shadow-lg">
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'dashboard' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <BarChart3 className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">Início</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('analise')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'analise' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Filter className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">Análise</span>
+        </button>
+
+        {/* Center Accent IA Scanner Button */}
+        <button
+          onClick={() => setIsWasteScannerOpen(true)}
+          className="flex flex-col items-center justify-center -mt-5 bg-gradient-to-tr from-[#E8571A] to-[#D4A574] text-white p-3 rounded-full shadow-lg shadow-[#E8571A]/40 border-2 border-white active:scale-95 transition-transform"
+        >
+          <Sparkles className="w-5 h-5 text-amber-200" />
+        </button>
+
+        <button
+          onClick={() => setActiveTab('relatorio')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'relatorio' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Printer className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">Relatórios</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('config')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'config' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Settings className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">Config</span>
+        </button>
+      </nav>
     </div>
   );
 };

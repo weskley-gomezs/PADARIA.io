@@ -206,15 +206,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
 
   // MAIN ADMIN DASHBOARD WITH TABS
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-8 pb-12">
       {/* Header Admin */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
             <span className="px-2.5 py-0.5 rounded-md bg-[#2C2C2C] text-[#D4A574] text-xs font-bold uppercase tracking-wider">
               ADMINISTRADOR MASTER
             </span>
-            <h1 className="text-2xl font-extrabold text-[#2C2C2C]">Painel Central - PADARIA.io</h1>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#2C2C2C]">Painel Central - PADARIA.io</h1>
           </div>
           <p className="text-xs text-gray-500 mt-1">
             Gestão de empresas, faturamento recorrente, contratos em PDF e tickets de suporte
@@ -240,11 +240,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2">
+      {/* Navigation Tabs (Scrollable on Mobile) */}
+      <div className="flex items-center space-x-2 border-b border-gray-200 pb-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('empresas')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
             activeTab === 'empresas'
               ? 'bg-[#2C2C2C] text-white shadow-sm'
               : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
