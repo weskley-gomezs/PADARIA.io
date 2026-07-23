@@ -595,20 +595,13 @@ export class StorageService {
   }
 
   static getAsaasConfig(): AsaasConfig {
-    return getItem<AsaasConfig>(KEYS.ASAAS_CONFIG, {
-      apiKey: '$asaas_api_key_padariaio_live_2026',
-      environment: 'production',
+    return {
+      apiKey: import.meta.env.VITE_ASAAS_API_KEY || '$asaas_api_key_padariaio_live_2026',
+      environment: (import.meta.env.VITE_ASAAS_ENVIRONMENT as 'sandbox' | 'production') || 'production',
       webhookUrl: `${window.location.origin}/api/webhooks/asaas`,
       ativo: true,
       walletId: 'padariaio_main_wallet',
-    });
-  }
-
-  static saveAsaasConfig(updates: Partial<AsaasConfig>): AsaasConfig {
-    const current = StorageService.getAsaasConfig();
-    const updated = { ...current, ...updates };
-    setItem(KEYS.ASAAS_CONFIG, updated);
-    return updated;
+    };
   }
 
   // Support Tickets

@@ -37,12 +37,6 @@ interface AdminBillingProps {
 export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, onRefresh }) => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Asaas Config State
-  const [asaasConfig, setAsaasConfig] = useState<AsaasConfig>(() => StorageService.getAsaasConfig());
-  const [isAsaasModalOpen, setIsAsaasModalOpen] = useState<boolean>(false);
-  const [apiKeyInput, setApiKeyInput] = useState<string>(asaasConfig.apiKey);
-  const [envInput, setEnvInput] = useState<'sandbox' | 'production'>(asaasConfig.environment);
-
   // Status & Due Date Editing State per Company
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState<BillingStatus>('pendente');
@@ -156,16 +150,6 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
     });
     onRefresh();
     showToast(`Pagamento de implementação confirmado! Status alterado para Concluído.`);
-  };
-
-  const handleSaveAsaasConfig = () => {
-    const updated = StorageService.saveAsaasConfig({
-      apiKey: apiKeyInput,
-      environment: envInput,
-    });
-    setAsaasConfig(updated);
-    setIsAsaasModalOpen(false);
-    showToast('Configurações do Asaas salvas com sucesso!');
   };
 
   // Calculate alert counts
@@ -287,14 +271,6 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
               Altere o status de &quot;Em Configuração&quot; para &quot;Concluído&quot;, defina as datas de vencimento mensais e receba alertas automáticos
             </p>
           </div>
-
-          <button
-            onClick={() => setIsAsaasModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-xs shadow-md transition-all flex items-center space-x-2 cursor-pointer self-start sm:self-auto"
-          >
-            <Sliders className="w-4 h-4 text-blue-200" />
-            <span>Configurar Gateway Asaas</span>
-          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -519,147 +495,6 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
           </table>
         </div>
       </div>
-
-      {/* Asaas Integration Banner Box */}
-      <div className="p-6 bg-gradient-to-r from-[#1E293B] via-[#0F172A] to-[#1E293B] text-white rounded-2xl space-y-4 border border-blue-500/40 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-700/60 pb-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/30">
-              <CreditCard className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="font-extrabold text-base text-white">
-                  Gateway de Pagamentos Conectado: ASAAS
-                </h3>
-                <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/30 uppercase">
-                  Ativo e Homologado
-                </span>
-              </div>
-              <p className="text-xs text-gray-300 mt-0.5">
-                Emissão automática de PIX estático e dinâmico, boletos bancários e cartão de crédito recorrente.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setIsAsaasModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer self-start sm:self-auto"
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Gerenciar Chave Asaas</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-          <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/60 space-y-1">
-            <p className="text-gray-400 font-semibold">Ambiente Asaas</p>
-            <p className="font-extrabold text-blue-300 uppercase tracking-wide">{asaasConfig.environment}</p>
-          </div>
-
-          <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/60 space-y-1">
-            <p className="text-gray-400 font-semibold">Webhook Ativo</p>
-            <p className="font-mono text-emerald-400 text-[11px] truncate">{asaasConfig.webhookUrl}</p>
-          </div>
-
-          <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/60 space-y-1">
-            <p className="text-gray-400 font-semibold">Chave de API Asaas</p>
-            <p className="font-mono text-amber-300 text-[11px] truncate">
-              {asaasConfig.apiKey ? `${asaasConfig.apiKey.substring(0, 18)}...` : 'Não configurada'}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Asaas Configuration Modal */}
-      {isAsaasModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 space-y-5 animate-scale-up">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center space-x-2.5">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-base text-[#2C2C2C]">
-                    Configurar Integração ASAAS
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    Insira suas credenciais da conta do Asaas para cobrança automatizada
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsAsaasModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 font-bold text-lg"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-[#2C2C2C] mb-1">
-                  Ambiente de Execução
-                </label>
-                <select
-                  value={envInput}
-                  onChange={(e) => setEnvInput(e.target.value as 'sandbox' | 'production')}
-                  className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2 text-xs font-bold text-[#2C2C2C] focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="production">🚀 Produção (Conta Real Asaas)</option>
-                  <option value="sandbox">🧪 Sandbox (Testes e Homologação)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-[#2C2C2C] mb-1">
-                  Chave API Asaas ($asaas_api_key)
-                </label>
-                <input
-                  type="password"
-                  value={apiKeyInput}
-                  onChange={(e) => setApiKeyInput(e.target.value)}
-                  placeholder="Ex: $asaas_api_key_live_..."
-                  className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#2C2C2C] focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-[11px] text-gray-500 mt-1">
-                  Encontre sua chave API no painel do Asaas em Integrar -&gt; Chaves de API.
-                </p>
-              </div>
-
-              <div className="bg-blue-50 p-3.5 rounded-xl border border-blue-200 space-y-1">
-                <p className="font-bold text-blue-900 flex items-center space-x-1">
-                  <Info className="w-3.5 h-3.5 text-blue-600" />
-                  <span>URL do Webhook de Retorno Automático</span>
-                </p>
-                <p className="font-mono text-[11px] text-blue-800 break-all">
-                  {asaasConfig.webhookUrl}
-                </p>
-                <p className="text-[10px] text-blue-700">
-                  Ao receber pagamentos por PIX ou boleto, o Asaas notifica este webhook e altera o status da padaria para &quot;Concluído&quot; automaticamente.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
-              <button
-                onClick={() => setIsAsaasModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveAsaasConfig}
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md flex items-center space-x-1.5 cursor-pointer"
-              >
-                <Save className="w-3.5 h-3.5" />
-                <span>Salvar Credenciais Asaas</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Asaas Active Payment Link Modal */}
       {activePaymentModal && activePaymentModal.isOpen && (
