@@ -43,6 +43,8 @@ export interface BillingInfo {
   dataProximaCobranca: string; // YYYY-MM-DD
   statusAssinatura: BillingStatus;
   historicoCobrancas: InvoiceItem[];
+  ultimoLinkPagamento?: string;
+  tipoUltimoLink?: 'implementacao' | 'mensalidade';
   asaasCustomerId?: string;
   asaasSubscriptionId?: string;
   diaVencimentoMensal?: number; // ex: 15

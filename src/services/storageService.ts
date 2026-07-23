@@ -468,10 +468,14 @@ export class StorageService {
   static sendImplementationInvoice(code: string): string {
     const comp = StorageService.getCompanyByCode(code);
     if (!comp) return '';
-    const invoiceLink = `https://pagar.me/checkout/imp_${code}_${Date.now()}`;
+    const config = StorageService.getAsaasConfig();
+    const domain = config.environment === 'sandbox' ? 'sandbox.asaas.com' : 'www.asaas.com';
+    const invoiceLink = `https://${domain}/c/imp_${code.toLowerCase()}_${Date.now().toString(36)}`;
     
     // Update invoice status
     StorageService.updateCompanyBilling(code, {
+      ultimoLinkPagamento: invoiceLink,
+      tipoUltimoLink: 'implementacao',
       historicoCobrancas: [
         ...(comp.financeiro?.historicoCobrancas || []),
         {
@@ -491,9 +495,13 @@ export class StorageService {
   static generateRecurringBoleto(code: string): string {
     const comp = StorageService.getCompanyByCode(code);
     if (!comp) return '';
-    const boletoLink = `https://pagar.me/boleto/rec_${code}_${Date.now()}`;
+    const config = StorageService.getAsaasConfig();
+    const domain = config.environment === 'sandbox' ? 'sandbox.asaas.com' : 'www.asaas.com';
+    const boletoLink = `https://${domain}/c/sub_${code.toLowerCase()}_${Date.now().toString(36)}`;
 
     StorageService.updateCompanyBilling(code, {
+      ultimoLinkPagamento: boletoLink,
+      tipoUltimoLink: 'mensalidade',
       historicoCobrancas: [
         ...(comp.financeiro?.historicoCobrancas || []),
         {

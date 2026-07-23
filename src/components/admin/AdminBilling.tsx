@@ -18,6 +18,11 @@ import {
   CheckCircle,
   ExternalLink,
   Info,
+  Copy,
+  Check,
+  Share2,
+  MessageSquare,
+  QrCode,
 } from 'lucide-react';
 import { BakeryCompany, BillingStatus, FinancialStats } from '../../types';
 import { StorageService, AsaasConfig } from '../../services/storageService';
@@ -43,6 +48,17 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
   const [editStatus, setEditStatus] = useState<BillingStatus>('pendente');
   const [editDueDate, setEditDueDate] = useState<string>('');
 
+  // Payment Link Modal State
+  const [activePaymentModal, setActivePaymentModal] = useState<{
+    isOpen: boolean;
+    companyName: string;
+    companyPhone?: string;
+    type: 'implementacao' | 'mensalidade';
+    value: number;
+    link: string;
+  } | null>(null);
+  const [copiedLink, setCopiedLink] = useState<boolean>(false);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
@@ -61,16 +77,65 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
     showToast(`Status e data de vencimento atualizados com sucesso!`);
   };
 
-  const handleSendInvoice = (code: string, name: string) => {
-    const link = StorageService.sendImplementationInvoice(code);
+  const handleSendInvoice = (company: BakeryCompany) => {
+    const link = StorageService.sendImplementationInvoice(company.codigoAtivacao);
     onRefresh();
-    showToast(`Fatura de Implementação R$ 1.500 gerada via Asaas para ${name}! Link enviado.`);
+    const valor = company.financeiro?.valorImplementacao || 1500;
+    setActivePaymentModal({
+      isOpen: true,
+      companyName: company.empresa,
+      companyPhone: company.telefone,
+      type: 'implementacao',
+      value: valor,
+      link,
+    });
+    showToast(`Fatura de Implementação R$ ${valor} gerada via Asaas para ${company.empresa}!`);
   };
 
-  const handleGenerateBoleto = (code: string, name: string) => {
-    const link = StorageService.generateRecurringBoleto(code);
+  const handleGenerateBoleto = (company: BakeryCompany) => {
+    const link = StorageService.generateRecurringBoleto(company.codigoAtivacao);
     onRefresh();
-    showToast(`Boleto / PIX Asaas gerado para ${name}! Link: ${link}`);
+    const valor = company.financeiro?.valorMensalidade || 199;
+    setActivePaymentModal({
+      isOpen: true,
+      companyName: company.empresa,
+      companyPhone: company.telefone,
+      type: 'mensalidade',
+      value: valor,
+      link,
+    });
+    showToast(`Cobrança Recorrente Asaas R$ ${valor} gerada para ${company.empresa}!`);
+  };
+
+  const handleShowExistingLink = (company: BakeryCompany) => {
+    const fin = company.financeiro;
+    if (!fin?.ultimoLinkPagamento) return;
+    setActivePaymentModal({
+      isOpen: true,
+      companyName: company.empresa,
+      companyPhone: company.telefone,
+      type: fin.tipoUltimoLink || 'implementacao',
+      value: fin.tipoUltimoLink === 'mensalidade' ? (fin.valorMensalidade || 199) : (fin.valorImplementacao || 1500),
+      link: fin.ultimoLinkPagamento,
+    });
+  };
+
+  const handleCopyLink = (linkUrl: string) => {
+    navigator.clipboard.writeText(linkUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const handleOpenWhatsApp = (modalData: { companyName: string; companyPhone?: string; type: 'implementacao' | 'mensalidade'; value: number; link: string }) => {
+    const cleanPhone = modalData.companyPhone ? modalData.companyPhone.replace(/\D/g, '') : '';
+    const textMsg = `Olá, equipe da *${modalData.companyName}*! 👋\n\nSegue o link de pagamento do sistema PADARIA.io via *Asaas*:\n\n📌 *Tipo:* ${modalData.type === 'implementacao' ? 'Taxa de Implementação & Setup' : 'Assinatura Mensalidade Recorrente'}\n💰 *Valor:* R$ ${modalData.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n💳 *Opções:* PIX Instantâneo, Boleto Bancário ou Cartão de Crédito\n\n🔗 *Link para Pagamento Direto:* \n${modalData.link}\n\nQualquer dúvida, estamos à disposição no suporte PADARIA.io!`;
+
+    const encodedMsg = encodeURIComponent(textMsg);
+    const whatsappUrl = cleanPhone 
+      ? `https://wa.me/55${cleanPhone}?text=${encodedMsg}`
+      : `https://wa.me/?text=${encodedMsg}`;
+    
+    window.open(whatsappUrl, '_blank');
   };
 
   const handleToggleSuspension = (code: string, name: string) => {
@@ -404,22 +469,33 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
                             </button>
 
                             <button
-                              onClick={() => handleSendInvoice(c.codigoAtivacao, c.empresa)}
+                              onClick={() => handleSendInvoice(c)}
                               className="px-2.5 py-1.5 rounded-lg bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] font-bold text-[11px] transition-all cursor-pointer inline-flex items-center space-x-1"
-                              title="Enviar Fatura de Implementação R$ 1.500"
+                              title="Gerar & Enviar Fatura de Implementação R$ 1.500 (Asaas)"
                             >
-                              <Send className="w-3 h-3" />
+                              <Send className="w-3 h-3 text-[#E8571A]" />
                               <span>Fatura Imp.</span>
                             </button>
 
                             <button
-                              onClick={() => handleGenerateBoleto(c.codigoAtivacao, c.empresa)}
+                              onClick={() => handleGenerateBoleto(c)}
                               className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] transition-all cursor-pointer inline-flex items-center space-x-1"
-                              title="Gerar PIX / Boleto Asaas R$ 199"
+                              title="Gerar & Enviar Assinatura PIX / Boleto Asaas R$ 199"
                             >
-                              <CreditCard className="w-3 h-3" />
+                              <CreditCard className="w-3 h-3 text-blue-600" />
                               <span>PIX / Asaas</span>
                             </button>
+
+                            {fin.ultimoLinkPagamento && (
+                              <button
+                                onClick={() => handleShowExistingLink(c)}
+                                className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[11px] transition-all cursor-pointer inline-flex items-center space-x-1 border border-emerald-200"
+                                title="Ver & Copiar Último Link Asaas Gerado"
+                              >
+                                <Link2 className="w-3 h-3 text-emerald-600" />
+                                <span>Ver Link</span>
+                              </button>
+                            )}
 
                             <button
                               onClick={() => handleToggleSuspension(c.codigoAtivacao, c.empresa)}
@@ -580,6 +656,119 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
                 <Save className="w-3.5 h-3.5" />
                 <span>Salvar Credenciais Asaas</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Asaas Active Payment Link Modal */}
+      {activePaymentModal && activePaymentModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 space-y-5 animate-scale-up">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-200">
+                  <CreditCard className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="font-black text-base text-[#2C2C2C]">
+                      Link de Pagamento ASAAS
+                    </h3>
+                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
+                      Pronto para envio
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 font-medium">
+                    Cliente: <strong className="text-[#2C2C2C]">{activePaymentModal.companyName}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActivePaymentModal(null)}
+                className="text-gray-400 hover:text-gray-600 font-bold text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Invoice Info Card */}
+            <div className="bg-[#FAFAF8] p-4 rounded-xl border border-gray-200 space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500 font-semibold">Tipo de Cobrança:</span>
+                <span className="font-extrabold text-[#2C2C2C]">
+                  {activePaymentModal.type === 'implementacao'
+                    ? '🛠️ Taxa de Implementação & Setup'
+                    : '🔄 Assinatura Mensalidade Recorrente'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs border-t border-gray-200/60 pt-2">
+                <span className="text-gray-500 font-semibold">Valor Total:</span>
+                <span className="font-black text-lg text-[#27AE60]">
+                  R$ {activePaymentModal.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs border-t border-gray-200/60 pt-2">
+                <span className="text-gray-500 font-semibold">Gateway / Processador:</span>
+                <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                  ASAAS (PIX / Boleto / Cartão)
+                </span>
+              </div>
+            </div>
+
+            {/* Link Input with 1-Click Copy */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-[#2C2C2C] flex items-center justify-between">
+                <span>Link Direto de Pagamento (Asaas Checkout):</span>
+                {copiedLink && (
+                  <span className="text-[11px] font-bold text-emerald-700 flex items-center space-x-1">
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Copiado com sucesso!</span>
+                  </span>
+                )}
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={activePaymentModal.link}
+                  className="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-blue-700 select-all focus:outline-none"
+                />
+                <button
+                  onClick={() => handleCopyLink(activePaymentModal.link)}
+                  className="px-4 py-2.5 bg-[#E8571A] hover:bg-[#d44e15] text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-xs"
+                >
+                  {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedLink ? 'Copiado!' : 'Copiar'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons: WhatsApp & Open Browser */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <button
+                onClick={() => handleOpenWhatsApp(activePaymentModal)}
+                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-md"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>Enviar p/ WhatsApp do Cliente</span>
+              </button>
+
+              <button
+                onClick={() => window.open(activePaymentModal.link, '_blank')}
+                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-md"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>Abrir Checkout Asaas</span>
+              </button>
+            </div>
+
+            {/* Note & QR Code Preview simulation */}
+            <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-[11px] text-amber-900 flex items-start space-x-2">
+              <QrCode className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <p>
+                O cliente poderá pagar instantaneamente por <strong>PIX com QR Code / Copia e Cola</strong>, <strong>Boleto Bancário</strong> ou <strong>Cartão de Crédito</strong>. Quando pago, a conta da padaria é ativada automaticamente pelo Webhook Asaas.
+              </p>
             </div>
           </div>
         </div>
