@@ -88,16 +88,18 @@ try {
       }
 
       console.log("[ROUTE] Processando base64 e iniciando chamada ao Gemini...");
+      const mimeMatch = imageBase64.match(/^data:(image\/\w+);base64,/);
+      const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
       const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
 
-      console.log("[GEMINI] Chamando generateContent...");
+      console.log(`[GEMINI] Chamando generateContent com modelo gemini-3.1-flash-lite (MIME: ${mimeType})...`);
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.1-flash-lite",
         contents: {
           parts: [
             {
               inlineData: {
-                mimeType: "image/jpeg",
+                mimeType: mimeType,
                 data: base64Data,
               },
             },
@@ -138,7 +140,8 @@ try {
       });
 
       console.log("[GEMINI] Resposta recebida.");
-      const text = response.text || "{}";
+      let text = response.text || "{}";
+      text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
       const result = JSON.parse(text);
 
       // If bakeryCode is provided and DB is available, save product directly to Firestore

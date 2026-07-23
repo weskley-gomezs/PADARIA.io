@@ -60,8 +60,8 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
     showToast(`Status e data de vencimento atualizados com sucesso!`);
   };
 
-  const handleToggleSuspension = (code: string, name: string) => {
-    const newStatus = StorageService.toggleCompanyBillingSuspension(code);
+  const handleToggleSuspension = async (code: string, name: string) => {
+    const newStatus = await StorageService.toggleCompanyBillingSuspension(code);
     onRefresh();
     if (newStatus === 'suspenso') {
       showToast(`Acesso da padaria ${name} SUSPENSO por inadimplência!`);
