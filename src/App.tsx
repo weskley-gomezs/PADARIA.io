@@ -152,8 +152,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center space-x-4 text-gray-400">
-            <span>Cores: #D4A574 | #F5E6D3 | #E8571A</span>
-            <span>•</span>
             <button onClick={() => handleNavigate('admin')} className="hover:text-[#2C2C2C] font-semibold">
               Painel Admin
             </button>

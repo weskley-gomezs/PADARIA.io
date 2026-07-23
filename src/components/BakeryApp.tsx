@@ -444,7 +444,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
         </div>
 
         {/* Quick Action Buttons Grid on Mobile */}
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setIsSupportOpen(true)}
             className="px-3 py-2 rounded-xl bg-orange-50 hover:bg-[#E8571A] hover:text-white text-[#E8571A] text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer border border-orange-200"
@@ -460,25 +460,6 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Relatório</span>
-          </button>
-
-          <button
-            onClick={() => setIsWasteScannerOpen(true)}
-            className="px-3 py-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:opacity-90 text-white text-xs font-extrabold shadow-sm transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Descarte IA</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setProductToEdit(null);
-              setIsProductModalOpen(true);
-            }}
-            className="px-3 py-2 rounded-xl bg-[#D4A574] hover:bg-[#c29363] text-white text-xs font-extrabold shadow-sm transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>+ Registrar</span>
           </button>
         </div>
       </div>
@@ -772,48 +753,88 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
       )}
 
       {activeTab === 'relatorio' && (
-        <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-100">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-4 sm:space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-4 border-b border-gray-100">
             <div>
-              <h2 className="text-xl font-extrabold text-[#1F2937]">Relatório Executivo de Descartes</h2>
+              <h2 className="text-lg sm:text-xl font-extrabold text-[#1F2937]">Relatório Executivo de Descartes</h2>
               <p className="text-xs text-gray-500">Visualize e exporte o relatório completo com todas as especificações dos produtos vencidos.</p>
             </div>
             <button
               onClick={() => setIsPrintReportOpen(true)}
-              className="px-4 py-2 bg-[#E8571A] hover:bg-[#d44e15] text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-2 shadow-sm"
+              className="w-full md:w-auto px-4 py-2.5 bg-[#E8571A] hover:bg-[#d44e15] text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center space-x-2 shadow-sm cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>Imprimir / PDF Executivo</span>
             </button>
           </div>
 
-          <div className="p-6 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
-            <div className="flex justify-between items-center">
+          <div className="p-4 sm:p-6 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <div>
-                <h3 className="font-extrabold text-sm text-[#1F2937]">{company.empresa}</h3>
+                <h3 className="font-extrabold text-sm sm:text-base text-[#1F2937]">{company.empresa}</h3>
                 <p className="text-xs text-gray-500">CNPJ: {company.cnpj || '00.000.000/0001-00'} • Código: {company.codigoAtivacao}</p>
               </div>
-              <div className="text-right">
-                <span className="text-xs font-bold bg-red-100 text-red-700 px-3 py-1 rounded-full">
+              <div>
+                <span className="inline-block text-xs font-bold bg-red-100 text-red-700 px-3 py-1 rounded-full">
                   Período Atual: Mês Corrente
                 </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200 text-center">
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <div className="text-xs text-gray-500 font-bold uppercase">Total Descartado</div>
-                <div className="text-xl font-black text-[#1F2937] mt-1">{expiredMonthCount} unidades</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-200 text-center">
+              <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
+                <div className="text-[11px] text-gray-500 font-bold uppercase">Total Descartado</div>
+                <div className="text-lg sm:text-xl font-black text-[#1F2937] mt-1">{expiredMonthCount} unidades</div>
               </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <div className="text-xs text-gray-500 font-bold uppercase">Prejuízo Financeiro</div>
-                <div className="text-xl font-black text-red-600 mt-1">R$ {expiredMonthValue.toFixed(2)}</div>
+              <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
+                <div className="text-[11px] text-gray-500 font-bold uppercase">Prejuízo Financeiro</div>
+                <div className="text-lg sm:text-xl font-black text-red-600 mt-1">R$ {expiredMonthValue.toFixed(2)}</div>
               </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <div className="text-xs text-gray-500 font-bold uppercase">Eficiência Operacional</div>
-                <div className="text-xl font-black text-emerald-600 mt-1">84.2%</div>
+              <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
+                <div className="text-[11px] text-gray-500 font-bold uppercase">Eficiência Operacional</div>
+                <div className="text-lg sm:text-xl font-black text-emerald-600 mt-1">84.2%</div>
               </div>
             </div>
+          </div>
+
+          {/* Quick List Preview of Vencidos for Mobile */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs sm:text-sm font-black text-[#2C2C2C]">Resumo de Itens Vencidos ({expiredMonthProducts.length})</h3>
+              <button
+                onClick={() => setIsPrintReportOpen(true)}
+                className="text-xs font-bold text-[#E8571A] hover:underline cursor-pointer"
+              >
+                Ver Relatório Completo →
+              </button>
+            </div>
+
+            {expiredMonthProducts.length === 0 ? (
+              <p className="text-xs text-gray-500 py-6 text-center italic border border-dashed border-gray-200 rounded-xl">
+                Nenhum produto vencido no mês atual.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {expiredMonthProducts.map((item) => {
+                  const unitVal = item.valorKg || 12.0;
+                  const totalVal = item.valorTotal || item.quantidade * unitVal;
+                  return (
+                    <div key={item.id} className="p-3 bg-red-50/60 border border-red-200/70 rounded-xl flex items-center justify-between text-xs">
+                      <div>
+                        <div className="font-bold text-red-950 text-xs">{item.nome}</div>
+                        <div className="text-[10px] text-gray-500">
+                          {item.categoria || 'Geral'} • Validade: {formatDateToBR(item.dataValidade)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-black text-red-800 text-xs">R$ {totalVal.toFixed(2)}</div>
+                        <div className="text-[10px] text-gray-600 font-bold">{item.quantidade} un</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
