@@ -13,16 +13,7 @@ const KEYS = {
   ADMIN_AUTH: 'padarias_admin_authenticated',
   BAKERY_SESSION: 'padarias_active_session',
   ADMIN_PASSWORD: 'padarias_admin_password',
-  ASAAS_CONFIG: 'padarias_asaas_config_v1',
 };
-
-export interface AsaasConfig {
-  apiKey: string;
-  environment: 'sandbox' | 'production';
-  webhookUrl: string;
-  ativo: boolean;
-  walletId?: string;
-}
 
 function getItem<T>(key: string, defaultValue: T): T {
   try {
@@ -48,10 +39,10 @@ export class StorageService {
   // Initialize and sync with Firestore
   static async init(): Promise<void> {
     if (!localStorage.getItem(KEYS.COMPANIES)) {
-      setItem(KEYS.COMPANIES, INITIAL_COMPANIES);
+      setItem(KEYS.COMPANIES, []);
     }
     if (!localStorage.getItem(KEYS.PRODUCTS)) {
-      setItem(KEYS.PRODUCTS, INITIAL_PRODUCTS);
+      setItem(KEYS.PRODUCTS, []);
     }
     if (!localStorage.getItem(KEYS.SALES_HISTORY)) {
       setItem(KEYS.SALES_HISTORY, []);
@@ -465,16 +456,13 @@ export class StorageService {
     return comp;
   }
 
-  static sendImplementationInvoice(code: string): string {
+  static sendImplementationInvoice(code: string, link: string): string {
     const comp = StorageService.getCompanyByCode(code);
     if (!comp) return '';
-    const config = StorageService.getAsaasConfig();
-    const domain = config.environment === 'sandbox' ? 'sandbox.asaas.com' : 'www.asaas.com';
-    const invoiceLink = `https://${domain}/c/imp_${code.toLowerCase()}_${Date.now().toString(36)}`;
     
     // Update invoice status
     StorageService.updateCompanyBilling(code, {
-      ultimoLinkPagamento: invoiceLink,
+      ultimoLinkPagamento: link,
       tipoUltimoLink: 'implementacao',
       historicoCobrancas: [
         ...(comp.financeiro?.historicoCobrancas || []),
@@ -484,23 +472,20 @@ export class StorageService {
           valor: comp.financeiro?.valorImplementacao || 1500,
           tipo: 'implementacao',
           status: 'pendente',
-          linkBoleto: invoiceLink,
+          linkBoleto: link,
         },
       ],
     });
 
-    return invoiceLink;
+    return link;
   }
 
-  static generateRecurringBoleto(code: string): string {
+  static generateRecurringBoleto(code: string, link: string): string {
     const comp = StorageService.getCompanyByCode(code);
     if (!comp) return '';
-    const config = StorageService.getAsaasConfig();
-    const domain = config.environment === 'sandbox' ? 'sandbox.asaas.com' : 'www.asaas.com';
-    const boletoLink = `https://${domain}/c/sub_${code.toLowerCase()}_${Date.now().toString(36)}`;
 
     StorageService.updateCompanyBilling(code, {
-      ultimoLinkPagamento: boletoLink,
+      ultimoLinkPagamento: link,
       tipoUltimoLink: 'mensalidade',
       historicoCobrancas: [
         ...(comp.financeiro?.historicoCobrancas || []),
@@ -510,12 +495,12 @@ export class StorageService {
           valor: comp.financeiro?.valorMensalidade || 199,
           tipo: 'mensalidade',
           status: 'pendente',
-          linkBoleto: boletoLink,
+          linkBoleto: link,
         },
       ],
     });
 
-    return boletoLink;
+    return link;
   }
 
   static toggleCompanyBillingSuspension(code: string): BillingStatus {
@@ -592,16 +577,6 @@ export class StorageService {
     setItem(KEYS.COMPANIES, companies);
     setDoc(doc(db, 'companies', code), comp).catch(() => {});
     return comp;
-  }
-
-  static getAsaasConfig(): AsaasConfig {
-    return {
-      apiKey: import.meta.env.VITE_ASAAS_API_KEY || '$asaas_api_key_padariaio_live_2026',
-      environment: (import.meta.env.VITE_ASAAS_ENVIRONMENT as 'sandbox' | 'production') || 'production',
-      webhookUrl: `${window.location.origin}/api/webhooks/asaas`,
-      ativo: true,
-      walletId: 'padariaio_main_wallet',
-    };
   }
 
   // Support Tickets
@@ -698,7 +673,13 @@ export class StorageService {
     nome: string,
     quantidade: number,
     dataValidade: string,
-    categoria?: string
+    categoria?: string,
+    barcode?: string,
+    valorKg?: number,
+    dataFabricacao?: string,
+    valorTotal?: number,
+    motivo?: string,
+    notas?: string
   ): Product {
     const products = StorageService.getProducts();
     const bakeryProducts = products.filter((p) => p.bakeryCode === bakeryCode);
@@ -718,6 +699,12 @@ export class StorageService {
       dataCadastro: formatDateToISO(new Date()),
       diasParaVencer: daysRemaining,
       status: getProductStatus(daysRemaining),
+      barcode: barcode ? barcode.trim() : '',
+      valorKg: valorKg,
+      dataFabricacao: dataFabricacao,
+      valorTotal: valorTotal,
+      motivo: motivo ? motivo.trim() : 'Vencimento',
+      notas: notas ? notas.trim() : '',
     };
 
     products.unshift(newProduct);
@@ -735,7 +722,13 @@ export class StorageService {
     nome: string,
     quantidade: number,
     dataValidade: string,
-    categoria?: string
+    categoria?: string,
+    barcode?: string,
+    valorKg?: number,
+    dataFabricacao?: string,
+    valorTotal?: number,
+    motivo?: string,
+    notas?: string
   ): Product {
     const products = StorageService.getProducts();
     const index = products.findIndex((p) => p.id === id);
@@ -752,6 +745,12 @@ export class StorageService {
       categoria: categoria ? categoria.trim() : products[index].categoria || 'Geral',
       diasParaVencer: daysRemaining,
       status: getProductStatus(daysRemaining),
+      barcode: barcode !== undefined ? barcode.trim() : products[index].barcode,
+      valorKg: valorKg !== undefined ? valorKg : products[index].valorKg,
+      dataFabricacao: dataFabricacao !== undefined ? dataFabricacao : products[index].dataFabricacao,
+      valorTotal: valorTotal !== undefined ? valorTotal : products[index].valorTotal,
+      motivo: motivo !== undefined ? motivo.trim() : products[index].motivo,
+      notas: notas !== undefined ? notas.trim() : products[index].notas,
     };
 
     products[index] = updated;

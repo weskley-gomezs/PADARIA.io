@@ -4,6 +4,7 @@ import { createServer as createViteServer } from 'vite';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import fs from 'fs';
+import { GoogleGenAI, Type } from '@google/genai';
 
 // Initialize Firebase App in Node (using same config as client)
 const firebaseConfigPath = path.join(process.cwd(), 'firebase-applet-config.json');
@@ -15,88 +16,90 @@ if (fs.existsSync(firebaseConfigPath)) {
   db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 }
 
+// Initialize Gemini
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+  httpOptions: {
+    headers: {
+      'User-Agent': 'aistudio-build',
+    }
+  }
+});
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Use JSON parser for webhooks
-  app.use(express.json());
+  // Use JSON parser for webhooks and big payloads
+  app.use(express.json({ limit: '10mb' }));
 
   // API Routes
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
   });
 
-  // Asaas Webhook Endpoint
-  app.post('/api/webhooks/asaas', async (req, res) => {
+  app.post('/api/analyze-product-image', async (req, res) => {
     try {
-      console.log('Webhook Asaas recebido:', JSON.stringify(req.body, null, 2));
-      const { event, payment } = req.body;
-
-      if (!payment) {
-        return res.status(400).json({ error: 'Payload de pagamento ausente' });
+      const { imageBase64 } = req.body;
+      if (!imageBase64) {
+        return res.status(400).json({ error: 'Nenhuma imagem fornecida.' });
       }
 
-      // Procura o código da padaria no externalReference ou na description
-      const searchString = `${payment.externalReference || ''} ${payment.description || ''}`.toUpperCase();
-      
-      if (!db) {
-        console.error('Firestore não inicializado no servidor');
-        return res.status(500).json({ error: 'Firestore não inicializado' });
-      }
+      // Remove the prefix if it exists (e.g., "data:image/jpeg;base64,")
+      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
 
-      // Busca as empresas para encontrar a correspondente
-      const companiesSnapshot = await getDocs(collection(db, 'companies'));
-      let targetCompanyId = null;
-      let targetCompanyData = null;
-
-      companiesSnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data.codigoAtivacao && searchString.includes(data.codigoAtivacao.toUpperCase())) {
-          targetCompanyId = doc.id;
-          targetCompanyData = data;
-        }
+      const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType: "image/jpeg",
+                data: base64Data,
+              },
+            },
+            {
+              text: "Você é um assistente de controle de perdas e descarte de padaria. Leia o rótulo do produto na imagem e extraia o nome do produto, a data de fabricação (se houver), a data de validade (se houver), o valor total do produto (se houver), e o valor por KG (se houver). Formate as datas para YYYY-MM-DD. O valor KG e o valor total devem ser numéricos. Retorne em formato JSON. Extraia todos os dados visíveis com precisão, sem recusar nenhum produto.",
+            },
+          ],
+        },
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              nome: {
+                type: Type.STRING,
+                description: "O nome do produto identificado na embalagem.",
+              },
+              dataFabricacao: {
+                type: Type.STRING,
+                description: "A data de fabricação impressa na embalagem no formato YYYY-MM-DD. Deixe vazio se não for possível identificar.",
+              },
+              dataValidade: {
+                type: Type.STRING,
+                description: "A data de validade impressa na embalagem no formato YYYY-MM-DD. Deixe vazio se não for possível identificar.",
+              },
+              valorKg: {
+                type: Type.NUMBER,
+                description: "O valor por quilo do produto, se houver.",
+              },
+              valorTotal: {
+                type: Type.NUMBER,
+                description: "O valor total do produto (ex: preço final), se houver.",
+              },
+            },
+            required: ["nome"],
+          },
+        },
       });
 
-      if (!targetCompanyId) {
-        console.log('Nenhuma empresa encontrada para o pagamento:', payment.id);
-        // Mesmo não encontrando, retorna 200 para o Asaas parar de tentar enviar
-        return res.status(200).json({ received: true, message: 'Empresa não encontrada' });
-      }
-
-      console.log(`Atualizando status financeiro da empresa ${targetCompanyData?.empresa} (${targetCompanyData?.codigoAtivacao})`);
-
-      const financeiro = targetCompanyData?.financeiro || {};
-      let newStatus = financeiro.statusAssinatura;
-
-      // Mapeia eventos do Asaas para os status internos
-      if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
-        newStatus = 'ativo';
-        if (financeiro.tipoUltimoLink === 'implementacao' || searchString.includes('IMPLEMENTACAO')) {
-           financeiro.implementacaoPaga = true;
-        } else {
-           financeiro.assinaturaMensalAtiva = true;
-        }
-      } else if (event === 'PAYMENT_OVERDUE') {
-        newStatus = 'pendente';
-      } else if (event === 'PAYMENT_DELETED' || event === 'PAYMENT_REFUNDED') {
-        newStatus = 'suspenso';
-      }
-
-      // Atualiza o documento no Firestore
-      const companyRef = doc(db, 'companies', targetCompanyId);
-      await updateDoc(companyRef, {
-        'financeiro.statusAssinatura': newStatus,
-        'financeiro.implementacaoPaga': financeiro.implementacaoPaga || false,
-        'financeiro.assinaturaMensalAtiva': financeiro.assinaturaMensalAtiva || false,
-      });
-
-      console.log(`Status atualizado para: ${newStatus}`);
-      return res.status(200).json({ received: true, updatedStatus: newStatus });
-
-    } catch (error) {
-      console.error('Erro ao processar webhook do Asaas:', error);
-      return res.status(500).json({ error: 'Erro interno do servidor' });
+      const text = response.text || "{}";
+      const result = JSON.parse(text);
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error analyzing image:', error);
+      res.status(500).json({ error: 'Erro ao processar imagem.' });
     }
   });
 

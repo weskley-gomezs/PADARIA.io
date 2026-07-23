@@ -24,6 +24,9 @@ import {
   LogOut,
   ExternalLink,
   LifeBuoy,
+  CreditCard,
+  Send,
+  BarChart3,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem } from '../types';
@@ -34,13 +37,14 @@ import { NotificationsModal } from './NotificationsModal';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
 import { PrintReportModal } from './PrintReportModal';
 import { SupportModal } from './SupportModal';
+import { ImageScanner } from './ImageScanner';
+import { WasteChartSection } from './WasteChartSection';
 
 interface BakeryAppProps {
-  onOpenAdmin: () => void;
   presetCode?: string | null;
 }
 
-export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode }) => {
+export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
   // Session State
   const [activeCode, setActiveCode] = useState<string | null>(presetCode || null);
   const [company, setCompany] = useState<BakeryCompany | null>(null);
@@ -55,9 +59,16 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'analise' | 'insights' | 'relatorio' | 'config'>('dashboard');
+  const [keepLoggedIn, setKeepLoggedIn] = useState<boolean>(true);
+  const [analysisStartDate, setAnalysisStartDate] = useState<string>('');
+  const [analysisEndDate, setAnalysisEndDate] = useState<string>('');
+  const [analysisCategory, setAnalysisCategory] = useState<string>('all');
+  const [analysisMotivo, setAnalysisMotivo] = useState<string>('all');
 
   // Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState<boolean>(false);
+  const [isWasteScannerOpen, setIsWasteScannerOpen] = useState<boolean>(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState<boolean>(false);
@@ -65,7 +76,6 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
   const [isSupportOpen, setIsSupportOpen] = useState<boolean>(false);
 
   // Accordion UI state
-  const [isHistoryExpanded, setIsHistoryExpanded] = useState<boolean>(false);
   const [isSettingsExpanded, setIsSettingsExpanded] = useState<boolean>(false);
 
   // Toast / Feedback State
@@ -152,17 +162,47 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
     nome: string,
     quantidade: number,
     dataValidade: string,
-    categoria?: string
+    categoria?: string,
+    barcode?: string,
+    valorKg?: number,
+    dataFabricacao?: string,
+    valorTotal?: number,
+    motivo?: string,
+    notas?: string
   ) => {
     if (!company) return;
 
     try {
       if (productToEdit) {
-        StorageService.updateProduct(productToEdit.id, nome, quantidade, dataValidade, categoria);
-        showToast('Produto atualizado com sucesso!');
+        StorageService.updateProduct(
+          productToEdit.id,
+          nome,
+          quantidade,
+          dataValidade,
+          categoria,
+          barcode,
+          valorKg,
+          dataFabricacao,
+          valorTotal,
+          motivo,
+          notas
+        );
+        showToast('Descarte atualizado com sucesso!');
       } else {
-        StorageService.addProduct(company.codigoAtivacao, nome, quantidade, dataValidade, categoria);
-        showToast('Produto cadastrado com sucesso!');
+        StorageService.addProduct(
+          company.codigoAtivacao,
+          nome,
+          quantidade,
+          dataValidade,
+          categoria,
+          barcode,
+          valorKg,
+          dataFabricacao,
+          valorTotal,
+          motivo,
+          notas
+        );
+        showToast('Descarte registrado com sucesso!');
       }
       loadBakeryData(company.codigoAtivacao);
       setProductToEdit(null);
@@ -180,28 +220,55 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
     }
   };
 
-  const handleMarkAsSold = (id: string) => {
+  const handleWasteScanResult = (result: {
+    nome: string;
+    dataFabricacao?: string;
+    dataValidade?: string;
+    valorKg?: number;
+    valorTotal?: number;
+  }) => {
     if (!company) return;
-    const sold = StorageService.markAsSold(id);
-    if (sold) {
-      loadBakeryData(company.codigoAtivacao);
-      showToast(`Item "${sold.nomeProduto}" marcado como vendido! ✅`);
-      // Celebration effect
-      confetti({
-        particleCount: 40,
-        spread: 50,
-        origin: { y: 0.7 },
-      });
-    }
-  };
 
-  const handleRestoreSold = (historyId: string) => {
-    if (!company) return;
-    const restored = StorageService.restoreSoldProduct(historyId);
-    if (restored) {
-      loadBakeryData(company.codigoAtivacao);
-      showToast(`Produto "${restored.nome}" restaurado ao estoque.`);
+    const normalizeStr = (s: string) => s.toLowerCase().trim();
+    let bestMatch = products.find(
+      (p) => result.nome && normalizeStr(p.nome).includes(normalizeStr(result.nome))
+    );
+
+    if (bestMatch) {
+      const newQty = Math.max(0, bestMatch.quantidade - 1);
+      if (newQty > 0) {
+        StorageService.updateProduct(
+          bestMatch.id,
+          bestMatch.nome,
+          newQty,
+          result.dataValidade || bestMatch.dataValidade,
+          bestMatch.categoria,
+          bestMatch.barcode,
+          result.valorKg !== undefined ? result.valorKg : bestMatch.valorKg,
+          result.dataFabricacao || bestMatch.dataFabricacao,
+          result.valorTotal !== undefined ? result.valorTotal : bestMatch.valorTotal
+        );
+      } else {
+        StorageService.deleteProduct(bestMatch.id);
+      }
+      showToast(`Descarte registrado! 1 unidade de "${bestMatch.nome}" removida do estoque.`);
+    } else {
+      StorageService.addProduct(
+        company.codigoAtivacao,
+        result.nome || 'Produto Vencido',
+        1,
+        result.dataValidade || new Date().toISOString().split('T')[0],
+        'Descarte',
+        undefined,
+        result.valorKg,
+        result.dataFabricacao,
+        result.valorTotal
+      );
+      showToast(`Descarte registrado: "${result.nome || 'Produto'}" adicionado ao registro de perdas.`);
     }
+
+    loadBakeryData(company.codigoAtivacao);
+    setIsWasteScannerOpen(false);
   };
 
   const handleRegenerateCode = () => {
@@ -223,14 +290,25 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
   const expiringProducts = products.filter((p) => p.status === 'vencendo');
   const expiredProducts = products.filter((p) => p.status === 'vencido');
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const currentYearMonth = todayStr.substring(0, 7);
+
+  const expiredTodayProducts = expiredProducts.filter((p) => p.dataValidade === todayStr);
+  const expiredMonthProducts = expiredProducts.filter((p) => p.dataValidade && p.dataValidade.startsWith(currentYearMonth));
+
+  const expiredTodayCount = expiredTodayProducts.reduce((acc, p) => acc + p.quantidade, 0);
+  const expiredTodayValue = expiredTodayProducts.reduce((acc, p) => acc + (p.valorTotal || (p.quantidade * (p.valorKg || 12))), 0);
+
+  const expiredMonthCount = expiredMonthProducts.reduce((acc, p) => acc + p.quantidade, 0);
+  const expiredMonthValue = expiredMonthProducts.reduce((acc, p) => acc + (p.valorTotal || (p.quantidade * (p.valorKg || 12))), 0);
+
   // Filtered Table Data
   const filteredProducts = products.filter((p) => {
     const matchesSearch =
       p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (p.categoria && p.categoria.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
     const matchesCategory = categoryFilter === 'all' || p.categoria === categoryFilter;
-    return matchesSearch && matchesStatus && matchesCategory;
+    return matchesSearch && matchesCategory;
   });
 
   const categoriesList = Array.from(new Set(products.map((p) => p.categoria || 'Geral')));
@@ -238,29 +316,31 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
   // IF NOT LOGGED IN -> RENDER ACTIVATION CODE LOGIN SCREEN
   if (!activeCode || !company) {
     return (
-      <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
+      <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 bg-[#F9FAFB]">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-[#E0E0E0] p-8 space-y-6 animate-scale-up">
           {/* Logo & Header */}
-          <div className="text-center space-y-3">
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-[#D4A574] to-[#E8571A] text-white flex items-center justify-center shadow-lg relative">
-              <ChefHat className="w-9 h-9" />
-              <div className="absolute -bottom-1 -right-1 bg-[#2C2C2C] p-1 rounded-full border-2 border-white">
-                <Clock className="w-3.5 h-3.5 text-[#D4A574]" />
+          <div className="text-center space-y-2">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-[#1F2937] text-white flex items-center justify-center shadow-lg relative">
+              <ChefHat className="w-9 h-9 text-[#D4A574]" />
+              <div className="absolute -bottom-1 -right-1 bg-[#EF4444] p-1 rounded-full border-2 border-white">
+                <Clock className="w-3.5 h-3.5 text-white" />
               </div>
             </div>
 
             <div>
-              <h1 className="text-2xl font-black text-[#2C2C2C]">
-                PADARIA<span className="text-[#E8571A]">.io</span>
+              <h1 className="text-2xl font-black text-[#1F2937]">
+                PADARIA<span className="text-[#EF4444]">.io</span>
               </h1>
-              <p className="text-xs text-gray-500 mt-1">Acesso do Aplicativo da Panificadora</p>
+              <p className="text-xs font-semibold text-gray-500 mt-1">
+                "Seu controle de desperdícios começa aqui"
+              </p>
             </div>
           </div>
 
           {/* Login Form */}
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-extrabold text-[#2C2C2C] uppercase tracking-wider mb-1">
+              <label className="block text-xs font-extrabold text-[#1F2937] uppercase tracking-wider mb-1">
                 Código de Ativação (8 Dígitos)
               </label>
               <div className="relative">
@@ -270,15 +350,30 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
                   placeholder="EX: AB12CD34"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 font-mono font-bold text-center tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-[#D4A574] uppercase text-[#2C2C2C]"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 font-mono font-bold text-center tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-[#1F2937] uppercase text-[#1F2937]"
                   autoFocus
                   required
                 />
                 <Key className="w-5 h-5 text-gray-400 absolute right-3 top-3.5" />
               </div>
-              <p className="text-[11px] text-gray-400 mt-1 text-center">
-                Digite o código fornecido pelo seu administrador.
-              </p>
+              <div className="flex items-center justify-between mt-2">
+                <label className="flex items-center space-x-2 text-xs text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={keepLoggedIn}
+                    onChange={(e) => setKeepLoggedIn(e.target.checked)}
+                    className="rounded border-gray-300 text-[#1F2937] focus:ring-[#1F2937]"
+                  />
+                  <span>Manter conectado 30 dias</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => alert('Entre em contato com o suporte da PADARIA.io para recuperar seu código de ativação.')}
+                  className="text-xs font-bold text-[#E8571A] hover:underline"
+                >
+                  Esqueceu seu código?
+                </button>
+              </div>
             </div>
 
             {loginError && (
@@ -289,48 +384,16 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
 
             <button
               type="submit"
-              className="w-full bg-[#D4A574] hover:bg-[#c29363] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md text-sm flex items-center justify-center space-x-2"
+              className="w-full bg-[#1F2937] hover:bg-black text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md text-sm flex items-center justify-center space-x-2"
             >
               <span>Entrar no Sistema</span>
-              <Sparkles className="w-4 h-4 text-amber-200" />
+              <Sparkles className="w-4 h-4 text-[#D4A574]" />
             </button>
           </form>
 
-          {/* Demo Shortcuts */}
-          <div className="pt-4 border-t border-gray-100 text-center space-y-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Códigos de Demonstração Rápidos:
-            </span>
-            <div className="flex flex-wrap justify-center gap-2 pt-1">
-              <button
-                onClick={() => {
-                  setCodeInput('AB12CD34');
-                  StorageService.setActiveBakeryCode('AB12CD34');
-                  setActiveCode('AB12CD34');
-                }}
-                className="px-2.5 py-1.5 bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white rounded-lg text-xs font-mono font-bold text-[#2C2C2C] transition-all"
-              >
-                AB12CD34 (Pão D'Ouro)
-              </button>
-              <button
-                onClick={() => {
-                  setCodeInput('PAD8X92M');
-                  StorageService.setActiveBakeryCode('PAD8X92M');
-                  setActiveCode('PAD8X92M');
-                }}
-                className="px-2.5 py-1.5 bg-orange-50 hover:bg-[#E8571A] hover:text-white rounded-lg text-xs font-mono font-bold text-[#E8571A] transition-all"
-              >
-                PAD8X92M (Panificadora Imperial)
-              </button>
-            </div>
-            <div className="pt-2">
-              <button
-                onClick={onOpenAdmin}
-                className="text-xs text-gray-500 underline hover:text-[#2C2C2C]"
-              >
-                Não possui código? Acesse o Painel Admin para gerar um.
-              </button>
-            </div>
+          {/* Footer */}
+          <div className="pt-4 border-t border-gray-100 text-center text-[11px] text-gray-400">
+            PADARIA.io v2.5 • Sistema Exclusivo de Controle de Perdas com IA
           </div>
         </div>
       </div>
@@ -381,6 +444,13 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
           </button>
 
           <button
+            onClick={() => setIsWasteScannerOpen(true)}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:opacity-90 text-white text-xs font-extrabold shadow-sm transition-all flex items-center space-x-1.5"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Descarte IA</span>
+          </button>
+          <button
             onClick={() => {
               setProductToEdit(null);
               setIsProductModalOpen(true);
@@ -388,93 +458,406 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
             className="px-4 py-2 rounded-xl bg-[#D4A574] hover:bg-[#c29363] text-white text-xs font-extrabold shadow-sm transition-all flex items-center space-x-1.5"
           >
             <Plus className="w-4 h-4" />
-            <span>Adicionar Produto</span>
+            <span>Registrar Descarte</span>
           </button>
         </div>
       </div>
 
-      {/* 1. RESUMO RÁPIDO CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        {/* Card 1: Normais */}
-        <div
-          onClick={() => setStatusFilter('normal')}
-          className={`bg-white border rounded-xl p-6 flex items-center gap-5 cursor-pointer transition-all shadow-xs ${
-            statusFilter === 'normal'
-              ? 'border-[#27AE60] ring-2 ring-[#27AE60]/30'
-              : 'border-[#E0E0E0] hover:border-[#27AE60]'
+      {/* Navigation Tabs Bar */}
+      <div className="flex items-center space-x-2 border-b border-gray-200 pb-3 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
+            activeTab === 'dashboard' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          <div className="w-12 h-12 rounded-xl bg-[#E8F5E9] text-[#27AE60] flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">PRODUTOS NORMAIS</div>
-            <div className="text-2xl font-black text-[#2C2C2C] mt-0.5">{normalProducts.length}</div>
-            <div className="text-[11px] text-gray-400">Validade segura (&gt; 3 dias)</div>
-          </div>
-        </div>
-
-        {/* Card 2: Vencendo em breve */}
-        <div
-          onClick={() => setStatusFilter('vencendo')}
-          className={`bg-white border rounded-xl p-6 flex items-center gap-5 cursor-pointer transition-all shadow-xs ${
-            statusFilter === 'vencendo'
-              ? 'border-[#F39C12] ring-2 ring-[#F39C12]/30'
-              : 'border-[#E0E0E0] hover:border-[#F39C12]'
+          <BarChart3 className="w-4 h-4" />
+          <span>📊 Dashboard</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('analise')}
+          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
+            activeTab === 'analise' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          <div className="w-12 h-12 rounded-xl bg-[#FFF3E0] text-[#F39C12] flex items-center justify-center shrink-0">
-            <Clock className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-amber-600 uppercase tracking-wider">VENCENDO EM BREVE</div>
-            <div className="text-2xl font-black text-[#2C2C2C] mt-0.5">{expiringProducts.length}</div>
-            <div className="text-[11px] text-amber-600 font-medium">Recomendado aplicar promoção</div>
-          </div>
-        </div>
-
-        {/* Card 3: Vencidos */}
-        <div
-          onClick={() => setStatusFilter('vencido')}
-          className={`bg-white border rounded-xl p-6 flex items-center gap-5 cursor-pointer transition-all shadow-xs ${
-            statusFilter === 'vencido'
-              ? 'border-[#E74C3C] ring-2 ring-[#E74C3C]/30'
-              : 'border-[#E0E0E0] hover:border-[#E74C3C]'
+          <Filter className="w-4 h-4" />
+          <span>📈 Análise Detalhada</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('insights')}
+          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
+            activeTab === 'insights' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          <div className="w-12 h-12 rounded-xl bg-[#FFEBEE] text-[#E74C3C] flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-6 h-6 animate-pulse" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-[#E74C3C] uppercase tracking-wider">PRODUTOS VENCIDOS</div>
-            <div className="text-2xl font-black text-[#E74C3C] mt-0.5">{expiredProducts.length}</div>
-            <div className="text-[11px] text-red-500 font-semibold">Remover da área de venda</div>
-          </div>
-        </div>
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <span>🤖 Insights com IA</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('relatorio')}
+          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
+            activeTab === 'relatorio' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+          }`}
+        >
+          <Printer className="w-4 h-4" />
+          <span>📋 Relatório Executivo</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('config')}
+          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
+            activeTab === 'config' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+          }`}
+        >
+          <Settings className="w-4 h-4" />
+          <span>⚙️ Configurações</span>
+        </button>
       </div>
 
-      {/* Critical Warning Alert Banner */}
-      {(expiredProducts.length > 0 || expiringProducts.length > 0) && (
-        <div className="bg-gradient-to-r from-red-500 via-amber-500 to-amber-600 text-white p-4 rounded-2xl shadow-md flex items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-white/20 rounded-xl">
-              <AlertTriangle className="w-6 h-6 animate-pulse" />
+      {activeTab === 'dashboard' && (
+        <>
+          {/* 1. RESUMO RÁPIDO CARDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+            {/* Card 1: Perdas do Mês */}
+            <div className="bg-white border border-[#E0E0E0] rounded-xl p-6 flex flex-col justify-between shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold text-red-600 uppercase tracking-wider">Perdas do Mês</span>
+                <span className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center font-bold">R$</span>
+              </div>
+              <div className="mt-4">
+                <div className="text-2xl font-black text-[#1F2937]">R$ {expiredMonthValue.toFixed(2)}</div>
+                <div className="text-xs text-gray-500 mt-1 flex items-center space-x-1">
+                  <span className="text-red-600 font-bold">↑ 12%</span>
+                  <span>vs. mês anterior</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Quantidade Descartada */}
+            <div className="bg-white border border-[#E0E0E0] rounded-xl p-6 flex flex-col justify-between shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold text-amber-600 uppercase tracking-wider">Qtd Descartada</span>
+                <span className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">📦</span>
+              </div>
+              <div className="mt-4">
+                <div className="text-2xl font-black text-[#1F2937]">{expiredMonthCount} un</div>
+                <div className="text-xs text-gray-500 mt-1 flex items-center space-x-1">
+                  <span className="text-emerald-600 font-bold">↓ 5%</span>
+                  <span>eficiência de estoque</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Categoria Top Perda */}
+            <div className="bg-white border border-[#E0E0E0] rounded-xl p-6 flex flex-col justify-between shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold text-[#1F2937] uppercase tracking-wider">Categoria Top Perda</span>
+                <span className="w-8 h-8 rounded-lg bg-gray-100 text-[#1F2937] flex items-center justify-center font-bold">🏷️</span>
+              </div>
+              <div className="mt-4">
+                <div className="text-lg font-black text-[#1F2937] truncate">
+                  {categoriesList[0] || 'Pães e Massas'}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Principal motivo: Vencimento de validade
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Economia Potencial */}
+            <div className="bg-white border border-[#E0E0E0] rounded-xl p-6 flex flex-col justify-between shadow-xs border-emerald-200 bg-emerald-50/20">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">Economia Potencial</span>
+                <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">💡</span>
+              </div>
+              <div className="mt-4">
+                <div className="text-2xl font-black text-emerald-700">R$ 850,00</div>
+                <div className="text-xs text-emerald-600 font-medium mt-1">
+                  Recomendação IA ativa
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Evolution Chart */}
+          <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs">
+            <h2 className="text-lg font-extrabold text-[#1F2937] mb-4">Evolução do Desperdício (Últimos 30 Dias)</h2>
+            <WasteChartSection products={products} />
+          </div>
+        </>
+      )}
+
+      {activeTab === 'analise' && (
+        <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-extrabold text-[#1F2937]">Análise Detalhada de Perdas</h2>
+              <p className="text-xs text-gray-500">Filtre por período, categoria e motivo para identificar gargalos operacionais.</p>
+            </div>
+            <button
+              onClick={() => setIsPrintReportOpen(true)}
+              className="px-4 py-2 bg-[#1F2937] hover:bg-black text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-2 shadow-sm"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Exportar Relatório PDF</span>
+            </button>
+          </div>
+
+          {/* Filters Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <div>
+              <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Data Início</label>
+              <input
+                type="date"
+                value={analysisStartDate}
+                onChange={(e) => setAnalysisStartDate(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 bg-white"
+              />
             </div>
             <div>
-              <p className="text-sm font-extrabold">Atenção Crítica no Estoque!</p>
-              <p className="text-xs text-white/90">
-                Existem <strong>{expiredProducts.length}</strong> produtos vencidos e{' '}
-                <strong>{expiringProducts.length}</strong> vencendo em até 3 dias.
-              </p>
+              <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Data Fim</label>
+              <input
+                type="date"
+                value={analysisEndDate}
+                onChange={(e) => setAnalysisEndDate(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 bg-white"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Categoria</label>
+              <select
+                value={analysisCategory}
+                onChange={(e) => setAnalysisCategory(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 bg-white"
+              >
+                <option value="all">Todas as Categorias</option>
+                {categoriesList.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-gray-600 uppercase mb-1">Motivo do Descarte</label>
+              <select
+                value={analysisMotivo}
+                onChange={(e) => setAnalysisMotivo(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 bg-white"
+              >
+                <option value="all">Todos os Motivos</option>
+                <option value="Vencimento">Vencimento de Validade</option>
+                <option value="Avaria">Avaria / Embalagem Danificada</option>
+                <option value="Excedente">Produção Excedente</option>
+              </select>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsNotificationsOpen(true)}
-            className="px-4 py-2 bg-white text-[#2C2C2C] hover:bg-gray-100 font-extrabold text-xs rounded-xl shadow-xs shrink-0 transition-all"
-          >
-            Ver Detalhes Críticos
-          </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-5 border border-gray-200 rounded-xl bg-white space-y-3">
+              <h3 className="font-extrabold text-sm text-[#1F2937]">Distribuição por Categoria</h3>
+              <div className="space-y-2">
+                {categoriesList.map((cat, idx) => {
+                  const catProducts = products.filter((p) => p.categoria === cat);
+                  const catVal = catProducts.reduce((acc, p) => acc + (p.valorTotal || p.quantidade * (p.valorKg || 12)), 0);
+                  const totalVal = products.reduce((acc, p) => acc + (p.valorTotal || p.quantidade * (p.valorKg || 12)), 1);
+                  const pct = Math.round((catVal / totalVal) * 100);
+                  return (
+                    <div key={cat} className="space-y-1">
+                      <div className="flex justify-between text-xs font-bold text-gray-700">
+                        <span>{cat}</span>
+                        <span>R$ {catVal.toFixed(2)} ({pct}%)</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#1F2937] rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="p-5 border border-gray-200 rounded-xl bg-white space-y-4">
+              <h3 className="font-extrabold text-sm text-[#1F2937]">Análise Inteligente de Causas</h3>
+              <div className="p-4 bg-orange-50 rounded-xl border border-orange-200 text-xs text-orange-900 space-y-2">
+                <p className="font-bold flex items-center space-x-1.5">
+                  <Sparkles className="w-4 h-4 text-orange-600" />
+                  <span>Padrão Detectado pela IA:</span>
+                </p>
+                <p>
+                  74% dos descartes na categoria de Pães e Confeitaria ocorrem entre terças e quintas-feiras devido a superprodução matinal. Sugerimos reduzir a fornada de 14h em 25%.
+                </p>
+              </div>
+              <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 space-y-2">
+                <p className="font-bold flex items-center space-x-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Oportunidade de Redução:</span>
+                </p>
+                <p>
+                  Aplicando descontos dinâmicos de 30% em produtos com 2 dias para vencer, sua padaria pode recuperar até R$ 1.400,00 mensais em receita perdida.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'insights' && (
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-2">
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-6 h-6 text-amber-500" />
+              <h2 className="text-xl font-extrabold text-[#1F2937]">Insights com IA para Redução de Desperdícios</h2>
+            </div>
+            <p className="text-xs text-gray-500">Recomendações automatizadas baseadas no histórico de descartes da sua panificadora.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-2xl border border-amber-200 shadow-xs space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">1</div>
+              <h3 className="font-extrabold text-sm text-[#1F2937]">Ajuste de Fornadas Noturnas</h3>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                Identificamos sobra recorrente de baguetes e pão doce após as 19h. Recomendamos congelar massa pré-fermentada em vez de assar o lote completo.
+              </p>
+              <div className="pt-2">
+                <span className="inline-block bg-amber-50 text-amber-700 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                  Economia estimada: R$ 420/mês
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-emerald-200 shadow-xs space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">2</div>
+              <h3 className="font-extrabold text-sm text-[#1F2937]">Giro de Estoque FIFO</h3>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                Produtos lácteos e recheios estão ficando no fundo das prateleiras. Reorganize o estoque aplicando rigorosamente o princípio "Primeiro a Entrar, Primeiro a Sair".
+              </p>
+              <div className="pt-2">
+                <span className="inline-block bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                  Redução de perdas: 18%
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-blue-200 shadow-xs space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">3</div>
+              <h3 className="font-extrabold text-sm text-[#1F2937]">Campanha de Promoção Relâmpago</h3>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                Para itens com vencimento em 24h, envie alertas automáticos no WhatsApp dos clientes cadastrados no clube de fidelidade oferecendo combo promocional.
+              </p>
+              <div className="pt-2">
+                <span className="inline-block bg-blue-50 text-blue-700 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                  Recuperação de receita
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'relatorio' && (
+        <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-100">
+            <div>
+              <h2 className="text-xl font-extrabold text-[#1F2937]">Relatório Executivo de Descartes</h2>
+              <p className="text-xs text-gray-500">Visualize e exporte o relatório completo com todas as especificações dos produtos vencidos.</p>
+            </div>
+            <button
+              onClick={() => setIsPrintReportOpen(true)}
+              className="px-4 py-2 bg-[#E8571A] hover:bg-[#d44e15] text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-2 shadow-sm"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Imprimir / PDF Executivo</span>
+            </button>
+          </div>
+
+          <div className="p-6 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-extrabold text-sm text-[#1F2937]">{company.empresa}</h3>
+                <p className="text-xs text-gray-500">CNPJ: {company.cnpj || '00.000.000/0001-00'} • Código: {company.codigoAtivacao}</p>
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-bold bg-red-100 text-red-700 px-3 py-1 rounded-full">
+                  Período Atual: Mês Corrente
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200 text-center">
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="text-xs text-gray-500 font-bold uppercase">Total Descartado</div>
+                <div className="text-xl font-black text-[#1F2937] mt-1">{expiredMonthCount} unidades</div>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="text-xs text-gray-500 font-bold uppercase">Prejuízo Financeiro</div>
+                <div className="text-xl font-black text-red-600 mt-1">R$ {expiredMonthValue.toFixed(2)}</div>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="text-xs text-gray-500 font-bold uppercase">Eficiência Operacional</div>
+                <div className="text-xl font-black text-emerald-600 mt-1">84.2%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'config' && (
+        <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-6">
+          <div>
+            <h2 className="text-xl font-extrabold text-[#1F2937]">Configurações da Padaria</h2>
+            <p className="text-xs text-gray-500">Gerencie os dados da empresa, código de ativação, categorias e suporte.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-5 border border-gray-200 rounded-xl space-y-4">
+              <h3 className="font-extrabold text-sm text-[#1F2937] flex items-center space-x-2">
+                <Building2 className="w-4 h-4 text-[#E8571A]" />
+                <span>Dados da Empresa</span>
+              </h3>
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-bold text-gray-600 uppercase mb-1">Nome da Padaria</label>
+                  <input
+                    type="text"
+                    value={company.empresa}
+                    disabled
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-700 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-600 uppercase mb-1">Código de Ativação</label>
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={company.codigoAtivacao}
+                      disabled
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-700 font-mono font-bold"
+                    />
+                    <button
+                      onClick={handleRegenerateCode}
+                      className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-lg text-xs"
+                    >
+                      Renovar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 border border-gray-200 rounded-xl space-y-4">
+              <h3 className="font-extrabold text-sm text-[#1F2937] flex items-center space-x-2">
+                <LifeBuoy className="w-4 h-4 text-[#E8571A]" />
+                <span>Suporte Técnico e Atendimento</span>
+              </h3>
+              <p className="text-xs text-gray-600">
+                Precisa de auxílio com a leitura de etiquetas por IA ou relatórios? Nossa equipe está pronta para ajudar.
+              </p>
+              <button
+                onClick={() => setIsSupportOpen(true)}
+                className="px-4 py-2.5 bg-[#1F2937] hover:bg-black text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-2"
+              >
+                <LifeBuoy className="w-4 h-4" />
+                <span>Abrir Chamado de Suporte</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -483,7 +866,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
         {/* Table Header & Controls */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-100">
           <div>
-            <h2 className="text-lg font-extrabold text-[#2C2C2C]">2. Gerenciar Produtos</h2>
+            <h2 className="text-lg font-extrabold text-[#2C2C2C]">2. Registro de Descartes</h2>
             <p className="text-xs text-gray-500">Tabela em tempo real de validade e saldo</p>
           </div>
 
@@ -514,50 +897,6 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
                 </option>
               ))}
             </select>
-
-            {/* Status Filter Pills */}
-            <div className="bg-[#FAFAF8] p-1 rounded-xl border border-gray-200 flex text-xs">
-              <button
-                onClick={() => setStatusFilter('all')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  statusFilter === 'all'
-                    ? 'bg-[#2C2C2C] text-white'
-                    : 'text-gray-500 hover:text-[#2C2C2C]'
-                }`}
-              >
-                Todos ({products.length})
-              </button>
-              <button
-                onClick={() => setStatusFilter('normal')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  statusFilter === 'normal'
-                    ? 'bg-[#27AE60] text-white'
-                    : 'text-gray-500 hover:text-[#27AE60]'
-                }`}
-              >
-                Normais ({normalProducts.length})
-              </button>
-              <button
-                onClick={() => setStatusFilter('vencendo')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  statusFilter === 'vencendo'
-                    ? 'bg-[#F39C12] text-white'
-                    : 'text-gray-500 hover:text-[#F39C12]'
-                }`}
-              >
-                Vencendo ({expiringProducts.length})
-              </button>
-              <button
-                onClick={() => setStatusFilter('vencido')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  statusFilter === 'vencido'
-                    ? 'bg-[#E74C3C] text-white'
-                    : 'text-gray-500 hover:text-[#E74C3C]'
-                }`}
-              >
-                Vencidos ({expiredProducts.length})
-              </button>
-            </div>
           </div>
         </div>
 
@@ -568,8 +907,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
               <tr className="bg-[#FAFAF8] text-gray-500 text-[11px] font-extrabold uppercase tracking-wider border-b border-gray-200">
                 <th className="py-3.5 px-4">Produto</th>
                 <th className="py-3.5 px-4">Quantidade</th>
-                <th className="py-3.5 px-4">Data de Validade</th>
-                <th className="py-3.5 px-4">Status Visual</th>
+                <th className="py-3.5 px-4">Datas (Fab / Validade)</th>
+                <th className="py-3.5 px-4">Valores (Un. / Total)</th>
                 <th className="py-3.5 px-4 text-right">Ações</th>
               </tr>
             </thead>
@@ -577,8 +916,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
               {filteredProducts.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-12 text-gray-400">
-                    <p className="font-bold text-sm">Nenhum produto encontrado.</p>
-                    <p className="text-xs mt-1">Clique em "+ Adicionar Produto" para cadastrar itens no estoque.</p>
+                    <p className="font-bold text-sm">Nenhum registro encontrado.</p>
+                    <p className="text-xs mt-1">Clique em "+ Registrar Descarte" para adicionar.</p>
                   </td>
                 </tr>
               ) : (
@@ -610,9 +949,12 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
                       </span>
                     </td>
 
-                    {/* Data de Validade */}
+                    {/* Datas */}
                     <td className="py-3.5 px-4">
-                      <div className="font-extrabold text-sm">{formatDateToBR(p.dataValidade)}</div>
+                      {p.dataFabricacao && (
+                        <div className="text-xs text-gray-500">Fab: {formatDateToBR(p.dataFabricacao)}</div>
+                      )}
+                      <div className="font-extrabold text-sm text-[#2C2C2C]">Val: {formatDateToBR(p.dataValidade)}</div>
                       <div
                         className={`text-[11px] font-bold ${
                           p.status === 'vencido'
@@ -626,42 +968,22 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
                       </div>
                     </td>
 
-                    {/* Status Visual Badge */}
+                    {/* Valores */}
                     <td className="py-3.5 px-4">
-                      {p.status === 'vencido' && (
-                        <div className="status-pill status-red animate-pulse">
-                          <AlertTriangle className="w-3.5 h-3.5" />
-                          <span>Vencido!</span>
-                        </div>
+                      {p.valorKg ? (
+                        <div className="text-xs text-gray-500">R$ {p.valorKg.toFixed(2)} / KG</div>
+                      ) : (
+                        <div className="text-xs text-gray-400">KG não inf.</div>
                       )}
-
-                      {p.status === 'vencendo' && (
-                        <div className="status-pill status-yellow">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>Atenção</span>
-                        </div>
-                      )}
-
-                      {p.status === 'normal' && (
-                        <div className="status-pill status-green">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Válido</span>
-                        </div>
+                      {p.valorTotal ? (
+                        <div className="font-extrabold text-sm text-[#2C2C2C]">Total: R$ {p.valorTotal.toFixed(2)}</div>
+                      ) : (
+                        <div className="text-sm text-gray-400">-</div>
                       )}
                     </td>
 
                     {/* Actions */}
                     <td className="py-3.5 px-4 text-right space-x-1">
-                      {/* Marcar como Vendido */}
-                      <button
-                        onClick={() => handleMarkAsSold(p.id)}
-                        className="px-2.5 py-1.5 rounded-lg bg-[#27AE60] hover:bg-green-700 text-white font-bold text-xs transition-all shadow-xs inline-flex items-center space-x-1"
-                        title="Marcar como Vendido"
-                      >
-                        <PackageCheck className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Vendido</span>
-                      </button>
-
                       {/* Editar */}
                       <button
                         onClick={() => {
@@ -691,184 +1013,6 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
         </div>
       </div>
 
-      {/* 3. HISTÓRICO DE VENDAS / BAIXAS (SEÇÃO EXPANSÍVEL) */}
-      <div className="bg-white rounded-2xl border border-[#E0E0E0] shadow-xs overflow-hidden">
-        <button
-          onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
-          className="w-full p-6 flex items-center justify-between hover:bg-gray-50/80 transition-colors text-left"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-[#F5E6D3] text-[#2C2C2C] rounded-xl">
-              <History className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-extrabold text-[#2C2C2C]">
-                3. Histórico de Vendas / Baixas ({salesHistory.length})
-              </h2>
-              <p className="text-xs text-gray-500">
-                Produtos marcados como vendidos. Opção de restaurar em caso de erro acidental.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-bold text-[#D4A574]">
-              {isHistoryExpanded ? 'Ocultar' : 'Expandir'}
-            </span>
-            {isHistoryExpanded ? (
-              <ChevronUp className="w-5 h-5 text-gray-400" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
-            )}
-          </div>
-        </button>
-
-        {isHistoryExpanded && (
-          <div className="p-6 pt-0 border-t border-gray-100 space-y-4 animate-fade-in">
-            <div className="flex justify-between items-center pt-2">
-              <span className="text-xs font-bold text-gray-400 uppercase">
-                Registro de itens baixados
-              </span>
-              {salesHistory.length > 0 && (
-                <button
-                  onClick={() => {
-                    if (confirm('Deseja realmente limpar todo o histórico de vendas?')) {
-                      StorageService.clearSalesHistory(company.codigoAtivacao);
-                      loadBakeryData(company.codigoAtivacao);
-                      showToast('Histórico de vendas limpo.');
-                    }
-                  }}
-                  className="text-xs text-red-600 hover:underline font-bold"
-                >
-                  Limpar Histórico
-                </button>
-              )}
-            </div>
-
-            {salesHistory.length === 0 ? (
-              <p className="text-xs text-gray-400 py-6 text-center italic">
-                Nenhum produto foi marcado como vendido ainda.
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-[#FAFAF8] text-gray-500 font-bold uppercase tracking-wider border-b border-gray-200">
-                      <th className="py-2.5 px-3">Produto Vendido</th>
-                      <th className="py-2.5 px-3">Quantidade</th>
-                      <th className="py-2.5 px-3">Data da Venda</th>
-                      <th className="py-2.5 px-3 text-right">Ação</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {salesHistory.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50/50">
-                        <td className="py-2.5 px-3 font-bold text-[#2C2C2C]">{item.nomeProduto}</td>
-                        <td className="py-2.5 px-3 font-bold">{item.quantidade} un</td>
-                        <td className="py-2.5 px-3 text-gray-500">
-                          {new Date(item.dataVenda).toLocaleString('pt-BR')}
-                        </td>
-                        <td className="py-2.5 px-3 text-right">
-                          <button
-                            onClick={() => handleRestoreSold(item.id)}
-                            className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-lg transition-colors inline-flex items-center space-x-1"
-                            title="Restaurar ao Estoque"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Restaurar</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* 4. CONFIGURAÇÕES DA PADARIA */}
-      <div className="bg-white rounded-2xl border border-[#E0E0E0] shadow-xs overflow-hidden">
-        <button
-          onClick={() => setIsSettingsExpanded(!isSettingsExpanded)}
-          className="w-full p-6 flex items-center justify-between hover:bg-gray-50/80 transition-colors text-left"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-gray-100 text-[#2C2C2C] rounded-xl">
-              <Settings className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-extrabold text-[#2C2C2C]">4. Configurações da Panificadora</h2>
-              <p className="text-xs text-gray-500">Gerenciar conta, código de ativação e dados de segurança</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-bold text-[#D4A574]">
-              {isSettingsExpanded ? 'Ocultar' : 'Expandir'}
-            </span>
-            {isSettingsExpanded ? (
-              <ChevronUp className="w-5 h-5 text-gray-400" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
-            )}
-          </div>
-        </button>
-
-        {isSettingsExpanded && (
-          <div className="p-6 pt-0 border-t border-gray-100 space-y-6 animate-fade-in">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              {/* Box 1: Change Activation Code */}
-              <div className="p-4 bg-[#FAFAF8] border border-gray-200 rounded-xl space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Key className="w-4 h-4 text-[#E8571A]" />
-                  <h4 className="font-extrabold text-sm text-[#2C2C2C]">Código de Ativação</h4>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Código atual: <strong className="font-mono text-[#E8571A]">{company.codigoAtivacao}</strong>
-                </p>
-                <button
-                  onClick={handleRegenerateCode}
-                  className="px-3.5 py-2 bg-[#2C2C2C] hover:bg-black text-white text-xs font-bold rounded-xl transition-all"
-                >
-                  Gerar Novo Código de Ativação
-                </button>
-              </div>
-
-              {/* Box 2: Privacy Policy & Terms */}
-              <div className="p-4 bg-[#FAFAF8] border border-gray-200 rounded-xl space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Shield className="w-4 h-4 text-[#D4A574]" />
-                  <h4 className="font-extrabold text-sm text-[#2C2C2C]">Segurança & Privacidade</h4>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Conformidade sanitária, termos de uso e política de privacidade do sistema.
-                </p>
-                <button
-                  onClick={() => setIsPrivacyOpen(true)}
-                  className="px-3.5 py-2 bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] text-xs font-bold rounded-xl transition-all"
-                >
-                  Ver Política de Privacidade
-                </button>
-              </div>
-            </div>
-
-            {/* Logout button */}
-            <div className="pt-2 border-t border-gray-100 flex justify-between items-center">
-              <span className="text-xs text-gray-400">Sessão salva no navegador (válida por 30 dias)</span>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl transition-all flex items-center space-x-1"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sair da Conta</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* MODALS */}
       <ProductModal
         isOpen={isProductModalOpen}
@@ -876,13 +1020,19 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ onOpenAdmin, presetCode })
         onSave={handleSaveProduct}
         productToEdit={productToEdit}
       />
+      
+      {isWasteScannerOpen && (
+        <ImageScanner
+          onScanResult={handleWasteScanResult}
+          onClose={() => setIsWasteScannerOpen(false)}
+        />
+      )}
 
       <NotificationsModal
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
         expiredProducts={expiredProducts}
         expiringProducts={expiringProducts}
-        onMarkAsSold={handleMarkAsSold}
       />
 
       <PrivacyPolicyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />

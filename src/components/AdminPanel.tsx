@@ -68,15 +68,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
 
-  // Password change state
-  const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
-  const [newPassword, setNewPassword] = useState<string>('');
-  const [passwordSuccess, setPasswordSuccess] = useState<string>('');
-
-  // Password reset state
-  const [isSettingNewPass, setIsSettingNewPass] = useState<boolean>(false);
-  const [customPassInput, setCustomPassInput] = useState<string>('');
-
   useEffect(() => {
     const authStatus = StorageService.isAdminAuthenticated();
     setIsAuthenticated(authStatus);
@@ -99,21 +90,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
       setIsAuthenticated(true);
       loadAdminData();
     } else {
-      setPasswordError('Senha incorreta! Use "admin123" ou a senha redefinida.');
+      setPasswordError('Senha incorreta! Use "admin123".');
     }
-  };
-
-  const handleSetCustomPassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (customPassInput.trim().length < 4) {
-      setPasswordError('A senha deve ter no mínimo 4 caracteres.');
-      return;
-    }
-    StorageService.setAdminPassword(customPassInput.trim());
-    StorageService.setAdminAuthenticated(true);
-    setIsAuthenticated(true);
-    loadAdminData();
-    setPasswordError('');
   };
 
   const handleCreateCompany = (e: React.FormEvent) => {
@@ -165,21 +143,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
     }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword.trim().length < 4) {
-      alert('A nova senha deve ter no mínimo 4 caracteres.');
-      return;
-    }
-    StorageService.setAdminPassword(newPassword.trim());
-    setPasswordSuccess('Senha alterada com sucesso!');
-    setNewPassword('');
-    setTimeout(() => {
-      setPasswordSuccess('');
-      setShowPasswordModal(false);
-    }, 2000);
-  };
-
   const filteredCompanies = companies.filter(
     (c) =>
       c.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -197,115 +160,45 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
               <ShieldCheck className="w-8 h-8" />
             </div>
             <h2 className="text-2xl font-black text-[#2C2C2C]">
-              {isSettingNewPass ? 'Escolher Senha de Admin' : 'Acesso Administrativo'}
+              Acesso Administrativo
             </h2>
             <p className="text-xs text-gray-500">
-              {isSettingNewPass
-                ? 'Defina a sua senha personalizada de Administrador'
-                : 'Painel de Controle Central - PADARIA.io'}
+              Painel de Controle Central - PADARIA.io
             </p>
           </div>
 
-          {!isSettingNewPass ? (
-            <form onSubmit={handleAdminLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">
-                  Senha Master / Admin
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder="Digite sua senha de Admin"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
-                    autoFocus
-                  />
-                  <Lock className="w-5 h-5 text-gray-400 absolute right-3 top-3.5" />
-                </div>
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">
+                Senha Master / Admin
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Digite sua senha de Admin"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
+                  autoFocus
+                />
+                <Lock className="w-5 h-5 text-gray-400 absolute right-3 top-3.5" />
               </div>
+            </div>
 
-              {passwordError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-medium">
-                  {passwordError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="w-full bg-[#2C2C2C] hover:bg-[#1a1a1a] text-white font-bold py-3 rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer"
-              >
-                <span>Acessar Painel Admin</span>
-                <ArrowRight className="w-4 h-4 text-[#D4A574]" />
-              </button>
-
-              <div className="pt-2 text-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSettingNewPass(true);
-                    setPasswordError('');
-                  }}
-                  className="text-xs text-[#E8571A] hover:underline font-semibold cursor-pointer"
-                >
-                  Criar / Definir Minha Própria Senha
-                </button>
+            {passwordError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-medium">
+                {passwordError}
               </div>
-            </form>
-          ) : (
-            <form onSubmit={handleSetCustomPassword} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">
-                  Nova Senha do Administrador
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={customPassInput}
-                    onChange={(e) => setCustomPassInput(e.target.value)}
-                    placeholder="Digite a nova senha desejada"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
-                    autoFocus
-                  />
-                  <Key className="w-5 h-5 text-gray-400 absolute right-3 top-3.5" />
-                </div>
-              </div>
+            )}
 
-              {passwordError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-medium">
-                  {passwordError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="w-full bg-[#E8571A] hover:bg-[#d44e15] text-white font-bold py-3 rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer"
-              >
-                <Check className="w-4 h-4" />
-                <span>Salvar Nova Senha e Entrar</span>
-              </button>
-
-              <div className="pt-2 text-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSettingNewPass(false);
-                    setPasswordError('');
-                  }}
-                  className="text-xs text-gray-500 hover:underline cursor-pointer"
-                >
-                  Voltar para o Login
-                </button>
-              </div>
-            </form>
-          )}
-
-          <div className="pt-4 border-t border-gray-100 text-center">
-            <span className="text-xs text-gray-400">Senha atual configurada: </span>
-            <code className="text-xs font-mono font-bold text-[#E8571A] bg-orange-50 px-2 py-0.5 rounded">
-              {StorageService.getAdminPassword()}
-            </code>
-          </div>
+            <button
+              type="submit"
+              className="w-full bg-[#2C2C2C] hover:bg-[#1a1a1a] text-white font-bold py-3 rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer"
+            >
+              <span>Acessar Painel Admin</span>
+              <ArrowRight className="w-4 h-4 text-[#D4A574]" />
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -343,14 +236,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Limpar Sistema</span>
-          </button>
-
-          <button
-            onClick={() => setShowPasswordModal(true)}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#F5E6D3] text-[#2C2C2C] hover:bg-[#D4A574] hover:text-white transition-all flex items-center space-x-1.5 cursor-pointer"
-          >
-            <Lock className="w-3.5 h-3.5" />
-            <span>Alterar Senha Admin</span>
           </button>
         </div>
       </div>
@@ -732,52 +617,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
       {activeTab === 'treinamento' && (
         <div className="animate-fade-in">
           <AdminTrainingPlan companies={companies} />
-        </div>
-      )}
-
-      {/* Change Password Modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 border border-[#E0E0E0] shadow-xl">
-            <h3 className="text-lg font-extrabold text-[#2C2C2C]">Alterar Senha do Admin</h3>
-            <p className="text-xs text-gray-500">Defina uma nova senha para acessar o painel administrativo.</p>
-
-            <form onSubmit={handleChangePassword} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#2C2C2C] mb-1">Nova Senha Master</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Mínimo 4 caracteres"
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
-                  required
-                />
-              </div>
-
-              {passwordSuccess && (
-                <div className="p-2.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold">
-                  {passwordSuccess}
-                </div>
-              )}
-
-              <div className="flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setShowPasswordModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#2C2C2C] text-white hover:bg-black cursor-pointer"
-                >
-                  Salvar Nova Senha
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
     </div>

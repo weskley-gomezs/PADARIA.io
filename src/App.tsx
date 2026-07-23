@@ -117,7 +117,7 @@ export default function App() {
         {currentView === 'admin' ? (
           <AdminPanel onLoginAsBakery={handleLoginAsBakeryFromAdmin} />
         ) : (
-          <BakeryApp onOpenAdmin={() => handleNavigate('admin')} presetCode={activeCode} />
+          <BakeryApp presetCode={activeCode} />
         )}
       </main>
 

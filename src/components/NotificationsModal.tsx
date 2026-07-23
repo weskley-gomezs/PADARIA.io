@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, AlertTriangle, Clock, CheckCircle2, PackageCheck } from 'lucide-react';
+import { X, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
 import { Product } from '../types';
 import { formatDateToBR, getRelativeExpirationText } from '../utils/dateUtils';
 
@@ -8,7 +8,6 @@ interface NotificationsModalProps {
   onClose: () => void;
   expiredProducts: Product[];
   expiringProducts: Product[];
-  onMarkAsSold: (id: string) => void;
 }
 
 export const NotificationsModal: React.FC<NotificationsModalProps> = ({
@@ -16,7 +15,6 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
   onClose,
   expiredProducts,
   expiringProducts,
-  onMarkAsSold,
 }) => {
   if (!isOpen) return null;
 
@@ -71,14 +69,9 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => onMarkAsSold(item.id)}
-                      className="px-2.5 py-1.5 bg-[#27AE60] hover:bg-green-700 text-white font-bold rounded-lg shrink-0 flex items-center space-x-1 transition-all"
-                      title="Marcar como Baixado/Vendido"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Baixar</span>
-                    </button>
+                    <span className="px-2.5 py-1 bg-red-100 text-red-700 font-bold rounded-lg text-[11px]">
+                      Vencido
+                    </span>
                   </div>
                 ))}
               </div>
@@ -113,14 +106,9 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => onMarkAsSold(item.id)}
-                      className="px-2.5 py-1.5 bg-[#27AE60] hover:bg-green-700 text-white font-bold rounded-lg shrink-0 flex items-center space-x-1 transition-all"
-                      title="Marcar como Vendido"
-                    >
-                      <PackageCheck className="w-3.5 h-3.5" />
-                      <span>Vendido</span>
-                    </button>
+                    <span className="px-2.5 py-1 bg-amber-100 text-amber-800 font-bold rounded-lg text-[11px]">
+                      Atenção
+                    </span>
                   </div>
                 ))}
               </div>

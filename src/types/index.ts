@@ -10,6 +10,13 @@ export interface Product {
   dataCadastro: string; // ISO string or YYYY-MM-DD
   status: ProductStatus;
   diasParaVencer: number;
+  barcode?: string;
+  valorKg?: number;
+  dataFabricacao?: string;
+  valorTotal?: number;
+  motivo?: string;
+  notas?: string;
+  fotos?: string[];
 }
 
 export interface SaleHistoryItem {
@@ -31,7 +38,6 @@ export interface InvoiceItem {
   tipo: 'implementacao' | 'mensalidade';
   status: 'pago' | 'pendente' | 'cancelado';
   linkBoleto?: string;
-  asaasPaymentId?: string;
 }
 
 export interface BillingInfo {
@@ -45,8 +51,6 @@ export interface BillingInfo {
   historicoCobrancas: InvoiceItem[];
   ultimoLinkPagamento?: string;
   tipoUltimoLink?: 'implementacao' | 'mensalidade';
-  asaasCustomerId?: string;
-  asaasSubscriptionId?: string;
   diaVencimentoMensal?: number; // ex: 15
 }
 

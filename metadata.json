@@ -1,6 +1,6 @@
 {
   "name": "PADARIA.io",
-  "description": "Sistema completo de gestão e monitoramento de validade para padarias e panificadoras com painel administrativo e aplicativo com código de ativação.",
+  "description": "PADARIA.io - Seu controle de desperdícios começa aqui. Sistema exclusivo para registrar e analisar produtos vencidos e descartados com IA.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
