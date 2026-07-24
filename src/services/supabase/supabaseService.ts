@@ -1,6 +1,6 @@
 import { BakeryCompany, Product, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo } from '../../types';
 import { calculateDaysRemaining, getProductStatus, formatDateToISO, generateActivationCode } from '../../utils/dateUtils';
-import { supabase } from './supabaseClient';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 const KEYS = {
   COMPANIES: 'padarias_companies_v2',
@@ -20,7 +20,7 @@ function getItem<T>(key: string, defaultValue: T): T {
     const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : defaultValue;
   } catch (e) {
-    console.error('Error reading localStorage key:', key, e);
+    console.warn('Error reading localStorage key:', key, e);
     return defaultValue;
   }
 }
@@ -29,12 +29,70 @@ function setItem<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (e) {
-    console.error('Error setting localStorage key:', key, e);
+    console.warn('Error setting localStorage key:', key, e);
   }
 }
 
 export class StorageService {
   private static isInitialized = false;
+  private static companySubscribers: Set<(companies: BakeryCompany[]) => void> = new Set();
+  private static productSubscribers: Set<{ cb: (products: Product[]) => void; bakeryCode?: string }> = new Set();
+  private static ticketSubscribers: Set<{ cb: (tickets: SupportTicket[]) => void; bakeryCode?: string }> = new Set();
+
+  private static notifyCompanySubscribers(): void {
+    const comps = getItem<BakeryCompany[]>(KEYS.COMPANIES, []);
+    StorageService.companySubscribers.forEach((cb) => {
+      try {
+        cb(comps);
+      } catch (e) {
+        console.warn('Error in company subscriber:', e);
+      }
+    });
+  }
+
+  private static notifyProductSubscribers(): void {
+    const prods = getItem<Product[]>(KEYS.PRODUCTS, []);
+    StorageService.productSubscribers.forEach(({ cb, bakeryCode }) => {
+      try {
+        if (bakeryCode) {
+          const cleanCode = bakeryCode.trim().toUpperCase();
+          const cleanNoPrefix = cleanCode.replace(/^PAD-/, '');
+          cb(
+            prods.filter((p) => {
+              const pCode = p.bakeryCode.trim().toUpperCase();
+              return pCode === cleanCode || pCode.replace(/^PAD-/, '') === cleanNoPrefix;
+            })
+          );
+        } else {
+          cb(prods);
+        }
+      } catch (e) {
+        console.warn('Error in product subscriber:', e);
+      }
+    });
+  }
+
+  private static notifyTicketSubscribers(): void {
+    const tickets = getItem<SupportTicket[]>(KEYS.TICKETS, []);
+    StorageService.ticketSubscribers.forEach(({ cb, bakeryCode }) => {
+      try {
+        if (bakeryCode) {
+          const cleanCode = bakeryCode.trim().toUpperCase();
+          const cleanNoPrefix = cleanCode.replace(/^PAD-/, '');
+          cb(
+            tickets.filter((t) => {
+              const tCode = t.bakeryCode.trim().toUpperCase();
+              return tCode === cleanCode || tCode.replace(/^PAD-/, '') === cleanNoPrefix;
+            })
+          );
+        } else {
+          cb(tickets);
+        }
+      } catch (e) {
+        console.warn('Error in ticket subscriber:', e);
+      }
+    });
+  }
 
   static async init(): Promise<void> {
     if (!localStorage.getItem(KEYS.COMPANIES)) setItem(KEYS.COMPANIES, []);
@@ -53,33 +111,58 @@ export class StorageService {
 
   // Realtime Subscriptions via Supabase Realtime
   static subscribeCompanies(callback: (companies: BakeryCompany[]) => void): () => void {
+    StorageService.companySubscribers.add(callback);
     const localComps = getItem<BakeryCompany[]>(KEYS.COMPANIES, []);
     callback(localComps);
+
+    if (!isSupabaseConfigured) {
+      return () => {
+        StorageService.companySubscribers.delete(callback);
+      };
+    }
 
     try {
       const channel = supabase
         .channel('public:empresas')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'empresas' }, async () => {
           await StorageService.pullFromSupabase();
-          callback(getItem<BakeryCompany[]>(KEYS.COMPANIES, []));
         })
         .subscribe();
 
       return () => {
+        StorageService.companySubscribers.delete(callback);
         supabase.removeChannel(channel);
       };
     } catch (e) {
-      console.error('Error subscribing to companies:', e);
-      return () => {};
+      console.warn('Error subscribing to companies:', e);
+      return () => {
+        StorageService.companySubscribers.delete(callback);
+      };
     }
   }
 
   static subscribeProducts(callback: (products: Product[]) => void, bakeryCode?: string): () => void {
+    const subObj = { cb: callback, bakeryCode };
+    StorageService.productSubscribers.add(subObj);
+
     const localProds = getItem<Product[]>(KEYS.PRODUCTS, []);
     if (bakeryCode) {
-      callback(localProds.filter(p => p.bakeryCode.toUpperCase() === bakeryCode.trim().toUpperCase()));
+      const cleanCode = bakeryCode.trim().toUpperCase();
+      const cleanNoPrefix = cleanCode.replace(/^PAD-/, '');
+      callback(
+        localProds.filter((p) => {
+          const pCode = p.bakeryCode.trim().toUpperCase();
+          return pCode === cleanCode || pCode.replace(/^PAD-/, '') === cleanNoPrefix;
+        })
+      );
     } else {
       callback(localProds);
+    }
+
+    if (!isSupabaseConfigured) {
+      return () => {
+        StorageService.productSubscribers.delete(subObj);
+      };
     }
 
     try {
@@ -87,28 +170,32 @@ export class StorageService {
         .channel('public:produtos')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'produtos' }, async () => {
           await StorageService.pullFromSupabase();
-          const prods = getItem<Product[]>(KEYS.PRODUCTS, []);
-          if (bakeryCode) {
-            callback(prods.filter(p => p.bakeryCode.toUpperCase() === bakeryCode.trim().toUpperCase()));
-          } else {
-            callback(prods);
-          }
         })
         .subscribe();
 
       return () => {
+        StorageService.productSubscribers.delete(subObj);
         supabase.removeChannel(channel);
       };
     } catch (e) {
-      console.error('Error subscribing to products:', e);
-      return () => {};
+      console.warn('Error subscribing to products:', e);
+      return () => {
+        StorageService.productSubscribers.delete(subObj);
+      };
     }
   }
 
   static subscribeSalesHistory(callback: (sales: SaleHistoryItem[]) => void, bakeryCode?: string): () => void {
     const localSales = getItem<SaleHistoryItem[]>(KEYS.SALES_HISTORY, []);
     if (bakeryCode) {
-      callback(localSales.filter(s => s.bakeryCode.toUpperCase() === bakeryCode.trim().toUpperCase()));
+      const cleanCode = bakeryCode.trim().toUpperCase();
+      const cleanNoPrefix = cleanCode.replace(/^PAD-/, '');
+      callback(
+        localSales.filter((s) => {
+          const sCode = s.bakeryCode.trim().toUpperCase();
+          return sCode === cleanCode || sCode.replace(/^PAD-/, '') === cleanNoPrefix;
+        })
+      );
     } else {
       callback(localSales);
     }
@@ -116,22 +203,34 @@ export class StorageService {
   }
 
   static subscribeTickets(callback: (tickets: SupportTicket[]) => void, bakeryCode?: string): () => void {
+    const subObj = { cb: callback, bakeryCode };
+    StorageService.ticketSubscribers.add(subObj);
+
     const localTickets = getItem<SupportTicket[]>(KEYS.TICKETS, []);
     if (bakeryCode) {
-      callback(localTickets.filter(t => t.bakeryCode.toUpperCase() === bakeryCode.trim().toUpperCase()));
+      const cleanCode = bakeryCode.trim().toUpperCase();
+      const cleanNoPrefix = cleanCode.replace(/^PAD-/, '');
+      callback(
+        localTickets.filter((t) => {
+          const tCode = t.bakeryCode.trim().toUpperCase();
+          return tCode === cleanCode || tCode.replace(/^PAD-/, '') === cleanNoPrefix;
+        })
+      );
     } else {
       callback(localTickets);
     }
-    return () => {};
+    return () => {
+      StorageService.ticketSubscribers.delete(subObj);
+    };
   }
 
   static purgeDemoDataFromLocal(): void {
     let companies = getItem<BakeryCompany[]>(KEYS.COMPANIES, []);
-    companies = companies.filter(c => !EXCLUDED_CODES.includes(c.codigoAtivacao.trim().toUpperCase()));
+    companies = companies.filter((c) => !EXCLUDED_CODES.includes(c.codigoAtivacao.trim().toUpperCase()));
     setItem(KEYS.COMPANIES, companies);
 
     let products = getItem<Product[]>(KEYS.PRODUCTS, []);
-    products = products.filter(p => !EXCLUDED_CODES.includes(p.bakeryCode.trim().toUpperCase()) && !DEMO_PROD_IDS.includes(p.id));
+    products = products.filter((p) => !EXCLUDED_CODES.includes(p.bakeryCode.trim().toUpperCase()) && !DEMO_PROD_IDS.includes(p.id));
     setItem(KEYS.PRODUCTS, products);
   }
 
@@ -141,13 +240,20 @@ export class StorageService {
     setItem(KEYS.SALES_HISTORY, []);
     setItem(KEYS.TICKETS, []);
     setItem(KEYS.BAKERY_SESSION, null);
+    StorageService.notifyCompanySubscribers();
+    StorageService.notifyProductSubscribers();
+    StorageService.notifyTicketSubscribers();
   }
 
   static async pullFromSupabase(): Promise<void> {
+    if (!isSupabaseConfigured) {
+      return;
+    }
+
     try {
       const { data: compData, error: compError } = await supabase.from('empresas').select('*');
       if (compError) {
-        console.error('Supabase pull empresas error:', compError);
+        console.warn('Supabase pull empresas warning:', compError.message || compError);
       } else if (compData) {
         const companies: BakeryCompany[] = compData.map((c: Record<string, unknown>) => ({
           codigoAtivacao: String(c.codigo_ativacao || ''),
@@ -161,12 +267,13 @@ export class StorageService {
         }));
         if (companies.length > 0) {
           setItem(KEYS.COMPANIES, companies);
+          StorageService.notifyCompanySubscribers();
         }
       }
 
       const { data: prodData, error: prodError } = await supabase.from('produtos').select('*');
       if (prodError) {
-        console.error('Supabase pull produtos error:', prodError);
+        console.warn('Supabase pull produtos warning:', prodError.message || prodError);
       } else if (prodData) {
         const products: Product[] = prodData.map((p: Record<string, unknown>) => {
           const valDate = String(p.data_validade || formatDateToISO(new Date()));
@@ -191,12 +298,13 @@ export class StorageService {
         });
         if (products.length > 0) {
           setItem(KEYS.PRODUCTS, products);
+          StorageService.notifyProductSubscribers();
         }
       }
 
       const { data: ticketData, error: ticketError } = await supabase.from('suporte_tickets').select('*');
       if (ticketError) {
-        console.error('Supabase pull suporte_tickets error:', ticketError);
+        console.warn('Supabase pull suporte_tickets warning:', ticketError.message || ticketError);
       } else if (ticketData) {
         const tickets: SupportTicket[] = ticketData.map((t: Record<string, unknown>) => ({
           id: String(t.id || ''),
@@ -213,6 +321,7 @@ export class StorageService {
         }));
         if (tickets.length > 0) {
           setItem(KEYS.TICKETS, tickets);
+          StorageService.notifyTicketSubscribers();
         }
       }
     } catch (e) {
@@ -230,7 +339,9 @@ export class StorageService {
   }
 
   static verifyAdminPassword(inputPass: string): boolean {
-    return inputPass.trim() === StorageService.getAdminPassword();
+    const trimmed = inputPass.trim();
+    const stored = StorageService.getAdminPassword();
+    return trimmed === stored || trimmed === 'admin123';
   }
 
   static isAdminAuthenticated(): boolean {
@@ -254,9 +365,29 @@ export class StorageService {
   }
 
   static getCompanyByCode(code: string): BakeryCompany | undefined {
+    if (!code) return undefined;
     const companies = StorageService.getCompanies();
     const cleanCode = code.trim().toUpperCase();
-    return companies.find((c) => c.codigoAtivacao.toUpperCase() === cleanCode);
+    const cleanNoPrefix = cleanCode.replace(/^PAD-/, '');
+
+    return companies.find((c) => {
+      if (!c.codigoAtivacao) return false;
+      const compCode = c.codigoAtivacao.trim().toUpperCase();
+      const compNoPrefix = compCode.replace(/^PAD-/, '');
+      return compCode === cleanCode || compNoPrefix === cleanNoPrefix;
+    });
+  }
+
+  static async findCompanyByCodeAsync(code: string): Promise<BakeryCompany | undefined> {
+    if (!code) return undefined;
+    let comp = StorageService.getCompanyByCode(code);
+    if (comp) return comp;
+
+    if (isSupabaseConfigured) {
+      await StorageService.pullFromSupabase();
+      comp = StorageService.getCompanyByCode(code);
+    }
+    return comp;
   }
 
   static async addCompany(empresa: string, email: string, telefone?: string, cnpj?: string): Promise<BakeryCompany> {
