@@ -36,7 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer shrink-0" onClick={() => onNavigate('app')}>
             <div className="relative flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white shadow-xs border border-gray-100 p-1 transition-transform active:scale-95 sm:hover:scale-105 overflow-hidden">
               <img 
-                src="https://i.imgur.com/WIiDOiP.png" 
+                src="https://i.imgur.com/r41aOzi.png" 
                 alt="Padaria.io Logo" 
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
