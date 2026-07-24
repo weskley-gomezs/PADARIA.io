@@ -14,6 +14,27 @@ create type ticket_status_enum as enum ('aberto', 'em_andamento', 'resolvido');
 create type movimentacao_tipo_enum as enum ('entrada', 'saida', 'ajuste', 'venda', 'descarte');
 
 -- 2. TABELA: empresas
+create or replace function gerar_codigo_ativacao()
+returns trigger as $$
+declare
+  chars text := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  result text := 'PAD-';
+  i int;
+begin
+  if new.codigo_ativacao is null or new.codigo_ativacao = '' then
+    loop
+      result := 'PAD-';
+      for i in 1..8 loop
+        result := result || substr(chars, floor(random() * length(chars) + 1)::int, 1);
+      end loop;
+      exit when not exists (select 1 from empresas where codigo_ativacao = result);
+    end loop;
+    new.codigo_ativacao := result;
+  end if;
+  return new;
+end;
+$$ language plpgsql;
+
 create table if not exists empresas (
   id uuid primary key default uuid_generate_v4(),
   codigo_ativacao varchar(32) unique not null,
@@ -30,6 +51,12 @@ create table if not exists empresas (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+drop trigger if exists trg_gerar_codigo_ativacao on empresas;
+create trigger trg_gerar_codigo_ativacao
+  before insert on empresas
+  for each row
+  execute function gerar_codigo_ativacao();
 
 -- 3. TABELA: usuarios
 create table if not exists usuarios (

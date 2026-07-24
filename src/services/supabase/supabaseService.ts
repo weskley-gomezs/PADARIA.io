@@ -20,6 +20,7 @@ function getItem<T>(key: string, defaultValue: T): T {
     const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : defaultValue;
   } catch (e) {
+    console.error('Error reading localStorage key:', key, e);
     return defaultValue;
   }
 }
@@ -68,6 +69,7 @@ export class StorageService {
         supabase.removeChannel(channel);
       };
     } catch (e) {
+      console.error('Error subscribing to companies:', e);
       return () => {};
     }
   }
@@ -98,6 +100,7 @@ export class StorageService {
         supabase.removeChannel(channel);
       };
     } catch (e) {
+      console.error('Error subscribing to products:', e);
       return () => {};
     }
   }
@@ -143,16 +146,18 @@ export class StorageService {
   static async pullFromSupabase(): Promise<void> {
     try {
       const { data: compData, error: compError } = await supabase.from('empresas').select('*');
-      if (!compError && compData) {
-        const companies: BakeryCompany[] = compData.map((c: any) => ({
-          codigoAtivacao: c.codigo_ativacao,
-          empresa: c.nome,
-          email: c.email,
-          telefone: c.telefone || '',
-          cnpj: c.cnpj || '',
-          ativo: c.status,
-          dataCadastro: c.created_at ? c.created_at.split('T')[0] : formatDateToISO(new Date()),
-          ultimoAcesso: c.updated_at ? c.updated_at.split('T')[0] : undefined,
+      if (compError) {
+        console.error('Supabase pull empresas error:', compError);
+      } else if (compData) {
+        const companies: BakeryCompany[] = compData.map((c: Record<string, unknown>) => ({
+          codigoAtivacao: String(c.codigo_ativacao || ''),
+          empresa: String(c.nome || ''),
+          email: String(c.email || ''),
+          telefone: String(c.telefone || ''),
+          cnpj: String(c.cnpj || ''),
+          ativo: Boolean(c.status),
+          dataCadastro: c.created_at ? String(c.created_at).split('T')[0] : formatDateToISO(new Date()),
+          ultimoAcesso: c.updated_at ? String(c.updated_at).split('T')[0] : undefined,
         }));
         if (companies.length > 0) {
           setItem(KEYS.COMPANIES, companies);
@@ -160,29 +165,54 @@ export class StorageService {
       }
 
       const { data: prodData, error: prodError } = await supabase.from('produtos').select('*');
-      if (!prodError && prodData) {
-        const products: Product[] = prodData.map((p: any) => {
-          const daysRemaining = calculateDaysRemaining(p.data_validade);
+      if (prodError) {
+        console.error('Supabase pull produtos error:', prodError);
+      } else if (prodData) {
+        const products: Product[] = prodData.map((p: Record<string, unknown>) => {
+          const valDate = String(p.data_validade || formatDateToISO(new Date()));
+          const daysRemaining = calculateDaysRemaining(valDate);
           return {
-            id: p.id,
-            bakeryCode: p.bakery_code,
-            nome: p.nome,
-            quantidade: p.quantidade || 1,
-            dataValidade: p.data_validade,
-            categoria: p.categoria_id || 'Geral',
-            dataCadastro: p.created_at ? p.created_at.split('T')[0] : formatDateToISO(new Date()),
+            id: String(p.id || ''),
+            bakeryCode: String(p.bakery_code || ''),
+            nome: String(p.nome || ''),
+            quantidade: Number(p.quantidade || 1),
+            dataValidade: valDate,
+            categoria: String(p.categoria_id || 'Geral'),
+            dataCadastro: p.created_at ? String(p.created_at).split('T')[0] : formatDateToISO(new Date()),
             status: getProductStatus(daysRemaining),
             diasParaVencer: daysRemaining,
-            barcode: p.codigo_barras || '',
-            valorKg: p.valor_kg,
-            dataFabricacao: p.data_fabricacao,
-            valorTotal: p.preco_venda,
-            motivo: p.motivo || 'Vencimento',
-            notas: p.notas || '',
+            barcode: String(p.codigo_barras || ''),
+            valorKg: p.valor_kg !== null && p.valor_kg !== undefined ? Number(p.valor_kg) : undefined,
+            dataFabricacao: p.data_fabricacao ? String(p.data_fabricacao) : undefined,
+            valorTotal: p.preco_venda !== null && p.preco_venda !== undefined ? Number(p.preco_venda) : undefined,
+            motivo: String(p.motivo || 'Vencimento'),
+            notas: String(p.notas || ''),
           };
         });
         if (products.length > 0) {
           setItem(KEYS.PRODUCTS, products);
+        }
+      }
+
+      const { data: ticketData, error: ticketError } = await supabase.from('suporte_tickets').select('*');
+      if (ticketError) {
+        console.error('Supabase pull suporte_tickets error:', ticketError);
+      } else if (ticketData) {
+        const tickets: SupportTicket[] = ticketData.map((t: Record<string, unknown>) => ({
+          id: String(t.id || ''),
+          bakeryCode: String(t.bakery_code || ''),
+          empresaNome: String(t.empresa_nome || ''),
+          assunto: String(t.assunto || ''),
+          descricao: String(t.descricao || ''),
+          prioridade: (t.prioridade as TicketPriority) || 'normal',
+          status: (t.status as TicketStatus) || 'aberto',
+          dataCriacao: String(t.data_criacao || new Date().toISOString()),
+          dataResolucao: t.data_resolucao ? String(t.data_resolucao) : undefined,
+          respostaSuporte: t.resposta_suporte ? String(t.resposta_suporte) : undefined,
+          screenshotUrl: t.screenshot_url ? String(t.screenshot_url) : undefined,
+        }));
+        if (tickets.length > 0) {
+          setItem(KEYS.TICKETS, tickets);
         }
       }
     } catch (e) {
@@ -274,16 +304,23 @@ export class StorageService {
     setItem(KEYS.COMPANIES, companies);
 
     try {
-      await supabase.from('empresas').insert([{
-        codigo_ativacao: code,
+      const { data: insData, error: insError } = await supabase.from('empresas').insert([{
         nome: empresa.trim(),
         email: email.trim(),
         telefone: telefone || '',
         cnpj: cnpj || '',
         status: true,
-      }]);
+      }]).select().single();
+
+      if (insError) {
+        console.error('Supabase insert company error:', insError);
+      } else if (insData && insData.codigo_ativacao) {
+        newCompany.codigoAtivacao = String(insData.codigo_ativacao);
+        // update local storage with the correct code from db
+        setItem(KEYS.COMPANIES, companies);
+      }
     } catch (e) {
-      console.warn('Supabase insert company error:', e);
+      console.error('Supabase insert company exception:', e);
     }
 
     return newCompany;
@@ -297,8 +334,13 @@ export class StorageService {
       setItem(KEYS.COMPANIES, companies);
 
       try {
-        await supabase.from('empresas').update({ status: company.ativo }).eq('codigo_ativacao', code);
-      } catch (e) {}
+        const { error: updError } = await supabase.from('empresas').update({ status: company.ativo }).eq('codigo_ativacao', code);
+        if (updError) {
+          console.error('Supabase update company status error:', updError);
+        }
+      } catch (e) {
+        console.error('Supabase update company status exception:', e);
+      }
 
       return company.ativo;
     }
@@ -315,8 +357,13 @@ export class StorageService {
     setItem(KEYS.COMPANIES, companies);
 
     try {
-      await supabase.from('empresas').update({ codigo_ativacao: cleanNewCode }).eq('codigo_ativacao', oldCode);
-    } catch (e) {}
+      const { error: updError } = await supabase.from('empresas').update({ codigo_ativacao: cleanNewCode }).eq('codigo_ativacao', oldCode);
+      if (updError) {
+        console.error('Supabase update company code error:', updError);
+      }
+    } catch (e) {
+      console.error('Supabase update company code exception:', e);
+    }
 
     return true;
   }
@@ -327,8 +374,13 @@ export class StorageService {
     setItem(KEYS.COMPANIES, companies);
 
     try {
-      await supabase.from('empresas').delete().eq('codigo_ativacao', code);
-    } catch (e) {}
+      const { error: delError } = await supabase.from('empresas').delete().eq('codigo_ativacao', code);
+      if (delError) {
+        console.error('Supabase delete company error:', delError);
+      }
+    } catch (e) {
+      console.error('Supabase delete company exception:', e);
+    }
   }
 
   static async updateCompanyCNPJ(code: string, cnpj: string): Promise<BakeryCompany | undefined> {
@@ -339,8 +391,13 @@ export class StorageService {
     comp.cnpj = cnpj.trim();
     setItem(KEYS.COMPANIES, companies);
     try {
-      await supabase.from('empresas').update({ cnpj: comp.cnpj }).eq('codigo_ativacao', code);
-    } catch (e) {}
+      const { error: updError } = await supabase.from('empresas').update({ cnpj: comp.cnpj }).eq('codigo_ativacao', code);
+      if (updError) {
+        console.error('Supabase update company CNPJ error:', updError);
+      }
+    } catch (e) {
+      console.error('Supabase update company CNPJ exception:', e);
+    }
     return comp;
   }
 
@@ -427,9 +484,10 @@ export class StorageService {
 
   static async createTicket(bakeryCode: string, empresaNome: string, assunto: string, descricao: string, prioridade: TicketPriority): Promise<SupportTicket> {
     const tickets = StorageService.getTickets();
+    const cleanBakeryCode = bakeryCode.trim().toUpperCase();
     const newTicket: SupportTicket = {
       id: 'tick_' + Date.now(),
-      bakeryCode: bakeryCode.trim().toUpperCase(),
+      bakeryCode: cleanBakeryCode,
       empresaNome: empresaNome.trim(),
       assunto: assunto.trim(),
       descricao: descricao.trim(),
@@ -439,6 +497,30 @@ export class StorageService {
     };
     tickets.unshift(newTicket);
     setItem(KEYS.TICKETS, tickets);
+
+    try {
+      const { data: compData } = await supabase.from('empresas').select('id').eq('codigo_ativacao', cleanBakeryCode).single();
+      const empresaId = compData?.id || null;
+
+      const { data: insData, error: insError } = await supabase.from('suporte_tickets').insert([{
+        empresa_id: empresaId,
+        bakery_code: cleanBakeryCode,
+        empresa_nome: empresaNome.trim(),
+        assunto: assunto.trim(),
+        descricao: descricao.trim(),
+        prioridade,
+        status: 'aberto',
+      }]).select().single();
+
+      if (insError) {
+        console.error('Supabase insert ticket error:', insError);
+      } else if (insData) {
+        newTicket.id = String(insData.id);
+      }
+    } catch (e) {
+      console.error('Supabase ticket exception:', e);
+    }
+
     return newTicket;
   }
 
@@ -449,6 +531,20 @@ export class StorageService {
     ticket.status = status;
     if (respostaSuporte) ticket.respostaSuporte = respostaSuporte;
     setItem(KEYS.TICKETS, tickets);
+
+    try {
+      const updatePayload: Record<string, unknown> = { status };
+      if (respostaSuporte) updatePayload.resposta_suporte = respostaSuporte;
+      if (status === 'resolvido') updatePayload.data_resolucao = new Date().toISOString();
+
+      const { error: updError } = await supabase.from('suporte_tickets').update(updatePayload).eq('id', ticketId);
+      if (updError) {
+        console.error('Supabase update ticket error:', updError);
+      }
+    } catch (e) {
+      console.error('Supabase update ticket exception:', e);
+    }
+
     return ticket;
   }
 
@@ -478,10 +574,11 @@ export class StorageService {
     notas?: string
   ): Promise<Product> {
     const products = StorageService.getProducts();
+    const cleanBakeryCode = bakeryCode.trim().toUpperCase();
     const days = calculateDaysRemaining(dataValidade);
     const newProd: Product = {
       id: 'prod_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      bakeryCode: bakeryCode.trim().toUpperCase(),
+      bakeryCode: cleanBakeryCode,
       nome: nome.trim(),
       quantidade: Math.max(1, Number(quantidade)),
       dataValidade,
@@ -501,20 +598,31 @@ export class StorageService {
     setItem(KEYS.PRODUCTS, products);
 
     try {
-      await supabase.from('produtos').insert([{
-        id: newProd.id,
-        bakery_code: newProd.bakeryCode,
+      const { data: compData } = await supabase.from('empresas').select('id').eq('codigo_ativacao', cleanBakeryCode).single();
+      const empresaId = compData?.id || null;
+
+      const { data: insData, error: insError } = await supabase.from('produtos').insert([{
+        empresa_id: empresaId,
+        bakery_code: cleanBakeryCode,
         nome: newProd.nome,
         quantidade: newProd.quantidade,
         data_validade: newProd.dataValidade,
         codigo_barras: newProd.barcode,
-        valor_kg: newProd.valorKg,
-        data_fabricacao: newProd.dataFabricacao,
-        preco_venda: newProd.valorTotal,
+        valor_kg: newProd.valorKg !== undefined ? newProd.valorKg : null,
+        data_fabricacao: newProd.dataFabricacao || null,
+        preco_venda: newProd.valorTotal !== undefined ? newProd.valorTotal : null,
         motivo: newProd.motivo,
         notas: newProd.notas,
-      }]);
-    } catch (e) {}
+      }]).select().single();
+
+      if (insError) {
+        console.error('Supabase insert product error:', insError);
+      } else if (insData) {
+        newProd.id = String(insData.id);
+      }
+    } catch (e) {
+      console.error('Supabase insert product exception:', e);
+    }
 
     return newProd;
   }
@@ -555,6 +663,27 @@ export class StorageService {
 
     products[idx] = updated;
     setItem(KEYS.PRODUCTS, products);
+
+    try {
+      const { error: updError } = await supabase.from('produtos').update({
+        nome: updated.nome,
+        quantidade: updated.quantidade,
+        data_validade: updated.dataValidade,
+        codigo_barras: updated.barcode,
+        valor_kg: updated.valorKg !== undefined ? updated.valorKg : null,
+        data_fabricacao: updated.dataFabricacao || null,
+        preco_venda: updated.valorTotal !== undefined ? updated.valorTotal : null,
+        motivo: updated.motivo,
+        notas: updated.notas,
+      }).eq('id', id);
+
+      if (updError) {
+        console.error('Supabase update product error:', updError);
+      }
+    } catch (e) {
+      console.error('Supabase update product exception:', e);
+    }
+
     return updated;
   }
 
@@ -563,8 +692,13 @@ export class StorageService {
     products = products.filter((p) => p.id !== id);
     setItem(KEYS.PRODUCTS, products);
     try {
-      await supabase.from('produtos').delete().eq('id', id);
-    } catch (e) {}
+      const { error: delError } = await supabase.from('produtos').delete().eq('id', id);
+      if (delError) {
+        console.error('Supabase delete product error:', delError);
+      }
+    } catch (e) {
+      console.error('Supabase delete product exception:', e);
+    }
   }
 
   static async markAsSold(id: string): Promise<SaleHistoryItem | null> {
