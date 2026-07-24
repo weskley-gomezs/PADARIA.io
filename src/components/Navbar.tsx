@@ -1,10 +1,10 @@
 import React from 'react';
-import { ChefHat, Clock, Bell, LogOut, ShieldAlert, Sparkles, Building2, Menu, X } from 'lucide-react';
+import { ChefHat, Clock, Bell, LogOut, ShieldAlert, Sparkles, Building2, Menu, X, Home } from 'lucide-react';
 import { BakeryCompany } from '../types';
 
 interface NavbarProps {
-  currentView: 'app' | 'admin';
-  onNavigate: (view: 'app' | 'admin') => void;
+  currentView: 'landing' | 'app' | 'admin';
+  onNavigate: (view: 'landing' | 'app' | 'admin') => void;
   activeCompany?: BakeryCompany | null;
   expiredCount: number;
   expiringCount: number;
@@ -33,7 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Brand Logo */}
-          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer shrink-0" onClick={() => onNavigate('app')}>
+          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer shrink-0" onClick={() => onNavigate('landing')}>
             <div className="relative flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white shadow-xs border border-gray-100 transition-transform active:scale-95 sm:hover:scale-105 overflow-hidden">
               <img 
                 src="https://i.imgur.com/r41aOzi.png" 
@@ -45,13 +45,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <div className="flex items-center space-x-1">
                 <span className="font-extrabold text-base sm:text-xl tracking-tight text-[#2C2C2C]">
-                  PADARIA<span className="text-[#E8571A]">.io</span>
-                </span>
-                <span className="text-[9px] sm:text-[10px] font-bold px-1 py-0.2 sm:px-1.5 sm:py-0.5 rounded bg-[#F5E6D3] text-[#2C2C2C] uppercase tracking-wider">
-                  PRO
+                  PADARIA<span className="text-[#FF6B00]">.io</span>
                 </span>
               </div>
-              <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block">Controle de Validade e Estoque</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block">Controle de Validade por IA</p>
             </div>
           </div>
 
@@ -60,11 +57,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* View Switcher Tabs */}
             <div className="bg-[#FAFAF8] p-1 rounded-xl border border-[#E0E0E0] flex items-center space-x-1">
               <button
+                onClick={() => onNavigate('landing')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  currentView === 'landing'
+                    ? 'bg-[#111111] text-white shadow-xs'
+                    : 'text-[#2C2C2C] hover:bg-gray-100'
+                }`}
+              >
+                <Home className="w-3.5 h-3.5 text-[#FF6B00]" />
+                <span>Início</span>
+              </button>
+
+              <button
                 onClick={() => onNavigate('app')}
                 className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   currentView === 'app'
-                    ? 'bg-[#D4A574] text-white shadow-xs'
-                    : 'text-[#2C2C2C] hover:bg-[#F5E6D3]'
+                    ? 'bg-[#FF6B00] text-white shadow-xs font-bold'
+                    : 'text-[#2C2C2C] hover:bg-gray-100'
                 }`}
               >
                 <ChefHat className="w-3.5 h-3.5" />
@@ -76,10 +85,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   currentView === 'admin'
                     ? 'bg-[#2C2C2C] text-white shadow-xs'
-                    : 'text-[#2C2C2C] hover:bg-[#F5E6D3]'
+                    : 'text-[#2C2C2C] hover:bg-gray-100'
                 }`}
               >
-                <ShieldAlert className="w-3.5 h-3.5" />
+                <ShieldAlert className="w-3.5 h-3.5 text-[#FF6B00]" />
                 <span>Painel Admin</span>
               </button>
             </div>
@@ -92,7 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className="text-xs font-bold text-[#2C2C2C] truncate max-w-[140px]">
                     {activeCompany.empresa}
                   </span>
-                  <span className="text-[10px] font-mono text-[#E8571A] font-semibold">
+                  <span className="text-[10px] font-mono text-[#FF6B00] font-semibold">
                     CÓD: {activeCompany.codigoAtivacao}
                   </span>
                 </div>
@@ -100,7 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {/* Notifications Button */}
                 <button
                   onClick={onOpenNotifications}
-                  className="relative p-2 rounded-xl text-gray-600 hover:text-[#2C2C2C] hover:bg-[#F5E6D3] transition-colors cursor-pointer"
+                  className="relative p-2 rounded-xl text-gray-600 hover:text-[#2C2C2C] hover:bg-gray-100 transition-colors cursor-pointer"
                   title="Alertas de Validade"
                 >
                   <Bell className="w-5 h-5" />
@@ -139,7 +148,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Mobile Top Header Actions */}
           <div className="flex md:hidden items-center space-x-1.5">
             {currentView === 'app' && activeCompany && (
-              <span className="text-[10px] font-mono font-bold bg-orange-50 text-[#E8571A] px-2 py-0.5 rounded-md border border-orange-200 truncate max-w-[110px]">
+              <span className="text-[10px] font-mono font-bold bg-orange-50 text-orange-800 px-2 py-0.5 rounded-md border border-orange-200 truncate max-w-[110px]">
                 {activeCompany.empresa}
               </span>
             )}
@@ -174,19 +183,32 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Mobile Drawer Dropdown Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200 bg-white px-4 py-3 space-y-3 animate-fade-in shadow-lg">
-          <div className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider">Mudar Visão do Sistema</div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider">Navegação do Sistema</div>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => {
+                onNavigate('landing');
+                setMobileMenuOpen(false);
+              }}
+              className={`flex items-center justify-center space-x-1 p-2.5 rounded-xl text-xs font-bold transition-all ${
+                currentView === 'landing' ? 'bg-[#111111] text-white' : 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              <Home className="w-3.5 h-3.5 text-[#FF6B00]" />
+              <span>Início</span>
+            </button>
+
             <button
               onClick={() => {
                 onNavigate('app');
                 setMobileMenuOpen(false);
               }}
-              className={`flex items-center justify-center space-x-1.5 p-2.5 rounded-xl text-xs font-bold transition-all ${
-                currentView === 'app' ? 'bg-[#D4A574] text-white' : 'bg-gray-100 text-gray-700'
+              className={`flex items-center justify-center space-x-1 p-2.5 rounded-xl text-xs font-bold transition-all ${
+                currentView === 'app' ? 'bg-[#FF6B00] text-white font-extrabold' : 'bg-gray-100 text-gray-700'
               }`}
             >
-              <ChefHat className="w-4 h-4" />
-              <span>App Padaria</span>
+              <ChefHat className="w-3.5 h-3.5" />
+              <span>App</span>
             </button>
 
             <button
@@ -194,12 +216,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onNavigate('admin');
                 setMobileMenuOpen(false);
               }}
-              className={`flex items-center justify-center space-x-1.5 p-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center justify-center space-x-1 p-2.5 rounded-xl text-xs font-bold transition-all ${
                 currentView === 'admin' ? 'bg-[#2C2C2C] text-white' : 'bg-gray-100 text-gray-700'
               }`}
             >
-              <ShieldAlert className="w-4 h-4" />
-              <span>Painel Admin</span>
+              <ShieldAlert className="w-3.5 h-3.5 text-[#FF6B00]" />
+              <span>Admin</span>
             </button>
           </div>
 
@@ -242,4 +264,5 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
 

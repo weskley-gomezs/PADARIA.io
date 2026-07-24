@@ -184,7 +184,7 @@ export const AdminSupportTickets: React.FC<AdminSupportTicketsProps> = ({ onRefr
 
               {/* Existing Support Reply */}
               {t.respostaSuporte && (
-                <div className="p-4 bg-emerald-50/50 border-l-4 border-l-[#27AE60] rounded-r-xl text-xs space-y-1">
+                <div className="p-4 bg-orange-50/50 border-l-4 border-l-[#27AE60] rounded-r-xl text-xs space-y-1">
                   <strong className="text-[#27AE60] font-black uppercase tracking-wider block">
                     Resposta Enviada pelo Administrador:
                   </strong>

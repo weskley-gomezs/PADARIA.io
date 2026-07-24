@@ -541,7 +541,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
               <div className="mt-3 sm:mt-4">
                 <div className="text-xl sm:text-2xl font-black text-[#1F2937]">{expiredMonthCount} un</div>
                 <div className="text-[10px] sm:text-xs text-gray-500 mt-1 flex items-center space-x-1">
-                  <span className="text-emerald-600 font-bold">↓ 5%</span>
+                  <span className="text-orange-600 font-bold">↓ 5%</span>
                   <span className="hidden sm:inline">estoque</span>
                 </div>
               </div>
@@ -564,14 +564,14 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
             </div>
 
             {/* Card 4: Economia Potencial */}
-            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-xs border-emerald-200 bg-emerald-50/20">
+            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-xs border-orange-200 bg-orange-50/20">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">Economia IA</span>
-                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">💡</span>
+                <span className="text-[10px] sm:text-[11px] font-extrabold text-orange-700 uppercase tracking-wider">Economia IA</span>
+                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs">💡</span>
               </div>
               <div className="mt-3 sm:mt-4">
-                <div className="text-xl sm:text-2xl font-black text-emerald-700">R$ 850,00</div>
-                <div className="text-[10px] sm:text-xs text-emerald-600 font-medium mt-1">
+                <div className="text-xl sm:text-2xl font-black text-orange-700">R$ 850,00</div>
+                <div className="text-[10px] sm:text-xs text-orange-600 font-medium mt-1">
                   Ativa
                 </div>
               </div>
@@ -685,9 +685,9 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
                   74% dos descartes na categoria de Pães e Confeitaria ocorrem entre terças e quintas-feiras devido a superprodução matinal. Sugerimos reduzir a fornada de 14h em 25%.
                 </p>
               </div>
-              <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 space-y-2">
+              <div className="p-4 bg-orange-50 rounded-xl border border-orange-200 text-xs text-orange-900 space-y-2">
                 <p className="font-bold flex items-center space-x-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <CheckCircle2 className="w-4 h-4 text-orange-600" />
                   <span>Oportunidade de Redução:</span>
                 </p>
                 <p>
@@ -723,14 +723,14 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-emerald-200 shadow-xs space-y-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">2</div>
+            <div className="bg-white p-6 rounded-2xl border border-orange-200 shadow-xs space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">2</div>
               <h3 className="font-extrabold text-sm text-[#1F2937]">Giro de Estoque FIFO</h3>
               <p className="text-xs text-gray-600 leading-relaxed">
                 Produtos lácteos e recheios estão ficando no fundo das prateleiras. Reorganize o estoque aplicando rigorosamente o princípio "Primeiro a Entrar, Primeiro a Sair".
               </p>
               <div className="pt-2">
-                <span className="inline-block bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                <span className="inline-block bg-orange-50 text-orange-700 text-[10px] font-bold px-2.5 py-1 rounded-full">
                   Redução de perdas: 18%
                 </span>
               </div>
@@ -792,7 +792,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
               </div>
               <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
                 <div className="text-[11px] text-gray-500 font-bold uppercase">Eficiência Operacional</div>
-                <div className="text-lg sm:text-xl font-black text-emerald-600 mt-1">84.2%</div>
+                <div className="text-lg sm:text-xl font-black text-orange-600 mt-1">84.2%</div>
               </div>
             </div>
           </div>
@@ -982,7 +982,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
                         ? 'bg-red-100 text-red-700'
                         : p.status === 'vencendo'
                         ? 'bg-amber-100 text-amber-800'
-                        : 'bg-emerald-100 text-emerald-800'
+                        : 'bg-orange-100 text-orange-800'
                     }`}
                   >
                     {p.status === 'vencido'

@@ -2,23 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { AdminPanel } from './components/AdminPanel';
 import { BakeryApp } from './components/BakeryApp';
+import { LandingPage } from './components/LandingPage';
 import { StorageService } from './services/storageService';
 import { BakeryCompany, Product } from './types';
 import { NotificationsModal } from './components/NotificationsModal';
+import { PrivacyPolicyModal } from './components/PrivacyPolicyModal';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'app' | 'admin'>(() => {
-    // Check URL path or default to app
+  const [currentView, setCurrentView] = useState<'landing' | 'app' | 'admin'>(() => {
     if (window.location.pathname.startsWith('/admin')) {
       return 'admin';
     }
-    return 'app';
+    // Default to landing page for new visitors, or app if requested via path
+    if (window.location.pathname.startsWith('/app')) {
+      return 'app';
+    }
+    return 'landing';
   });
 
   const [activeCode, setActiveCode] = useState<string | null>(null);
   const [activeCompany, setActiveCompany] = useState<BakeryCompany | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState<boolean>(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
 
   useEffect(() => {
@@ -70,17 +76,19 @@ export default function App() {
     return () => unsubProd();
   }, [activeCode]);
 
-  const handleNavigate = (view: 'app' | 'admin') => {
+  const handleNavigate = (view: 'landing' | 'app' | 'admin') => {
     setCurrentView(view);
-    // Update browser history URL without page reload if possible
     try {
-      const targetPath = view === 'admin' ? '/admin' : '/';
+      let targetPath = '/';
+      if (view === 'admin') targetPath = '/admin';
+      if (view === 'app') targetPath = '/app';
       if (window.location.pathname !== targetPath) {
         window.history.pushState({}, '', targetPath);
       }
     } catch (e) {
       // Ignored in sandbox
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleLoginAsBakeryFromAdmin = (code: string) => {
@@ -109,8 +117,24 @@ export default function App() {
     await StorageService.markAsSold(id);
   };
 
+  if (currentView === 'landing') {
+    return (
+      <>
+        <LandingPage
+          onEnterApp={() => handleNavigate('app')}
+          onOpenAdmin={() => handleNavigate('admin')}
+          onOpenPrivacy={() => setIsPrivacyOpen(true)}
+        />
+        <PrivacyPolicyModal
+          isOpen={isPrivacyOpen}
+          onClose={() => setIsPrivacyOpen(false)}
+        />
+      </>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#FAFAF8] text-[#2C2C2C] flex flex-col font-sans antialiased selection:bg-[#D4A574] selection:text-white">
+    <div className="min-h-screen bg-[#FAFAF8] text-[#2C2C2C] flex flex-col font-sans antialiased selection:bg-[#FF6B00] selection:text-white">
       {/* Top Navbar */}
       <Navbar
         currentView={currentView}
@@ -142,6 +166,12 @@ export default function App() {
         onMarkAsSold={handleMarkAsSold}
       />
 
+      {/* Privacy Policy Modal */}
+      <PrivacyPolicyModal
+        isOpen={isPrivacyOpen}
+        onClose={() => setIsPrivacyOpen(false)}
+      />
+
       {/* Footer */}
       <footer className="bg-white border-t border-[#E0E0E0] py-6 text-center text-xs text-gray-500 mt-auto">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -152,7 +182,13 @@ export default function App() {
           </div>
 
           <div className="flex items-center space-x-4 text-gray-400">
-            <button onClick={() => handleNavigate('admin')} className="hover:text-[#2C2C2C] font-semibold">
+            <button onClick={() => handleNavigate('landing')} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
+              Início / Site
+            </button>
+            <button onClick={() => setIsPrivacyOpen(true)} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
+              Política de Privacidade
+            </button>
+            <button onClick={() => handleNavigate('admin')} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
               Painel Admin
             </button>
           </div>
@@ -161,3 +197,4 @@ export default function App() {
     </div>
   );
 }
+

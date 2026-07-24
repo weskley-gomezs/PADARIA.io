@@ -156,7 +156,7 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
             <p className="text-3xl font-black text-[#2C2C2C] mt-1">
               R$ {stats.mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
-            <p className="text-[11px] text-emerald-600 font-semibold mt-1">R$ 199/mês por cliente</p>
+            <p className="text-[11px] text-orange-600 font-semibold mt-1">R$ 199/mês por cliente</p>
           </div>
           <div className="p-3 bg-[#F5E6D3] text-[#D4A574] rounded-xl">
             <TrendingUp className="w-6 h-6" />
@@ -343,7 +343,7 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
                                 ⚠️ Vence em {daysLeft === 0 ? 'HOJE' : `${daysLeft} dia(s)`}
                               </span>
                             ) : (
-                              <span className="inline-block text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                              <span className="inline-block text-[10px] font-medium text-orange-700 bg-orange-50 px-2 py-0.5 rounded">
                                 🟢 Em dia ({daysLeft}d restantes)
                               </span>
                             )}
