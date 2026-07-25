@@ -2,26 +2,54 @@ console.log("[VERCEL] API entry point called (/api/index.ts)");
 
 import express from 'express';
 import path from 'path';
-import { createClient } from '@supabase/supabase-js';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import fs from 'fs';
 import { GoogleGenAI, Type } from '@google/genai';
 
 console.log("[INIT] Inicializando servidor Express em /api/index.ts...");
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-let supabase: any = null;
+let db: any = null;
 let ai: any = null;
 
 try {
-  console.log("[INIT] Verificando configuração do Supabase...");
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  console.log("[INIT] Verificando configuração do Firebase...");
+  // Tenta carregar o config de vários lugares comuns
+  const possiblePaths = [
+    path.join(process.cwd(), 'firebase-applet-config.json'),
+    path.join(process.cwd(), 'api', '..', 'firebase-applet-config.json'),
+    '/var/task/firebase-applet-config.json'
+  ];
+  
+  let firebaseConfigPath = possiblePaths[0];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      firebaseConfigPath = p;
+      break;
+    }
+  }
 
-  if (supabaseUrl && supabaseKey) {
-    supabase = createClient(supabaseUrl, supabaseKey);
-    console.log("[INIT] Supabase inicializado com sucesso no backend.");
+  console.log(`[INIT] Usando caminho do config Firebase: ${firebaseConfigPath}`);
+
+  if (fs.existsSync(firebaseConfigPath)) {
+    console.log("[INIT] Arquivo firebase-applet-config.json encontrado.");
+    const configRaw = fs.readFileSync(firebaseConfigPath, 'utf8');
+    
+    try {
+      const firebaseConfig = JSON.parse(configRaw);
+      console.log("[INIT] Conteúdo do JSON do Firebase carregado com sucesso.");
+      
+      console.log("[INIT] Inicializando Firebase App...");
+      const firebaseApp = initializeApp(firebaseConfig);
+      db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
+      console.log("[INIT] Firebase inicializado com sucesso.");
+    } catch (jsonError) {
+      console.error("[INIT] Erro ao parsear o JSON do Firebase:", jsonError);
+    }
   } else {
-    console.log("[INIT] AVISO: Credenciais do Supabase não encontradas no ambiente do backend.");
+    console.log("[INIT] AVISO: Arquivo firebase-applet-config.json NÃO encontrado em nenhum dos caminhos tentados.");
   }
 
   console.log("[INIT] Verificando GEMINI_API_KEY...");
@@ -116,12 +144,13 @@ try {
       text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
       const result = JSON.parse(text);
 
-      // If bakeryCode is provided and Supabase is available, save product directly to Supabase
-      if (bakeryCode && supabase) {
-        console.log(`[SUPABASE] Salvando produto escaneado diretamente no Supabase para bakeryCode: ${bakeryCode}...`);
+      // If bakeryCode is provided and DB is available, save product directly to Firestore
+      if (bakeryCode && db) {
+        console.log(`[FIRESTORE] Salvando produto escaneado diretamente no Firestore para bakeryCode: ${bakeryCode}...`);
         const todayStr = new Date().toISOString().split('T')[0];
         const valDate = result.dataValidade || todayStr;
         
+        // Calculate days remaining
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const target = new Date(valDate + 'T00:00:00');
@@ -132,39 +161,28 @@ try {
         const productId = 'prod_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
         const newProduct = {
           id: productId,
-          bakery_code: String(bakeryCode).trim().toUpperCase(),
+          bakeryCode: String(bakeryCode).trim().toUpperCase(),
           nome: result.nome || 'Produto Escaneado',
           quantidade: 1,
-          data_validade: valDate,
-          dias_para_vencer: daysRemaining,
+          dataValidade: valDate,
+          categoria: 'Descarte IA',
+          dataCadastro: todayStr,
+          diasParaVencer: daysRemaining,
           status: status,
-          codigo_barras: '',
-          valor_kg: typeof result.valorKg === 'number' ? result.valorKg : null,
-          data_fabricacao: result.dataFabricacao || null,
-          preco_venda: typeof result.valorTotal === 'number' ? result.valorTotal : null,
+          barcode: '',
+          valorKg: typeof result.valorKg === 'number' ? result.valorKg : null,
+          dataFabricacao: result.dataFabricacao || null,
+          valorTotal: typeof result.valorTotal === 'number' ? result.valorTotal : null,
           motivo: 'Vencimento',
           notas: 'Registrado via Leitura de Etiquetas IA',
         };
 
-        await supabase.from('produtos').insert([newProduct]);
-        console.log(`[SUPABASE] Confirmação de gravação do produto ${productId} no Supabase com SUCESSO!`);
+        await setDoc(doc(db, 'products', productId), newProduct);
+        console.log(`[FIRESTORE] Confirmação de gravação do produto ${productId} no Firestore com SUCESSO!`);
         return res.json({
           ...result,
-          savedToSupabase: true,
-          product: {
-            id: newProduct.id,
-            bakeryCode: newProduct.bakery_code,
-            nome: newProduct.nome,
-            quantidade: newProduct.quantidade,
-            dataValidade: newProduct.data_validade,
-            diasParaVencer: newProduct.dias_para_vencer,
-            status: newProduct.status,
-            valorKg: newProduct.valor_kg,
-            dataFabricacao: newProduct.data_fabricacao,
-            valorTotal: newProduct.preco_venda,
-            motivo: newProduct.motivo,
-            notas: newProduct.notas,
-          },
+          savedToFirestore: true,
+          product: newProduct,
         });
       }
 

@@ -1,0 +1,102 @@
+{
+  "entities": {
+    "BakeryCompany": {
+      "title": "BakeryCompany",
+      "description": "Registered bakery enterprise in the system",
+      "type": "object",
+      "properties": {
+        "codigoAtivacao": { "type": "string" },
+        "empresa": { "type": "string" },
+        "email": { "type": "string" },
+        "telefone": { "type": "string" },
+        "ativo": { "type": "boolean" },
+        "dataCadastro": { "type": "string" },
+        "ultimoAcesso": { "type": "string" },
+        "financeiro": { "type": "object" },
+        "contrato": { "type": "object" }
+      },
+      "required": ["codigoAtivacao", "empresa", "ativo"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Bakery product with expiration date monitoring",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bakeryCode": { "type": "string" },
+        "nome": { "type": "string" },
+        "quantidade": { "type": "number" },
+        "dataValidade": { "type": "string" },
+        "categoria": { "type": "string" },
+        "dataCadastro": { "type": "string" },
+        "diasParaVencer": { "type": "number" },
+        "status": { "type": "string", "enum": ["normal", "vencendo", "vencido"] }
+      },
+      "required": ["id", "bakeryCode", "nome", "quantidade", "dataValidade"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Support request or issue ticket submitted by bakery or created by admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bakeryCode": { "type": "string" },
+        "empresaNome": { "type": "string" },
+        "assunto": { "type": "string" },
+        "descricao": { "type": "string" },
+        "prioridade": { "type": "string", "enum": ["normal", "urgente", "critica"] },
+        "status": { "type": "string", "enum": ["aberto", "em_andamento", "resolvido"] },
+        "dataCriacao": { "type": "string" },
+        "dataResolucao": { "type": "string" },
+        "respostaSuporte": { "type": "string" }
+      },
+      "required": ["id", "bakeryCode", "assunto", "descricao", "status"]
+    },
+    "SaleHistoryItem": {
+      "title": "SaleHistoryItem",
+      "description": "History item for sold products",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bakeryCode": { "type": "string" },
+        "produtoId": { "type": "string" },
+        "nomeProduto": { "type": "string" },
+        "quantidade": { "type": "number" },
+        "dataValidade": { "type": "string" },
+        "dataVenda": { "type": "string" }
+      },
+      "required": ["id", "bakeryCode", "nomeProduto", "dataVenda"]
+    },
+    "AdminSettings": {
+      "title": "AdminSettings",
+      "description": "Global administrator configuration and custom password",
+      "type": "object",
+      "properties": {
+        "adminPassword": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/companies/{companyCode}": {
+      "schema": "BakeryCompany",
+      "description": "Collection storing bakery companies"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection storing all bakery inventory products"
+    },
+    "/sales/{saleId}": {
+      "schema": "SaleHistoryItem",
+      "description": "Collection storing sales history"
+    },
+    "/tickets/{ticketId}": {
+      "schema": "SupportTicket",
+      "description": "Collection storing support tickets"
+    },
+    "/settings/{settingId}": {
+      "schema": "AdminSettings",
+      "description": "Global admin app configuration"
+    }
+  }
+}

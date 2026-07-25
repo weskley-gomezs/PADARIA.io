@@ -48,14 +48,7 @@ export default function App() {
     const unsubComp = StorageService.subscribeCompanies((companies) => {
       const code = StorageService.getActiveBakeryCode();
       if (code) {
-        const cleanCode = code.trim().toUpperCase();
-        const cleanNoPrefix = cleanCode.replace(/^PAD-/, '');
-        const comp = companies.find((c) => {
-          if (!c.codigoAtivacao) return false;
-          const compCode = c.codigoAtivacao.trim().toUpperCase();
-          return compCode === cleanCode || compCode.replace(/^PAD-/, '') === cleanNoPrefix;
-        });
-
+        const comp = companies.find(c => c.codigoAtivacao.toUpperCase() === code.trim().toUpperCase());
         if (comp && comp.ativo) {
           setActiveCompany(comp);
         } else {

@@ -96,21 +96,14 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
   useEffect(() => {
     const unsubCompanies = StorageService.subscribeCompanies((companies) => {
       if (activeCode) {
-        const cleanActive = activeCode.trim().toUpperCase();
-        const cleanNoPrefix = cleanActive.replace(/^PAD-/, '');
-        const comp = companies.find((c) => {
-          if (!c.codigoAtivacao) return false;
-          const compCode = c.codigoAtivacao.trim().toUpperCase();
-          return compCode === cleanActive || compCode.replace(/^PAD-/, '') === cleanNoPrefix;
-        });
-
+        const comp = companies.find(c => c.codigoAtivacao.toUpperCase() === activeCode.trim().toUpperCase());
         if (comp && comp.ativo) {
           setCompany(comp);
           setLoginError('');
         } else if (comp && !comp.ativo) {
           setLoginError('Empresa inativa. Entre em contato com o suporte/administrador.');
           setCompany(null);
-        } else if (companies.length > 0) {
+        } else {
           setLoginError('Código de ativação não encontrado.');
           setCompany(null);
         }
@@ -150,18 +143,17 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     const cleanCode = codeInput.trim().toUpperCase();
 
-    if (!cleanCode || cleanCode.length < 3) {
-      setLoginError('Informe um código de ativação válido.');
+    if (cleanCode.length !== 8) {
+      setLoginError('O código de ativação deve conter exatamente 8 caracteres.');
       return;
     }
 
-    const comp = await StorageService.findCompanyByCodeAsync(cleanCode);
-
+    const comp = StorageService.getCompanyByCode(cleanCode);
     if (!comp) {
       setLoginError('Código de ativação inválido. Verifique com o seu administrador.');
       return;
@@ -172,9 +164,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
       return;
     }
 
-    StorageService.setActiveBakeryCode(comp.codigoAtivacao);
-    setActiveCode(comp.codigoAtivacao);
-    setCompany(comp);
+    StorageService.setActiveBakeryCode(cleanCode);
+    setActiveCode(cleanCode);
     setCodeInput('');
   };
 
