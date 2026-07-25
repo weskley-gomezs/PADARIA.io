@@ -226,102 +226,41 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </p>
           </div>
 
-          {/* Hero Mockup Preview (Notebook, Tablet, Celular) */}
+          {/* Hero Mockup Preview (Dashboard Real) */}
           <div className="mt-16 relative max-w-5xl mx-auto">
             <div className="relative rounded-3xl bg-black p-3 sm:p-5 shadow-2xl border border-gray-800">
               {/* Top window dots */}
-              <div className="flex items-center space-x-2 mb-3 px-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <div className="w-3 h-3 rounded-full bg-amber-500" />
-                <div className="w-3 h-3 rounded-full bg-orange-500" />
-                <span className="text-[11px] font-mono text-gray-400 ml-2">https://app.padaria.io/dashboard</span>
+              <div className="flex items-center justify-between mb-3 px-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <div className="w-3 h-3 rounded-full bg-amber-500" />
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <span className="text-[11px] font-mono text-gray-400 ml-2 hidden sm:inline">https://app.padaria.io/dashboard</span>
+                </div>
+                <div className="text-[11px] font-bold text-[#FF6B00] bg-[#FF6B00]/10 px-2.5 py-0.5 rounded-full border border-[#FF6B00]/20">
+                  ● Painel Operacional do Sistema
+                </div>
               </div>
 
-              {/* Mockup Screen Content */}
-              <div className="rounded-2xl bg-white overflow-hidden border border-gray-200 shadow-inner">
-                <div className="bg-[#111111] text-white p-4 sm:p-6 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#FF6B00] text-black font-black flex items-center justify-center text-sm">
-                      P
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm sm:text-base">Padaria & Confeitaria Sabor d'Ouro</h3>
-                      <p className="text-[11px] text-gray-400 font-mono">Código Ativação: 8SSHQQTZ • Operação Ativa</p>
-                    </div>
-                  </div>
-                  <div className="hidden sm:flex items-center space-x-2">
-                    <span className="px-3 py-1 rounded-lg bg-orange-500/20 text-[#FF6B00] text-xs font-bold border border-orange-500/30">
-                      ● Sistema em Tempo Real
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-4 sm:p-8 space-y-6 bg-gray-50">
-                  {/* Metric Cards Row */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs">
-                      <div className="text-[10px] font-bold text-red-600 uppercase">Prejuízo Evitado (Mês)</div>
-                      <div className="text-xl sm:text-2xl font-black text-gray-900 mt-1">R$ 2.450,00</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs">
-                      <div className="text-[10px] font-bold text-amber-600 uppercase">Vencendo em 48h</div>
-                      <div className="text-xl sm:text-2xl font-black text-gray-900 mt-1">14 itens</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs">
-                      <div className="text-[10px] font-bold text-orange-600 uppercase">Cadastro por IA</div>
-                      <div className="text-xl sm:text-2xl font-black text-orange-600 mt-1">1.4s méd.</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs">
-                      <div className="text-[10px] font-bold text-gray-600 uppercase">Eficiência</div>
-                      <div className="text-xl sm:text-2xl font-black text-gray-900 mt-1">98.4%</div>
-                    </div>
-                  </div>
-
-                  {/* Active Table Preview */}
-                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-2xs">
-                    <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                      <span className="font-extrabold text-xs text-gray-800 uppercase tracking-wider">Monitoramento de Validade & Lotes</span>
-                      <span className="text-[11px] font-bold text-[#FF6B00] bg-orange-50 px-2.5 py-1 rounded-lg">IA Ativa</span>
-                    </div>
-                    <div className="divide-y divide-gray-100 text-xs">
-                      <div className="p-3.5 flex items-center justify-between hover:bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                          <span className="w-2 h-2 rounded-full bg-orange-500" />
-                          <span className="font-bold text-gray-900">Pão Integral Artesanal 500g</span>
-                        </div>
-                        <span className="text-gray-500">Validade: 28/07/2026 (5 dias)</span>
-                        <span className="font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded">Normal</span>
-                      </div>
-                      <div className="p-3.5 flex items-center justify-between hover:bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                          <span className="w-2 h-2 rounded-full bg-amber-500" />
-                          <span className="font-bold text-gray-900">Bolo de Chocolate Recheado</span>
-                        </div>
-                        <span className="text-gray-500">Validade: 24/07/2026 (Hoje)</span>
-                        <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Vencendo</span>
-                      </div>
-                      <div className="p-3.5 flex items-center justify-between hover:bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                          <span className="w-2 h-2 rounded-full bg-red-500" />
-                          <span className="font-bold text-gray-900">Leite Pasteurizado 1L (Lote 04)</span>
-                        </div>
-                        <span className="text-gray-500">Validade: 22/07/2026 (Vencido)</span>
-                        <span className="font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded">Descartar</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              {/* Real Dashboard Image */}
+              <div className="rounded-2xl overflow-hidden border border-gray-800 bg-gray-950 shadow-inner">
+                <img
+                  src="https://i.imgur.com/SZmyvPr.png"
+                  alt="Dashboard Padaria.io"
+                  className="w-full h-auto object-cover rounded-xl"
+                  referrerPolicy="no-referrer"
+                />
               </div>
             </div>
 
             {/* Floating badges */}
-            <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-gray-200 hidden sm:flex items-center space-x-3 animate-bounce">
+            <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-gray-200 hidden sm:flex items-center space-x-3">
               <div className="w-10 h-10 rounded-xl bg-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center font-bold">
                 ⚡
               </div>
               <div>
-                <div className="text-xs font-black text-gray-900">Cadastro por IA</div>
-                <div className="text-[10px] text-gray-500">Foto da etiqueta → Salvo!</div>
+                <div className="text-xs font-black text-gray-900">Dashboard em Tempo Real</div>
+                <div className="text-[10px] text-gray-500 font-medium">Gestão inteligente de perdas e validade</div>
               </div>
             </div>
           </div>
@@ -526,43 +465,108 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="space-y-6 animate-fade-in">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-800">
                   <div>
-                    <h3 className="text-lg font-black text-white">Dashboard Geral da Panificadora</h3>
-                    <p className="text-xs text-gray-400">Visão consolidada do mês atual</p>
+                    <h3 className="text-lg font-black text-white">Dashboard Operacional do Sistema</h3>
+                    <p className="text-xs text-gray-400">Visão completa do painel de controle da padaria</p>
                   </div>
                   <span className="px-3 py-1 rounded-full bg-[#FF6B00]/20 text-[#FF6B00] text-xs font-bold border border-[#FF6B00]/30">
-                    Atualizado agora
+                    ● Tela Real do Sistema
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-black/50 p-5 rounded-2xl border border-gray-800">
-                    <div className="text-xs text-red-400 font-bold">Prejuízo Mensal Acumulado</div>
-                    <div className="text-2xl font-black text-white mt-1">R$ 1.890,00</div>
-                  </div>
-                  <div className="bg-black/50 p-5 rounded-2xl border border-gray-800">
-                    <div className="text-xs text-amber-400 font-bold">Itens Vencendo Hoje</div>
-                    <div className="text-2xl font-black text-white mt-1">5 unidades</div>
-                  </div>
-                  <div className="bg-black/50 p-5 rounded-2xl border border-gray-800">
-                    <div className="text-xs text-orange-400 font-bold">Economia Gerada por IA</div>
-                    <div className="text-2xl font-black text-[#FF6B00] mt-1">R$ 1.250,00</div>
-                  </div>
+                <div className="rounded-2xl overflow-hidden border border-gray-800 bg-black shadow-2xl">
+                  <img
+                    src="https://i.imgur.com/SZmyvPr.png"
+                    alt="Dashboard do Sistema Padaria.io"
+                    className="w-full h-auto object-cover rounded-xl"
+                    referrerPolicy="no-referrer"
+                  />
                 </div>
               </div>
             )}
 
             {activeMockupTab === 'ia' && (
-              <div className="space-y-6 animate-fade-in text-center max-w-xl mx-auto py-8">
-                <div className="w-16 h-16 rounded-3xl bg-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center mx-auto text-2xl font-bold">
-                  📸
+              <div className="space-y-6 animate-fade-in">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-gray-800 gap-2">
+                  <div>
+                    <h3 className="text-lg font-black text-white">Inteligência Artificial Lendo Produtos em Tempo Real</h3>
+                    <p className="text-xs text-gray-400">Exemplos reais de leitura e extração automática de dados dos rótulos</p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-[#FF6B00]/20 text-[#FF6B00] text-xs font-bold border border-[#FF6B00]/30">
+                    ⚡ 3 Fotos Processadas pela IA
+                  </span>
                 </div>
-                <h3 className="text-xl font-black text-white">Scanner Inteligente por IA</h3>
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  Basta apontar a câmera do celular para qualquer etiqueta de balança ou embalagem. Nossa inteligência artificial extrai automaticamente nome, validade, peso e preço em menos de 2 segundos.
-                </p>
-                <div className="p-4 bg-black/60 rounded-2xl border border-gray-800 text-left space-y-2 text-xs font-mono">
-                  <div className="text-[#FF6B00]">✓ Produto Detectado: Pão de Centeio Artesanal</div>
-                  <div>✓ Validade Identificada: 29/07/2026</div>
-                  <div>✓ Preço por Kg: R$ 24,90</div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Photo 1 */}
+                  <div className="bg-black/60 rounded-2xl border border-gray-800 overflow-hidden flex flex-col group hover:border-[#FF6B00] transition-all">
+                    <div className="relative aspect-3/4 overflow-hidden bg-gray-950">
+                      <img
+                        src="https://i.imgur.com/NMV1vLB.jpeg"
+                        alt="IA Lendo Produto 1"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#FF6B00] border border-[#FF6B00]/30">
+                        🤖 Leitura IA #1
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-2 text-xs">
+                      <div className="font-bold text-white flex items-center justify-between">
+                        <span>Leitura de Rótulo</span>
+                        <span className="text-[10px] text-green-400 font-mono">1.2s</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400 leading-snug">
+                        Identificação precisa do nome do produto, data de validade e peso líquido impresso na etiqueta.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Photo 2 */}
+                  <div className="bg-black/60 rounded-2xl border border-gray-800 overflow-hidden flex flex-col group hover:border-[#FF6B00] transition-all">
+                    <div className="relative aspect-3/4 overflow-hidden bg-gray-950">
+                      <img
+                        src="https://i.imgur.com/Mu71dit.jpeg"
+                        alt="IA Lendo Produto 2"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#FF6B00] border border-[#FF6B00]/30">
+                        🤖 Leitura IA #2
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-2 text-xs">
+                      <div className="font-bold text-white flex items-center justify-between">
+                        <span>Reconhecimento de Balança</span>
+                        <span className="text-[10px] text-green-400 font-mono">1.1s</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400 leading-snug">
+                        Extração automática de valores por KG, preço total e código de barras sem necessidade de digitação.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Photo 3 */}
+                  <div className="bg-black/60 rounded-2xl border border-gray-800 overflow-hidden flex flex-col group hover:border-[#FF6B00] transition-all">
+                    <div className="relative aspect-3/4 overflow-hidden bg-gray-950">
+                      <img
+                        src="https://i.imgur.com/LB9lhBY.jpeg"
+                        alt="IA Lendo Produto 3"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#FF6B00] border border-[#FF6B00]/30">
+                        🤖 Leitura IA #3
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-2 text-xs">
+                      <div className="font-bold text-white flex items-center justify-between">
+                        <span>Análise de Validade</span>
+                        <span className="text-[10px] text-green-400 font-mono">1.4s</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400 leading-snug">
+                        Validação imediata da data de vencimento e cálculo automático de dias para descarte ou promoção.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

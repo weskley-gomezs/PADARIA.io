@@ -94,6 +94,26 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
     await processImageBase64(imageBase64);
   };
 
+  const handleSampleImage = async (url: string) => {
+    try {
+      setIsProcessing(true);
+      setError('');
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        setPreviewImage(base64);
+        await processImageBase64(base64);
+      };
+      reader.readAsDataURL(blob);
+    } catch (e: any) {
+      console.error('Erro ao carregar imagem de exemplo:', e);
+      setError('Erro ao carregar a imagem de exemplo.');
+      setIsProcessing(false);
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -204,6 +224,39 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
             <Upload className="w-4 h-4 text-gray-600" />
             <span>{cameraAvailable ? 'Ou Escolher Imagem da Galeria' : 'Escolher Foto do Rótulo'}</span>
           </button>
+
+          {/* Sample AI Images */}
+          <div className="pt-2 border-t border-gray-200 space-y-1.5">
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block text-center">
+              Ou teste com exemplos reais da IA:
+            </span>
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { url: 'https://i.imgur.com/NMV1vLB.jpeg', label: 'Rótulo 1' },
+                { url: 'https://i.imgur.com/Mu71dit.jpeg', label: 'Rótulo 2' },
+                { url: 'https://i.imgur.com/LB9lhBY.jpeg', label: 'Rótulo 3' },
+              ].map((sample, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSampleImage(sample.url)}
+                  disabled={isProcessing}
+                  className="relative group rounded-xl overflow-hidden border border-gray-200 hover:border-[#E8571A] transition-all aspect-4/3 bg-black cursor-pointer disabled:opacity-50"
+                  title="Clique para testar a IA com esta foto"
+                >
+                  <img
+                    src={sample.url}
+                    alt={sample.label}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-black/80 text-white text-[9px] font-bold text-center py-0.5">
+                    {sample.label}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <p className="text-[11px] text-gray-500 text-center pt-1">
             Aponte a câmera para o rótulo do produto ou envie uma foto com o nome e validade visíveis.
