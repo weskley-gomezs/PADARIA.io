@@ -197,6 +197,23 @@ try {
     }
   });
 
+  async function parseAsaasResponse(res: any): Promise<any> {
+    try {
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (jsonErr) {
+        console.error(`[ASAAS] Resposta não-JSON recebida (Status ${res.status}):`, text.substring(0, 200));
+        return {
+          error: `O servidor do Asaas retornou uma resposta inesperada (HTTP ${res.status}). Verifique a ASAAS_API_KEY e o ambiente.`,
+          raw: text.substring(0, 200),
+        };
+      }
+    } catch (err: any) {
+      return { error: `Erro ao ler resposta do Asaas: ${err.message}` };
+    }
+  }
+
   app.post('/api/asaas/create-subscription', async (req, res) => {
     console.log("[ROUTE] POST /api/asaas/create-subscription - Recebido");
     try {
@@ -244,10 +261,10 @@ try {
         }),
       });
 
-      const customerData = await customerRes.json();
-      if (!customerRes.ok) {
+      const customerData = await parseAsaasResponse(customerRes);
+      if (!customerRes.ok || customerData.error) {
         console.error('[ASAAS] Erro ao criar cliente no Asaas:', customerData);
-        return res.status(400).json({ error: 'Erro ao criar cliente no Asaas', details: customerData });
+        return res.status(400).json({ error: customerData.error || 'Erro ao criar cliente no Asaas', details: customerData });
       }
 
       const customerId = customerData.id;
@@ -278,10 +295,10 @@ try {
         }),
       });
 
-      const subData = await subRes.json();
-      if (!subRes.ok) {
+      const subData = await parseAsaasResponse(subRes);
+      if (!subRes.ok || subData.error) {
         console.error('[ASAAS] Erro ao criar assinatura no Asaas:', subData);
-        return res.status(400).json({ error: 'Erro ao criar assinatura no Asaas', details: subData });
+        return res.status(400).json({ error: subData.error || 'Erro ao criar assinatura no Asaas', details: subData });
       }
 
       console.log(`[ASAAS] Assinatura criada com sucesso: ${subData.id}`);
@@ -304,7 +321,7 @@ try {
             externalReference: extRef,
           }),
         });
-        const payData = await payRes.json();
+        const payData = await parseAsaasResponse(payRes);
         if (payRes.ok && (payData.invoiceUrl || payData.bankSlipUrl)) {
           paymentLink = payData.invoiceUrl || payData.bankSlipUrl;
         }
@@ -320,7 +337,7 @@ try {
             },
           });
           if (subPaymentsRes.ok) {
-            const subPaymentsData = await subPaymentsRes.json();
+            const subPaymentsData = await parseAsaasResponse(subPaymentsRes);
             if (subPaymentsData.data && subPaymentsData.data.length > 0) {
               const firstPayment = subPaymentsData.data[0];
               paymentLink = firstPayment.invoiceUrl || firstPayment.bankSlipUrl || '';
@@ -383,7 +400,7 @@ try {
               headers: { 'access_token': asaasApiKey },
             });
             if (subPayRes.ok) {
-              const subPayData = await subPayRes.json();
+              const subPayData = await parseAsaasResponse(subPayRes);
               if (subPayData.data && subPayData.data.length > 0) {
                 const firstPayment = subPayData.data[0];
                 paymentUrl = firstPayment.invoiceUrl || firstPayment.bankSlipUrl || firstPayment.paymentLink || '';
@@ -397,7 +414,7 @@ try {
               headers: { 'access_token': asaasApiKey },
             });
             if (custPayRes.ok) {
-              const custPayData = await custPayRes.json();
+              const custPayData = await parseAsaasResponse(custPayRes);
               if (custPayData.data && custPayData.data.length > 0) {
                 const firstPayment = custPayData.data[0];
                 paymentUrl = firstPayment.invoiceUrl || firstPayment.bankSlipUrl || firstPayment.paymentLink || '';
@@ -413,7 +430,7 @@ try {
               headers: { 'Content-Type': 'application/json', 'access_token': asaasApiKey },
               body: JSON.stringify({ name: empresa, email: email || 'financeiro@padaria.io', cpfCnpj: cnpj || undefined, phone: telefone || undefined, externalReference: extRef }),
             });
-            const custData = await custRes.json();
+            const custData = await parseAsaasResponse(custRes);
             if (custRes.ok && custData.id) {
               customerId = custData.id;
               // Create subscription
@@ -431,7 +448,7 @@ try {
                   externalReference: extRef,
                 }),
               });
-              const subData = await subRes.json();
+              const subData = await parseAsaasResponse(subRes);
               if (subRes.ok && subData.id) {
                 subscriptionId = subData.id;
                 paymentUrl = subData.invoiceUrl || subData.bankSlipUrl || '';

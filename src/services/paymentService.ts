@@ -35,6 +35,19 @@ export interface AsaasWebhookEvent {
   subscription?: AsaasSubscriptionPayload;
 }
 
+function cleanFirestoreData(obj: any): any {
+  if (obj === undefined) return null;
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(cleanFirestoreData);
+  const clean: Record<string, any> = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (val !== undefined) {
+      clean[key] = cleanFirestoreData(val);
+    }
+  }
+  return clean;
+}
+
 export class PaymentService {
   /**
    * Processa eventos do webhook do Asaas e atualiza o status de assinatura ('ativo' ou 'cancelado') das padarias na Firestore.
@@ -246,7 +259,8 @@ export class PaymentService {
       };
 
       // 6. Gravar atualização na coleção 'companies' no Firestore
-      await setDoc(doc(targetDb, 'companies', docId), updatedCompany);
+      const sanitizedCompany = cleanFirestoreData(updatedCompany);
+      await setDoc(doc(targetDb, 'companies', docId), sanitizedCompany);
 
       console.log(
         `[PAYMENT SERVICE] Firestore atualizado com SUCESSO para "${company.empresa}" (${company.codigoAtivacao}). Status Assinatura: ${newStatus}, Ativo: ${newAtivo}`
