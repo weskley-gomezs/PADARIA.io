@@ -43,7 +43,12 @@ export const WhatsAppMessageModal: React.FC<WhatsAppMessageModalProps> = ({
   if (!company) return null;
 
   const generateMessage = (type: TemplateType, c: BakeryCompany, phone: string) => {
-    const link = c.financeiro?.asaasPaymentLink || 'https://padariaio.com';
+    const currentDomain = typeof window !== 'undefined' ? window.location.origin : 'https://padariaio.com';
+    const link = c.financeiro?.asaasPaymentLink 
+      || c.financeiro?.ultimoLinkPagamento 
+      || (c.financeiro?.historicoCobrancas && c.financeiro.historicoCobrancas[0]?.linkBoleto)
+      || currentDomain;
+
     const valorMensal = (c.financeiro?.valorMensalidade || 199).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     const valorImp = (c.financeiro?.valorImplementacao || 1500).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     const dataVenc = formatDateToBR(c.financeiro?.dataProximaCobranca || '');
@@ -60,7 +65,7 @@ export const WhatsAppMessageModal: React.FC<WhatsAppMessageModalProps> = ({
         break;
 
       case 'boas_vindas':
-        text = `Seja bem-vindo ao *PADARIA.io*! 🚀\n\nO cadastro da *${c.empresa}* foi concluído com sucesso.\n\n🔑 *Sua Chave de Ativação / Código:* \`${c.codigoAtivacao}\` \n\nPara acessar o sistema:\n1. Acesse: https://padariaio.com\n2. Digite o código de 8 dígitos: *${c.codigoAtivacao}*\n3. Pronto! Seu controle de validade está ativo.`;
+        text = `Seja bem-vindo ao *PADARIA.io*! 🚀\n\nO cadastro da *${c.empresa}* foi concluído com sucesso.\n\n🔑 *Sua Chave de Ativação / Código:* \`${c.codigoAtivacao}\` \n\nPara acessar o sistema:\n1. Acesse: ${currentDomain}\n2. Digite o código de 8 dígitos: *${c.codigoAtivacao}*\n3. Pronto! Seu controle de validade está ativo.`;
         break;
 
       case 'implementacao':

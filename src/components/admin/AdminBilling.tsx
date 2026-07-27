@@ -106,10 +106,12 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
       showToast(`Enviando evento de Webhook Asaas (${eventType})...`);
       const payload = {
         event: eventType,
+        externalReference: company.codigoAtivacao,
         payment: {
           id: 'pay_test_' + Date.now(),
           customer: company.financeiro?.asaasCustomerId || 'cus_test',
           subscription: company.financeiro?.asaasSubscriptionId || 'sub_test',
+          externalReference: company.codigoAtivacao,
           value: company.financeiro?.valorMensalidade || 199,
           status: eventType === 'PAYMENT_CONFIRMED' ? 'CONFIRMED' : 'CANCELLED',
           description: 'Mensalidade Assinatura PADARIA.io - Pagamento Confirmado',
@@ -117,6 +119,7 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
         subscription: {
           id: company.financeiro?.asaasSubscriptionId || 'sub_test',
           customer: company.financeiro?.asaasCustomerId || 'cus_test',
+          externalReference: company.codigoAtivacao,
           status: eventType === 'PAYMENT_CONFIRMED' ? 'ACTIVE' : 'INACTIVE',
         },
       };
@@ -136,6 +139,20 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
       }
     } catch (err: any) {
       showToast(`Erro ao simular webhook: ${err.message}`);
+    }
+  };
+
+  const handleCopyPaymentLink = (company: BakeryCompany) => {
+    const fin = company.financeiro;
+    const link = fin?.asaasPaymentLink 
+      || fin?.ultimoLinkPagamento 
+      || (fin?.historicoCobrancas && fin.historicoCobrancas[0]?.linkBoleto);
+
+    if (link) {
+      navigator.clipboard.writeText(link);
+      showToast(`📋 Link do Asaas para ${company.empresa} copiado com sucesso!`);
+    } else {
+      showToast(`⚠️ Nenhum link de pagamento do Asaas cadastrado para ${company.empresa}.`);
     }
   };
 
@@ -540,6 +557,16 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
                             >
                               <MessageSquare className="w-3.5 h-3.5" />
                               <span>WhatsApp</span>
+                            </button>
+
+                            {/* Copy Asaas Payment Link */}
+                            <button
+                              onClick={() => handleCopyPaymentLink(c)}
+                              className="px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] transition-all cursor-pointer inline-flex items-center space-x-1 border border-blue-200"
+                              title="Copiar Link de Pagamento do Asaas para o Cliente"
+                            >
+                              <Link2 className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Link Asaas</span>
                             </button>
 
                             <button

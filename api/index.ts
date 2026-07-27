@@ -205,6 +205,7 @@ try {
         email,
         telefone,
         cnpj,
+        codigoAtivacao,
         valorImplementacao,
         valorMensalidade,
         teste1Dia,
@@ -225,6 +226,8 @@ try {
 
       console.log(`[ASAAS] Conectando ao Asaas (${asaasEnvironment})...`);
 
+      const extRef = codigoAtivacao ? String(codigoAtivacao).trim().toUpperCase() : undefined;
+
       // 1. Create or find customer in Asaas
       const customerRes = await fetch(`${baseUrl}/customers`, {
         method: 'POST',
@@ -237,6 +240,7 @@ try {
           email: email,
           cpfCnpj: cnpj || undefined,
           phone: telefone || undefined,
+          externalReference: extRef,
         }),
       });
 
@@ -247,7 +251,7 @@ try {
       }
 
       const customerId = customerData.id;
-      console.log(`[ASAAS] Cliente criado com sucesso: ${customerId}`);
+      console.log(`[ASAAS] Cliente criado com sucesso: ${customerId} (extRef: ${extRef})`);
 
       // Calculate next due date (1 day trial if requested)
       const today = new Date();
@@ -270,6 +274,7 @@ try {
           nextDueDate: nextDueDate,
           cycle: 'MONTHLY',
           description: 'Assinatura Mensal PADARIA.io - Controle de Desperdícios',
+          externalReference: extRef,
         }),
       });
 
@@ -296,11 +301,33 @@ try {
             value: valorImplementacao,
             dueDate: new Date().toISOString().split('T')[0],
             description: 'Taxa de Implementação - PADARIA.io',
+            externalReference: extRef,
           }),
         });
         const payData = await payRes.json();
-        if (payRes.ok && payData.invoiceUrl) {
-          paymentLink = payData.invoiceUrl;
+        if (payRes.ok && (payData.invoiceUrl || payData.bankSlipUrl)) {
+          paymentLink = payData.invoiceUrl || payData.bankSlipUrl;
+        }
+      }
+
+      // If paymentLink is still empty, fetch the pending payments for this subscription
+      if (!paymentLink && subData.id) {
+        try {
+          const subPaymentsRes = await fetch(`${baseUrl}/subscriptions/${subData.id}/payments`, {
+            headers: {
+              'Content-Type': 'application/json',
+              'access_token': asaasApiKey,
+            },
+          });
+          if (subPaymentsRes.ok) {
+            const subPaymentsData = await subPaymentsRes.json();
+            if (subPaymentsData.data && subPaymentsData.data.length > 0) {
+              const firstPayment = subPaymentsData.data[0];
+              paymentLink = firstPayment.invoiceUrl || firstPayment.bankSlipUrl || '';
+            }
+          }
+        } catch (err) {
+          console.warn('[ASAAS] Aviso ao consultar cobranças da assinatura:', err);
         }
       }
 
@@ -308,7 +335,7 @@ try {
         success: true,
         customerId,
         subscriptionId: subData.id,
-        paymentLink: paymentLink || `https://sandbox.asaas.com/i/${subData.id}`,
+        paymentLink: paymentLink || '',
         nextDueDate,
         asaasEnvironment,
       });

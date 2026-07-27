@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { BakeryCompany, BillingStatus, BillingInfo } from '../types';
 
@@ -6,6 +6,7 @@ export interface AsaasPaymentPayload {
   id: string;
   customer: string;
   subscription?: string;
+  externalReference?: string;
   value: number;
   netValue?: number;
   billingType?: string;
@@ -20,6 +21,7 @@ export interface AsaasPaymentPayload {
 export interface AsaasSubscriptionPayload {
   id: string;
   customer: string;
+  externalReference?: string;
   status: string; // ACTIVE, INACTIVE, CANCELLED
   value?: number;
 }
@@ -28,6 +30,7 @@ export interface AsaasWebhookEvent {
   id?: string;
   event: string;
   dateCreated?: string;
+  externalReference?: string;
   payment?: AsaasPaymentPayload;
   subscription?: AsaasSubscriptionPayload;
 }
@@ -35,6 +38,7 @@ export interface AsaasWebhookEvent {
 export class PaymentService {
   /**
    * Processa eventos do webhook do Asaas e atualiza o status de assinatura ('ativo' ou 'cancelado') das padarias na Firestore.
+   * Busca a padaria pelo campo 'externalReference' (código da padaria) ou por customerId / subscriptionId.
    */
   static async processAsaasWebhook(
     eventPayload: AsaasWebhookEvent,
@@ -59,53 +63,79 @@ export class PaymentService {
       const payment = eventPayload.payment;
       const subscription = eventPayload.subscription;
 
+      // Extrair externalReference (código da padaria) de qualquer nó do payload
+      const externalReference = (
+        payment?.externalReference ||
+        subscription?.externalReference ||
+        eventPayload.externalReference ||
+        (eventPayload as any).payment?.externalReference
+      )?.trim().toUpperCase();
+
       const customerId = payment?.customer || subscription?.customer;
       const subscriptionId = payment?.subscription || subscription?.id;
 
-      if (!customerId && !subscriptionId) {
+      if (!externalReference && !customerId && !subscriptionId) {
         return {
           success: false,
-          message: 'Evento do Asaas não possui customer ID ou subscription ID para vincular à padaria.',
+          message: 'Evento do Asaas não possui externalReference (código da padaria), customer ID nem subscription ID.',
         };
       }
 
-      // 1. Buscar todas as empresas cadastradas na coleção 'companies' da Firestore
       const targetDb = firestoreDb || db;
-      const companiesRef = collection(targetDb, 'companies');
-      const snapshot = await getDocs(companiesRef);
-
-      if (snapshot.empty) {
-        console.warn('[PAYMENT SERVICE] Nenhuma padaria cadastrada na coleção "companies" da Firestore.');
-        return {
-          success: false,
-          message: 'Nenhuma empresa encontrada no Firestore.',
-        };
-      }
-
       let matchedCompany: BakeryCompany | null = null;
       let matchedDocId: string | null = null;
 
-      // Buscar padaria pelo ID de assinatura do Asaas ou pelo ID de Cliente do Asaas
-      snapshot.forEach((d) => {
-        const company = d.data() as BakeryCompany;
-        const fin = company?.financeiro;
-
-        if (
-          (subscriptionId && fin?.asaasSubscriptionId === subscriptionId) ||
-          (customerId && fin?.asaasCustomerId === customerId)
-        ) {
-          matchedCompany = company;
-          matchedDocId = d.id || company.codigoAtivacao;
+      // 1. Tentar busca direta no Firestore via externalReference (código da padaria)
+      if (externalReference) {
+        try {
+          const directDocRef = doc(targetDb, 'companies', externalReference);
+          const directDocSnap = await getDoc(directDocRef);
+          if (directDocSnap.exists()) {
+            matchedCompany = directDocSnap.data() as BakeryCompany;
+            matchedDocId = externalReference;
+            console.log(`[PAYMENT SERVICE] Padaria encontrada por externalReference direto: ${externalReference}`);
+          }
+        } catch (e) {
+          console.warn('[PAYMENT SERVICE] Aviso na busca por externalReference:', e);
         }
-      });
+      }
+
+      // 2. Se não encontrou por ID direto, buscar em toda a coleção 'companies'
+      if (!matchedCompany) {
+        const companiesRef = collection(targetDb, 'companies');
+        const snapshot = await getDocs(companiesRef);
+
+        if (!snapshot.empty) {
+          snapshot.forEach((d) => {
+            const company = d.data() as BakeryCompany;
+            const fin = company?.financeiro;
+            const companyCode = company.codigoAtivacao?.trim().toUpperCase();
+
+            // Match por código de ativacao == externalReference
+            if (externalReference && companyCode === externalReference) {
+              matchedCompany = company;
+              matchedDocId = d.id || company.codigoAtivacao;
+            }
+            // Match por ID de Assinatura ou Cliente do Asaas
+            else if (
+              !matchedCompany &&
+              ((subscriptionId && fin?.asaasSubscriptionId === subscriptionId) ||
+                (customerId && fin?.asaasCustomerId === customerId))
+            ) {
+              matchedCompany = company;
+              matchedDocId = d.id || company.codigoAtivacao;
+            }
+          });
+        }
+      }
 
       if (!matchedCompany || !matchedDocId) {
         console.warn(
-          `[PAYMENT SERVICE] Nenhuma padaria encontrada para Asaas Customer: ${customerId} / Subscription: ${subscriptionId}`
+          `[PAYMENT SERVICE] Nenhuma padaria encontrada para Asaas extRef: "${externalReference}", Customer: "${customerId}", Sub: "${subscriptionId}"`
         );
         return {
           success: false,
-          message: `Nenhuma padaria vinculada aos dados do Asaas (Customer: ${customerId}, Sub: ${subscriptionId}).`,
+          message: `Nenhuma padaria encontrada para os dados do Asaas (extRef: ${externalReference}, Customer: ${customerId}, Sub: ${subscriptionId}).`,
         };
       }
 
@@ -126,12 +156,12 @@ export class PaymentService {
       let newImplementacaoPaga: boolean = currentFin.implementacaoPaga;
       let newNextDueDate: string = currentFin.dataProximaCobranca;
 
-      // 2. Mapeamento de regras de negócios dos eventos do Asaas
+      // 3. Mapeamento dos eventos do Asaas para alterar status na Firestore
       switch (eventType) {
         case 'PAYMENT_CONFIRMED':
         case 'PAYMENT_RECEIVED':
         case 'PAYMENT_DUNNING_RECEIVED':
-          // Pagamento confirmado pelo Asaas: Ativa assinatura da padaria
+          // Pagamento confirmado pelo Asaas: Ativa assinatura da padaria na Firestore
           newStatus = 'ativo';
           newAtivo = true;
 
@@ -145,7 +175,7 @@ export class PaymentService {
             newImplementacaoPaga = true;
           }
 
-          // Atualizar a próxima data de cobrança para o próximo mês
+          // Atualizar a próxima data de cobrança
           if (payment?.dueDate) {
             const dueDateObj = new Date(payment.dueDate);
             dueDateObj.setMonth(dueDateObj.getMonth() + 1);
@@ -166,15 +196,15 @@ export class PaymentService {
         case 'PAYMENT_REFUNDED':
           // Cancelamento automático ou falta de pagamento recorrente no Asaas
           newStatus = 'cancelado';
-          newAtivo = false; // Bloqueia ou suspende o acesso automático
+          newAtivo = false; // Bloqueia ou suspende o acesso da padaria
           break;
 
         default:
-          console.log(`[PAYMENT SERVICE] Evento informativo do Asaas recebido: ${eventType}`);
+          console.log(`[PAYMENT SERVICE] Evento do Asaas recebido: ${eventType}`);
           break;
       }
 
-      // 3. Atualizar histórico de cobranças da padaria
+      // 4. Atualizar histórico de cobranças da padaria
       const existingHistory = currentFin.historicoCobrancas || [];
       if (payment && (eventType === 'PAYMENT_CONFIRMED' || eventType === 'PAYMENT_RECEIVED')) {
         const invoiceId = payment.id || 'inv_' + Date.now();
@@ -197,24 +227,29 @@ export class PaymentService {
         }
       }
 
-      // 4. Montar o objeto atualizado da empresa
+      // 5. Vincular IDs do Asaas caso ainda não estivessem gravados
+      const updatedFin: BillingInfo = {
+        ...currentFin,
+        statusAssinatura: newStatus,
+        implementacaoPaga: newImplementacaoPaga,
+        dataProximaCobranca: newNextDueDate,
+        historicoCobrancas: existingHistory,
+        asaasCustomerId: customerId || currentFin.asaasCustomerId,
+        asaasSubscriptionId: subscriptionId || currentFin.asaasSubscriptionId,
+        asaasPaymentLink: payment?.invoiceUrl || payment?.bankSlipUrl || currentFin.asaasPaymentLink,
+      };
+
       const updatedCompany: BakeryCompany = {
         ...company,
         ativo: newAtivo,
-        financeiro: {
-          ...currentFin,
-          statusAssinatura: newStatus,
-          implementacaoPaga: newImplementacaoPaga,
-          dataProximaCobranca: newNextDueDate,
-          historicoCobrancas: existingHistory,
-        },
+        financeiro: updatedFin,
       };
 
-      // 5. Gravar atualização na coleção 'companies' da Firestore
+      // 6. Gravar atualização na coleção 'companies' no Firestore
       await setDoc(doc(targetDb, 'companies', docId), updatedCompany);
 
       console.log(
-        `[PAYMENT SERVICE] Firestore atualizado com sucesso para "${company.empresa}" (${company.codigoAtivacao}). Status Assinatura: ${newStatus}, Ativo: ${newAtivo}`
+        `[PAYMENT SERVICE] Firestore atualizado com SUCESSO para "${company.empresa}" (${company.codigoAtivacao}). Status Assinatura: ${newStatus}, Ativo: ${newAtivo}`
       );
 
       return {
@@ -256,7 +291,7 @@ export class PaymentService {
         { merge: true }
       );
 
-      console.log(`[PAYMENT SERVICE] Status da padaria ${code} atualizado manualmente para ${newStatus} no Firestore.`);
+      console.log(`[PAYMENT SERVICE] Status da padaria ${code} atualizado para ${newStatus} no Firestore.`);
       return true;
     } catch (error) {
       console.error('[PAYMENT SERVICE] Erro ao atualizar status manualmente:', error);
@@ -264,3 +299,4 @@ export class PaymentService {
     }
   }
 }
+

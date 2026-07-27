@@ -460,7 +460,7 @@ export class StorageService {
           valor: Number(valorImplementacao) || 1500,
           tipo: 'implementacao',
           status: 'pendente',
-          linkBoleto: asaasInfo?.paymentLink || `https://sandbox.asaas.com/invoice/imp_${code}`,
+          linkBoleto: asaasInfo?.paymentLink || '',
         },
       ],
     };
