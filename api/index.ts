@@ -198,20 +198,48 @@ try {
   });
 
   async function parseAsaasResponse(res: any): Promise<any> {
+    const status = res.status;
+    const is2xx = res.ok || (status >= 200 && status < 300);
+
+    const headersLog = {
+      'content-type': res.headers?.get?.('content-type') || '',
+      'x-request-id': res.headers?.get?.('x-request-id') || '',
+      'date': res.headers?.get?.('date') || '',
+    };
+
+    let text = '';
     try {
-      const text = await res.text();
-      try {
-        return JSON.parse(text);
-      } catch (jsonErr) {
-        console.error(`[ASAAS] Resposta não-JSON recebida (Status ${res.status}):`, text.substring(0, 200));
-        return {
-          error: `O servidor do Asaas retornou uma resposta inesperada (HTTP ${res.status}). Verifique a ASAAS_API_KEY e o ambiente.`,
-          raw: text.substring(0, 200),
-        };
-      }
+      text = await res.text();
     } catch (err: any) {
-      return { error: `Erro ao ler resposta do Asaas: ${err.message}` };
+      console.error(`[ASAAS] Erro ao ler corpo da resposta (Status ${status}):`, err);
     }
+
+    console.log(`[ASAAS RESPONSE] HTTP Status: ${status}`);
+    console.log(`[ASAAS HEADERS]:`, JSON.stringify(headersLog));
+    console.log(`[ASAAS BODY]:`, text);
+
+    let parsedData: any = {};
+    try {
+      parsedData = text ? JSON.parse(text) : {};
+    } catch (jsonErr) {
+      console.warn(`[ASAAS] Resposta com corpo não-JSON (Status ${status})`);
+      parsedData = { rawText: text };
+    }
+
+    if (is2xx) {
+      return parsedData;
+    }
+
+    const errorDescription =
+      parsedData?.errors?.[0]?.description ||
+      parsedData?.error ||
+      `Erro na API Asaas (HTTP ${status})`;
+
+    return {
+      error: errorDescription,
+      details: parsedData,
+      _httpStatus: status,
+    };
   }
 
   app.post('/api/asaas/create-subscription', async (req, res) => {
@@ -262,13 +290,42 @@ try {
       });
 
       const customerData = await parseAsaasResponse(customerRes);
-      if (!customerRes.ok || customerData.error) {
-        console.error('[ASAAS] Erro ao criar cliente no Asaas:', customerData);
-        return res.status(400).json({ error: customerData.error || 'Erro ao criar cliente no Asaas', details: customerData });
+      let customerId = customerData?.id;
+
+      if (!customerRes.ok) {
+        console.warn(`[ASAAS] Aviso/Erro ao criar cliente (HTTP ${customerRes.status}). Buscando cliente existente...`);
+        if (extRef || email || cnpj) {
+          let searchUrl = `${baseUrl}/customers?`;
+          if (extRef) searchUrl += `externalReference=${encodeURIComponent(extRef)}`;
+          else if (email) searchUrl += `&email=${encodeURIComponent(email)}`;
+          else if (cnpj) searchUrl += `&cpfCnpj=${encodeURIComponent(cnpj)}`;
+
+          try {
+            const searchRes = await fetch(searchUrl, {
+              headers: { 'access_token': asaasApiKey }
+            });
+            if (searchRes.ok) {
+              const searchData = await parseAsaasResponse(searchRes);
+              if (searchData.data && searchData.data.length > 0) {
+                customerId = searchData.data[0].id;
+                console.log(`[ASAAS] Cliente existente localizado no Asaas: ${customerId}`);
+              }
+            }
+          } catch (sErr) {
+            console.warn('[ASAAS] Erro ao buscar cliente existente:', sErr);
+          }
+        }
+
+        if (!customerId) {
+          console.error('[ASAAS] Erro definitivo ao criar/localizar cliente no Asaas:', customerData);
+          return res.status(customerRes.status || 400).json({
+            error: customerData.error || 'Erro ao criar cliente no Asaas',
+            details: customerData
+          });
+        }
       }
 
-      const customerId = customerData.id;
-      console.log(`[ASAAS] Cliente criado com sucesso: ${customerId} (extRef: ${extRef})`);
+      console.log(`[ASAAS] Cliente Asaas obtido: ${customerId} (extRef: ${extRef})`);
 
       // Calculate next due date (1 day trial if requested)
       const today = new Date();
@@ -296,9 +353,12 @@ try {
       });
 
       const subData = await parseAsaasResponse(subRes);
-      if (!subRes.ok || subData.error) {
+      if (!subRes.ok) {
         console.error('[ASAAS] Erro ao criar assinatura no Asaas:', subData);
-        return res.status(400).json({ error: subData.error || 'Erro ao criar assinatura no Asaas', details: subData });
+        return res.status(subRes.status || 400).json({
+          error: subData.error || 'Erro ao criar assinatura no Asaas',
+          details: subData
+        });
       }
 
       console.log(`[ASAAS] Assinatura criada com sucesso: ${subData.id}`);
@@ -345,6 +405,22 @@ try {
           }
         } catch (err) {
           console.warn('[ASAAS] Aviso ao consultar cobranças da assinatura:', err);
+        }
+      }
+
+      if (extRef && db) {
+        try {
+          await setDoc(doc(db, 'companies', extRef), {
+            financeiro: {
+              asaasCustomerId: customerId || null,
+              asaasSubscriptionId: subData.id || null,
+              asaasPaymentLink: paymentLink || null,
+              ultimoLinkPagamento: paymentLink || null,
+              statusAssinatura: 'PENDENTE',
+            }
+          }, { merge: true });
+        } catch (e) {
+          console.warn('[FIRESTORE] Erro ao atualizar empresa no Firestore:', e);
         }
       }
 
