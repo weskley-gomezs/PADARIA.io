@@ -269,7 +269,7 @@ try {
       } = req.body;
 
       const asaasApiKey = process.env.ASAAS_API_KEY;
-      const asaasEnvironment = process.env.ASAAS_ENVIRONMENT || 'sandbox';
+      const asaasEnvironment = process.env.ASAAS_ENVIRONMENT || 'production';
 
       if (!asaasApiKey) {
         return res.status(400).json({ 
@@ -469,7 +469,7 @@ try {
       } = req.body;
 
       const asaasApiKey = process.env.ASAAS_API_KEY;
-      const asaasEnvironment = process.env.ASAAS_ENVIRONMENT || 'sandbox';
+      const asaasEnvironment = process.env.ASAAS_ENVIRONMENT || 'production';
 
       const baseUrl = asaasEnvironment === 'production'
         ? 'https://api.asaas.com/v3'
