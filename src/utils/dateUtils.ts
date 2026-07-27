@@ -1,4 +1,4 @@
-import { ProductStatus } from '../types';
+import { ProductStatus } from '../types/index.js';
 
 /**
  * Calculates the difference in calendar days between target date (YYYY-MM-DD) and today.

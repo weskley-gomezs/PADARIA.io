@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { BakeryCompany, ContractInfo } from '../types';
+import { BakeryCompany, ContractInfo } from '../types/index.js';
 
 export function generateContractPDF(company: BakeryCompany, customCnpj?: string) {
   const doc = new jsPDF({

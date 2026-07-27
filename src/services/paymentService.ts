@@ -1,6 +1,6 @@
 import { collection, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from './firebase';
-import { BakeryCompany, BillingStatus, BillingInfo } from '../types';
+import { db } from './firebase.js';
+import { BakeryCompany, BillingStatus, BillingInfo } from '../types/index.js';
 
 export interface AsaasPaymentPayload {
   id: string;
