@@ -247,9 +247,9 @@ export class PaymentService {
         implementacaoPaga: newImplementacaoPaga,
         dataProximaCobranca: newNextDueDate,
         historicoCobrancas: existingHistory,
-        asaasCustomerId: customerId || currentFin.asaasCustomerId,
-        asaasSubscriptionId: subscriptionId || currentFin.asaasSubscriptionId,
-        asaasPaymentLink: payment?.invoiceUrl || payment?.bankSlipUrl || currentFin.asaasPaymentLink,
+        asaasCustomerId: customerId || currentFin.asaasCustomerId || null,
+        asaasSubscriptionId: subscriptionId || currentFin.asaasSubscriptionId || null,
+        asaasPaymentLink: payment?.invoiceUrl || payment?.bankSlipUrl || currentFin.asaasPaymentLink || null,
       };
 
       const updatedCompany: BakeryCompany = {
@@ -296,12 +296,12 @@ export class PaymentService {
 
       await setDoc(
         companyDocRef,
-        {
+        cleanFirestoreData({
           ativo: isAtivo,
           financeiro: {
             statusAssinatura: newStatus,
           },
-        },
+        }),
         { merge: true }
       );
 

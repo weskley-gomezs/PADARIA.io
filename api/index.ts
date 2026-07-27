@@ -8,6 +8,18 @@ import fs from 'fs';
 import { GoogleGenAI, Type } from '@google/genai';
 import { PaymentService } from '../src/services/paymentService.js';
 
+function removeUndefined(obj: any): any {
+  if (obj === undefined) return null;
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(removeUndefined);
+
+  return Object.fromEntries(
+    Object.entries(obj)
+      .filter(([_, value]) => value !== undefined)
+      .map(([key, value]) => [key, removeUndefined(value)])
+  );
+}
+
 console.log("[INIT] Inicializando servidor Express em /api/index.ts...");
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -178,7 +190,7 @@ try {
           notas: 'Registrado via Leitura de Etiquetas IA',
         };
 
-        await setDoc(doc(db, 'products', productId), newProduct);
+        await setDoc(doc(db, 'products', productId), removeUndefined(newProduct));
         console.log(`[FIRESTORE] Confirmação de gravação do produto ${productId} no Firestore com SUCESSO!`);
         return res.json({
           ...result,
@@ -410,15 +422,15 @@ try {
 
       if (extRef && db) {
         try {
-          await setDoc(doc(db, 'companies', extRef), {
+          await setDoc(doc(db, 'companies', extRef), removeUndefined({
             financeiro: {
-              asaasCustomerId: customerId || null,
-              asaasSubscriptionId: subData.id || null,
+              asaasCustomerId: customerId ?? null,
+              asaasSubscriptionId: subData?.id ?? null,
               asaasPaymentLink: paymentLink || null,
               ultimoLinkPagamento: paymentLink || null,
               statusAssinatura: 'PENDENTE',
             }
-          }, { merge: true });
+          }), { merge: true });
         } catch (e) {
           console.warn('[FIRESTORE] Erro ao atualizar empresa no Firestore:', e);
         }
@@ -548,14 +560,14 @@ try {
       // Save updated link to Firestore if db is ready
       if (extRef && db && paymentUrl) {
         try {
-          await setDoc(doc(db, 'companies', extRef), {
+          await setDoc(doc(db, 'companies', extRef), removeUndefined({
             financeiro: {
-              asaasCustomerId: customerId || null,
-              asaasSubscriptionId: subscriptionId || null,
-              asaasPaymentLink: paymentUrl,
-              ultimoLinkPagamento: paymentUrl,
+              asaasCustomerId: customerId ?? null,
+              asaasSubscriptionId: subscriptionId ?? null,
+              asaasPaymentLink: paymentUrl || null,
+              ultimoLinkPagamento: paymentUrl || null,
             }
-          }, { merge: true });
+          }), { merge: true });
         } catch (e) {
           console.warn('[FIRESTORE] Erro ao salvar link do Asaas:', e);
         }

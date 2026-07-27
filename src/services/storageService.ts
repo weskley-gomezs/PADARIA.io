@@ -4,6 +4,20 @@ import { db, testFirestoreConnection } from './firebase.js';
 import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler.js';
 
+export function removeUndefined<T>(obj: T): T {
+  if (obj === undefined) return null as any;
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(removeUndefined) as any;
+
+  const clean: Record<string, any> = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (val !== undefined) {
+      clean[key] = removeUndefined(val);
+    }
+  }
+  return clean as T;
+}
+
 const KEYS = {
   COMPANIES: 'padarias_companies_v1',
   PRODUCTS: 'padarias_products_v1',
@@ -490,7 +504,7 @@ export class StorageService {
     companies.unshift(newCompany);
     setItem(KEYS.COMPANIES, companies);
 
-    await setDoc(doc(db, 'companies', code), newCompany).catch((e) => {
+    await setDoc(doc(db, 'companies', code), removeUndefined(newCompany)).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `companies/${code}`);
     });
 
@@ -504,7 +518,7 @@ export class StorageService {
       company.ativo = !company.ativo;
       setItem(KEYS.COMPANIES, companies);
 
-      await setDoc(doc(db, 'companies', code), company).catch((e) => {
+      await setDoc(doc(db, 'companies', code), removeUndefined(company)).catch((e) => {
         handleFirestoreError(e, OperationType.WRITE, `companies/${code}`);
       });
 
@@ -528,7 +542,7 @@ export class StorageService {
     setItem(KEYS.COMPANIES, companies);
 
     await deleteDoc(doc(db, 'companies', oldCode)).catch(() => {});
-    await setDoc(doc(db, 'companies', cleanNewCode), company).catch((e) => {
+    await setDoc(doc(db, 'companies', cleanNewCode), removeUndefined(company)).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `companies/${cleanNewCode}`);
     });
 
@@ -590,7 +604,7 @@ export class StorageService {
 
     comp.cnpj = cnpj.trim();
     setItem(KEYS.COMPANIES, companies);
-    await setDoc(doc(db, 'companies', code), comp).catch(() => {});
+    await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch(() => {});
     return comp;
   }
 
@@ -682,7 +696,7 @@ export class StorageService {
     };
 
     setItem(KEYS.COMPANIES, companies);
-    await setDoc(doc(db, 'companies', code), comp).catch(() => {});
+    await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch(() => {});
     return comp;
   }
 
@@ -767,7 +781,7 @@ export class StorageService {
     }
 
     setItem(KEYS.COMPANIES, companies);
-    await setDoc(doc(db, 'companies', code), comp).catch(() => {});
+    await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch(() => {});
     return comp;
   }
 
@@ -803,7 +817,7 @@ export class StorageService {
     };
 
     setItem(KEYS.COMPANIES, companies);
-    await setDoc(doc(db, 'companies', code), comp).catch(() => {});
+    await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch(() => {});
     return comp;
   }
 
@@ -839,7 +853,7 @@ export class StorageService {
     tickets.unshift(newTicket);
     setItem(KEYS.TICKETS, tickets);
 
-    await setDoc(doc(db, 'tickets', newTicket.id), newTicket).catch((e) => {
+    await setDoc(doc(db, 'tickets', newTicket.id), removeUndefined(newTicket)).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `tickets/${newTicket.id}`);
     });
 
@@ -865,7 +879,7 @@ export class StorageService {
 
     setItem(KEYS.TICKETS, tickets);
 
-    await setDoc(doc(db, 'tickets', ticketId), ticket).catch((e) => {
+    await setDoc(doc(db, 'tickets', ticketId), removeUndefined(ticket)).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `tickets/${ticketId}`);
     });
 
@@ -936,7 +950,7 @@ export class StorageService {
     products.unshift(newProduct);
     setItem(KEYS.PRODUCTS, products);
 
-    await setDoc(doc(db, 'products', newProduct.id), newProduct).catch((e) => {
+    await setDoc(doc(db, 'products', newProduct.id), removeUndefined(newProduct)).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `products/${newProduct.id}`);
     });
 
@@ -982,7 +996,7 @@ export class StorageService {
     products[index] = updated;
     setItem(KEYS.PRODUCTS, products);
 
-    await setDoc(doc(db, 'products', updated.id), updated).catch((e) => {
+    await setDoc(doc(db, 'products', updated.id), removeUndefined(updated)).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `products/${updated.id}`);
     });
 
@@ -1018,7 +1032,7 @@ export class StorageService {
     history.unshift(historyItem);
     setItem(KEYS.SALES_HISTORY, history);
 
-    await setDoc(doc(db, 'sales', historyItem.id), historyItem).catch((e) => {
+    await setDoc(doc(db, 'sales', historyItem.id), removeUndefined(historyItem)).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `sales/${historyItem.id}`);
     });
 
