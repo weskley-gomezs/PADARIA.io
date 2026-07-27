@@ -49,15 +49,15 @@ export interface BillingInfo {
   dataProximaCobranca: string; // YYYY-MM-DD
   statusAssinatura: BillingStatus;
   historicoCobrancas: InvoiceItem[];
-  ultimoLinkPagamento?: string;
+  ultimoLinkPagamento?: string | null;
   tipoUltimoLink?: 'implementacao' | 'mensalidade';
   diaVencimentoMensal?: number; // ex: 15
   teste1Dia?: boolean;
   dataFimTeste?: string;
-  asaasCustomerId?: string;
-  asaasSubscriptionId?: string;
-  asaasPaymentLink?: string;
-  asaasEnvironment?: 'sandbox' | 'production';
+  asaasCustomerId?: string | null;
+  asaasSubscriptionId?: string | null;
+  asaasPaymentLink?: string | null;
+  asaasEnvironment?: 'sandbox' | 'production' | null;
 }
 
 export interface ContractInfo {

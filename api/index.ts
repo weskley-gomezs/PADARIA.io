@@ -422,7 +422,7 @@ try {
 
       if (extRef && db) {
         try {
-          await setDoc(doc(db, 'companies', extRef), removeUndefined({
+          const compData = {
             financeiro: {
               asaasCustomerId: customerId ?? null,
               asaasSubscriptionId: subData?.id ?? null,
@@ -430,7 +430,9 @@ try {
               ultimoLinkPagamento: paymentLink || null,
               statusAssinatura: 'PENDENTE',
             }
-          }), { merge: true });
+          };
+          console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(compData));
+          await setDoc(doc(db, 'companies', extRef), removeUndefined(compData), { merge: true });
         } catch (e) {
           console.warn('[FIRESTORE] Erro ao atualizar empresa no Firestore:', e);
         }
@@ -560,14 +562,16 @@ try {
       // Save updated link to Firestore if db is ready
       if (extRef && db && paymentUrl) {
         try {
-          await setDoc(doc(db, 'companies', extRef), removeUndefined({
+          const compData = {
             financeiro: {
               asaasCustomerId: customerId ?? null,
               asaasSubscriptionId: subscriptionId ?? null,
               asaasPaymentLink: paymentUrl || null,
               ultimoLinkPagamento: paymentUrl || null,
             }
-          }), { merge: true });
+          };
+          console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(compData));
+          await setDoc(doc(db, 'companies', extRef), removeUndefined(compData), { merge: true });
         } catch (e) {
           console.warn('[FIRESTORE] Erro ao salvar link do Asaas:', e);
         }

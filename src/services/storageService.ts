@@ -4,18 +4,20 @@ import { db, testFirestoreConnection } from './firebase.js';
 import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler.js';
 
-export function removeUndefined<T>(obj: T): T {
-  if (obj === undefined) return null as any;
-  if (obj === null || typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) return obj.map(removeUndefined) as any;
-
-  const clean: Record<string, any> = {};
-  for (const [key, val] of Object.entries(obj)) {
-    if (val !== undefined) {
-      clean[key] = removeUndefined(val);
-    }
+export function removeUndefined(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(removeUndefined);
   }
-  return clean as T;
+
+  if (obj !== null && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([_, value]) => value !== undefined)
+        .map(([key, value]) => [key, removeUndefined(value)])
+    );
+  }
+
+  return obj;
 }
 
 const KEYS = {
@@ -461,11 +463,11 @@ export class StorageService {
       dataProximaCobranca: nextDueDateStr,
       statusAssinatura: teste1Dia ? 'ativo' : 'pendente',
       teste1Dia: teste1Dia,
-      asaasCustomerId: asaasInfo?.customerId,
-      asaasSubscriptionId: asaasInfo?.subscriptionId,
-      asaasPaymentLink: asaasInfo?.paymentLink,
-      asaasEnvironment: asaasInfo?.asaasEnvironment,
-      ultimoLinkPagamento: asaasInfo?.paymentLink,
+      asaasCustomerId: asaasInfo?.customerId || null,
+      asaasSubscriptionId: asaasInfo?.subscriptionId || null,
+      asaasPaymentLink: asaasInfo?.paymentLink || null,
+      asaasEnvironment: asaasInfo?.asaasEnvironment || 'sandbox',
+      ultimoLinkPagamento: asaasInfo?.paymentLink || null,
       tipoUltimoLink: 'implementacao',
       historicoCobrancas: [
         {
@@ -504,7 +506,10 @@ export class StorageService {
     companies.unshift(newCompany);
     setItem(KEYS.COMPANIES, companies);
 
-    await setDoc(doc(db, 'companies', code), removeUndefined(newCompany)).catch((e) => {
+    console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(newCompany));
+    const cleanData = removeUndefined(newCompany);
+
+    await setDoc(doc(db, 'companies', code), cleanData).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `companies/${code}`);
     });
 
@@ -518,6 +523,7 @@ export class StorageService {
       company.ativo = !company.ativo;
       setItem(KEYS.COMPANIES, companies);
 
+      console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(company));
       await setDoc(doc(db, 'companies', code), removeUndefined(company)).catch((e) => {
         handleFirestoreError(e, OperationType.WRITE, `companies/${code}`);
       });
@@ -542,6 +548,7 @@ export class StorageService {
     setItem(KEYS.COMPANIES, companies);
 
     await deleteDoc(doc(db, 'companies', oldCode)).catch(() => {});
+    console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(company));
     await setDoc(doc(db, 'companies', cleanNewCode), removeUndefined(company)).catch((e) => {
       handleFirestoreError(e, OperationType.WRITE, `companies/${cleanNewCode}`);
     });
@@ -604,6 +611,7 @@ export class StorageService {
 
     comp.cnpj = cnpj.trim();
     setItem(KEYS.COMPANIES, companies);
+    console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(comp));
     await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch(() => {});
     return comp;
   }
@@ -696,6 +704,7 @@ export class StorageService {
     };
 
     setItem(KEYS.COMPANIES, companies);
+    console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(comp));
     await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch(() => {});
     return comp;
   }
@@ -781,6 +790,7 @@ export class StorageService {
     }
 
     setItem(KEYS.COMPANIES, companies);
+    console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(comp));
     await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch(() => {});
     return comp;
   }
@@ -817,6 +827,7 @@ export class StorageService {
     };
 
     setItem(KEYS.COMPANIES, companies);
+    console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(comp));
     await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch(() => {});
     return comp;
   }

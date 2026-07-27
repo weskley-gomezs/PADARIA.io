@@ -259,6 +259,7 @@ export class PaymentService {
       };
 
       // 6. Gravar atualização na coleção 'companies' no Firestore
+      console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(updatedCompany));
       const sanitizedCompany = cleanFirestoreData(updatedCompany);
       await setDoc(doc(targetDb, 'companies', docId), sanitizedCompany);
 
