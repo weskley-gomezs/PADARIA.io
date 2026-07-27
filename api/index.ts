@@ -6,6 +6,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import fs from 'fs';
 import { GoogleGenAI, Type } from '@google/genai';
+import { PaymentService } from '../src/services/paymentService';
 
 console.log("[INIT] Inicializando servidor Express em /api/index.ts...");
 const app = express();
@@ -193,6 +194,149 @@ try {
         error: 'Erro ao processar imagem.',
         details: error.message
       });
+    }
+  });
+
+  app.post('/api/asaas/create-subscription', async (req, res) => {
+    console.log("[ROUTE] POST /api/asaas/create-subscription - Recebido");
+    try {
+      const {
+        empresa,
+        email,
+        telefone,
+        cnpj,
+        valorImplementacao,
+        valorMensalidade,
+        teste1Dia,
+      } = req.body;
+
+      const asaasApiKey = process.env.ASAAS_API_KEY;
+      const asaasEnvironment = process.env.ASAAS_ENVIRONMENT || 'sandbox';
+
+      if (!asaasApiKey) {
+        return res.status(400).json({ 
+          error: 'A chave de API do Asaas não está configurada no servidor (Vercel). Configure a variável de ambiente ASAAS_API_KEY.' 
+        });
+      }
+
+      const baseUrl = asaasEnvironment === 'production'
+        ? 'https://api.asaas.com/v3'
+        : 'https://sandbox.asaas.com/v3';
+
+      console.log(`[ASAAS] Conectando ao Asaas (${asaasEnvironment})...`);
+
+      // 1. Create or find customer in Asaas
+      const customerRes = await fetch(`${baseUrl}/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'access_token': asaasApiKey,
+        },
+        body: JSON.stringify({
+          name: empresa,
+          email: email,
+          cpfCnpj: cnpj || undefined,
+          phone: telefone || undefined,
+        }),
+      });
+
+      const customerData = await customerRes.json();
+      if (!customerRes.ok) {
+        console.error('[ASAAS] Erro ao criar cliente no Asaas:', customerData);
+        return res.status(400).json({ error: 'Erro ao criar cliente no Asaas', details: customerData });
+      }
+
+      const customerId = customerData.id;
+      console.log(`[ASAAS] Cliente criado com sucesso: ${customerId}`);
+
+      // Calculate next due date (1 day trial if requested)
+      const today = new Date();
+      if (teste1Dia) {
+        today.setDate(today.getDate() + 1);
+      }
+      const nextDueDate = today.toISOString().split('T')[0];
+
+      // 2. Create subscription in Asaas
+      const subRes = await fetch(`${baseUrl}/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'access_token': asaasApiKey,
+        },
+        body: JSON.stringify({
+          customer: customerId,
+          billingType: 'BOLETO',
+          value: valorMensalidade || 199,
+          nextDueDate: nextDueDate,
+          cycle: 'MONTHLY',
+          description: 'Assinatura Mensal PADARIA.io - Controle de Desperdícios',
+        }),
+      });
+
+      const subData = await subRes.json();
+      if (!subRes.ok) {
+        console.error('[ASAAS] Erro ao criar assinatura no Asaas:', subData);
+        return res.status(400).json({ error: 'Erro ao criar assinatura no Asaas', details: subData });
+      }
+
+      console.log(`[ASAAS] Assinatura criada com sucesso: ${subData.id}`);
+
+      // 3. Create implementation fee charge if valorImplementacao > 0
+      let paymentLink = subData.invoiceUrl || subData.bankSlipUrl || '';
+      if (valorImplementacao && valorImplementacao > 0) {
+        const payRes = await fetch(`${baseUrl}/payments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'access_token': asaasApiKey,
+          },
+          body: JSON.stringify({
+            customer: customerId,
+            billingType: 'BOLETO',
+            value: valorImplementacao,
+            dueDate: new Date().toISOString().split('T')[0],
+            description: 'Taxa de Implementação - PADARIA.io',
+          }),
+        });
+        const payData = await payRes.json();
+        if (payRes.ok && payData.invoiceUrl) {
+          paymentLink = payData.invoiceUrl;
+        }
+      }
+
+      return res.json({
+        success: true,
+        customerId,
+        subscriptionId: subData.id,
+        paymentLink: paymentLink || `https://sandbox.asaas.com/i/${subData.id}`,
+        nextDueDate,
+        asaasEnvironment,
+      });
+    } catch (error: any) {
+      console.error('[ROUTE] ERRO em /api/asaas/create-subscription:', error);
+      res.status(500).json({ error: 'Erro ao integrar com Asaas', details: error.message });
+    }
+  });
+
+  // Webhook for Asaas notifications
+  app.post('/api/asaas/webhook', async (req, res) => {
+    console.log("[ROUTE] POST /api/asaas/webhook - Evento recebido do Asaas", req.body);
+    try {
+      const eventPayload = req.body;
+      const result = await PaymentService.processAsaasWebhook(eventPayload, db);
+      
+      console.log(`[ASAAS WEBHOOK RESULT] ${result.message}`);
+
+      return res.json({ 
+        received: true, 
+        processed: result.success,
+        companyCode: result.companyCode,
+        updatedStatus: result.updatedStatus,
+        message: result.message
+      });
+    } catch (error: any) {
+      console.error('[ROUTE] ERRO em /api/asaas/webhook:', error);
+      return res.status(500).json({ error: error.message });
     }
   });
 

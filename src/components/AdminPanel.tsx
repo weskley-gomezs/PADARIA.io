@@ -19,6 +19,14 @@ import {
   FileText,
   HelpCircle,
   BookOpen,
+  Menu,
+  X,
+  RefreshCw,
+  LogOut,
+  Edit2,
+  Save,
+  CheckCircle2,
+  Users,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BakeryCompany, AdminStats, FinancialStats } from '../types';
@@ -39,16 +47,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [passwordError, setPasswordError] = useState<string>('');
 
-  // Active Tab
+  // Sidebar & Navigation
   const [activeTab, setActiveTab] = useState<AdminTab>('empresas');
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
-  // Form states
+  // Registration Form states
   const [empresaName, setEmpresaName] = useState<string>('');
   const [emailInput, setEmailInput] = useState<string>('');
   const [telefoneInput, setTelefoneInput] = useState<string>('');
   const [cnpjInput, setCnpjInput] = useState<string>('');
+  
+  // Custom Billing & Asaas Form States
+  const [valorImpInput, setValorImpInput] = useState<string>('1500');
+  const [valorMensalInput, setValorMensalInput] = useState<string>('199');
+  const [teste1DiaInput, setTeste1DiaInput] = useState<boolean>(false);
+  const [integrarAsaasInput, setIntegrarAsaasInput] = useState<boolean>(false);
+
   const [generatedCompany, setGeneratedCompany] = useState<BakeryCompany | null>(null);
-  const [copiedCode, setCopiedCode] = useState<boolean>(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Edit Key Modal State
+  const [editingCompanyKey, setEditingCompanyKey] = useState<BakeryCompany | null>(null);
+  const [newKeyInput, setNewKeyInput] = useState<string>('');
+  const [keyError, setKeyError] = useState<string>('');
 
   // Data states
   const [companies, setCompanies] = useState<BakeryCompany[]>([]);
@@ -108,12 +129,55 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
     }
 
     try {
-      const newComp = await StorageService.addCompany(empresaName, emailInput, telefoneInput, cnpjInput);
+      const valImp = Number(valorImpInput) || 1500;
+      const valMensal = Number(valorMensalInput) || 199;
+      let asaasInfo = undefined;
+
+      if (integrarAsaasInput) {
+        const res = await fetch('/api/asaas/create-subscription', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            empresa: empresaName,
+            email: emailInput,
+            telefone: telefoneInput,
+            cnpj: cnpjInput,
+            valorImplementacao: valImp,
+            valorMensalidade: valMensal,
+            teste1Dia: teste1DiaInput,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Erro ao conectar com o Asaas.');
+        }
+
+        asaasInfo = {
+          customerId: data.customerId,
+          subscriptionId: data.subscriptionId,
+          paymentLink: data.paymentLink,
+          asaasEnvironment: data.asaasEnvironment || 'sandbox',
+        };
+      }
+
+      const newComp = await StorageService.addCompany(
+        empresaName,
+        emailInput,
+        telefoneInput,
+        cnpjInput,
+        valImp,
+        valMensal,
+        teste1DiaInput,
+        asaasInfo
+      );
+
       setGeneratedCompany(newComp);
       setEmpresaName('');
       setEmailInput('');
       setTelefoneInput('');
       setCnpjInput('');
+      setIntegrarAsaasInput(false);
 
       // Trigger confetti
       confetti({
@@ -128,20 +192,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
   };
 
   const handleToggleStatus = async (code: string) => {
     await StorageService.toggleCompanyStatus(code);
+    loadAdminData();
   };
 
   const handleDeleteCompany = async (code: string, name: string) => {
-    if (confirm(`Tem certeza que deseja excluir a padaria "${name}"? Todos os produtos vinculados também serão removidos.`)) {
+    if (confirm(`Tem certeza que deseja excluir a empresa "${name}"? Todos os registros e produtos serão excluídos.`)) {
       await StorageService.deleteCompany(code);
       if (generatedCompany?.codigoAtivacao === code) {
         setGeneratedCompany(null);
       }
+      loadAdminData();
+    }
+  };
+
+  const handleOpenEditKey = (company: BakeryCompany) => {
+    setEditingCompanyKey(company);
+    setNewKeyInput(company.codigoAtivacao);
+    setKeyError('');
+  };
+
+  const handleSaveCompanyKey = async () => {
+    if (!editingCompanyKey || !newKeyInput.trim()) return;
+    setKeyError('');
+    try {
+      await StorageService.updateCompanyCode(editingCompanyKey.codigoAtivacao, newKeyInput);
+      setEditingCompanyKey(null);
+      loadAdminData();
+    } catch (err: any) {
+      setKeyError(err.message || 'Erro ao alterar chave de ativação.');
     }
   };
 
@@ -149,30 +233,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
     (c) =>
       c.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.codigoAtivacao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchTerm.toLowerCase())
+      c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.cnpj && c.cnpj.includes(searchTerm))
   );
 
   // LOGIN SCREEN
   if (!isAuthenticated) {
     return (
-      <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-[#E0E0E0] p-8 space-y-6">
-          <div className="text-center space-y-2">
-            <div className="mx-auto w-16 h-16 bg-[#2C2C2C] text-[#D4A574] rounded-2xl flex items-center justify-center shadow-md">
-              <ShieldCheck className="w-8 h-8" />
+      <div className="min-h-screen bg-[#111111] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-200 p-8 space-y-6">
+          <div className="text-center space-y-3">
+            <div className="mx-auto w-24 h-24 bg-[#111111] text-white rounded-3xl p-3 flex items-center justify-center shadow-lg border border-[#FF6B00]">
+              <img
+                src="https://i.imgur.com/r41aOzi.png"
+                alt="Logo Padaria"
+                className="w-full h-full object-contain"
+              />
             </div>
-            <h2 className="text-2xl font-black text-[#2C2C2C]">
-              Acesso Administrativo
-            </h2>
-            <p className="text-xs text-gray-500">
-              Painel de Controle Central - PADARIA.io
-            </p>
+            <div>
+              <h2 className="text-2xl font-black text-[#111111]">
+                Painel Administrativo Master
+              </h2>
+              <p className="text-xs text-gray-500 font-medium">
+                Gestão de Cadastro, Chaves de Ativação e Financeiro
+              </p>
+            </div>
           </div>
 
           <form onSubmit={handleAdminLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-[#2C2C2C] uppercase tracking-wider mb-1">
-                Senha Master / Admin
+              <label className="block text-xs font-bold text-[#111111] uppercase tracking-wider mb-1">
+                Senha de Acesso Master
               </label>
               <div className="relative">
                 <input
@@ -180,25 +271,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   placeholder="Digite sua senha de Admin"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-sm font-bold"
                   autoFocus
                 />
-                <Lock className="w-5 h-5 text-gray-400 absolute right-3 top-3.5" />
+                <Lock className="w-5 h-5 text-gray-400 absolute right-3.5 top-4" />
               </div>
             </div>
 
             {passwordError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-medium">
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold">
                 {passwordError}
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full bg-[#2C2C2C] hover:bg-[#1a1a1a] text-white font-bold py-3 rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer"
+              className="w-full bg-[#111111] hover:bg-[#FF6B00] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer group"
             >
-              <span>Acessar Painel Admin</span>
-              <ArrowRight className="w-4 h-4 text-[#D4A574]" />
+              <span>Acessar Painel Central</span>
+              <ArrowRight className="w-4 h-4 text-[#FF6B00] group-hover:text-white transition-colors" />
             </button>
           </form>
         </div>
@@ -206,421 +297,623 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
     );
   }
 
-  // MAIN ADMIN DASHBOARD WITH TABS
+  const menuItems = [
+    {
+      id: 'empresas' as AdminTab,
+      label: 'Cadastro & Chaves',
+      icon: Building2,
+      badge: companies.length,
+      badgeColor: 'bg-[#FF6B00] text-white',
+    },
+    {
+      id: 'cobranca' as AdminTab,
+      label: 'Financeiro & Assinaturas',
+      icon: DollarSign,
+      badge: 'R$ ' + (financialStats.mrr || 0).toLocaleString('pt-BR'),
+      badgeColor: 'bg-emerald-600 text-white',
+    },
+    {
+      id: 'contratos' as AdminTab,
+      label: 'Contrato & Documentos',
+      icon: FileText,
+    },
+    {
+      id: 'suporte' as AdminTab,
+      label: 'Suporte & Tickets',
+      icon: HelpCircle,
+    },
+    {
+      id: 'treinamento' as AdminTab,
+      label: 'Plano de Treinamento',
+      icon: BookOpen,
+    },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-8 pb-12">
-      {/* Header Admin */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs">
-        <div>
-          <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded-md bg-[#2C2C2C] text-[#D4A574] text-xs font-bold uppercase tracking-wider">
-              ADMINISTRADOR MASTER
-            </span>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-[#2C2C2C]">Painel Central - PADARIA.io</h1>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Gestão de empresas, faturamento recorrente, contratos em PDF e tickets de suporte
-          </p>
-        </div>
-
+    <div className="min-h-screen bg-[#FAFAF8] flex flex-col md:flex-row">
+      {/* Mobile Top Header */}
+      <div className="md:hidden bg-[#111111] text-white p-4 flex items-center justify-between border-b border-[#FF6B00]">
         <div className="flex items-center space-x-3">
-          <button
-            onClick={async () => {
-              if (confirm('Deseja realmente limpar todos os dados do sistema e do banco de dados? Esta ação zerará a lista de padarias e estoques.')) {
-                await StorageService.clearAllSystemData();
-                loadAdminData();
-                setGeneratedCompany(null);
-                alert('Sistema limpo com sucesso!');
-              }
-            }}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 transition-all flex items-center space-x-1.5 cursor-pointer"
-            title="Zerar todos os registros do sistema"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Limpar Sistema</span>
-          </button>
+          <img src="https://i.imgur.com/r41aOzi.png" alt="Logo" className="w-8 h-8 object-contain" />
+          <span className="font-extrabold text-sm text-white">Painel Master ADM</span>
         </div>
-      </div>
-
-      {/* Navigation Tabs (Scrollable on Mobile) */}
-      <div className="flex items-center space-x-2 border-b border-gray-200 pb-2 overflow-x-auto no-scrollbar">
         <button
-          onClick={() => setActiveTab('empresas')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'empresas'
-              ? 'bg-[#2C2C2C] text-white shadow-sm'
-              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-          }`}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 text-gray-300 hover:text-white rounded-xl bg-white/10"
         >
-          <Building2 className="w-4 h-4 text-[#D4A574]" />
-          <span>Cadastros & Ativação</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('cobranca')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
-            activeTab === 'cobranca'
-              ? 'bg-[#2C2C2C] text-white shadow-sm'
-              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-          }`}
-        >
-          <DollarSign className="w-4 h-4 text-green-500" />
-          <span>Cobrança & Faturamento</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('contratos')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
-            activeTab === 'contratos'
-              ? 'bg-[#2C2C2C] text-white shadow-sm'
-              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-          }`}
-        >
-          <FileText className="w-4 h-4 text-[#E8571A]" />
-          <span>Contrato & Documentos</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('suporte')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
-            activeTab === 'suporte'
-              ? 'bg-[#2C2C2C] text-white shadow-sm'
-              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-          }`}
-        >
-          <HelpCircle className="w-4 h-4 text-blue-500" />
-          <span>Suporte & Tickets</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('treinamento')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
-            activeTab === 'treinamento'
-              ? 'bg-[#2C2C2C] text-white shadow-sm'
-              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-          }`}
-        >
-          <BookOpen className="w-4 h-4 text-amber-500" />
-          <span>Plano de Treinamento</span>
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
-      {/* TAB CONTENTS */}
-      {activeTab === 'empresas' && (
-        <div className="space-y-8 animate-fade-in">
-          {/* Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-[#E0E0E0] shadow-xs flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total de Padarias</p>
-                <p className="text-3xl font-black text-[#2C2C2C] mt-1">{stats.totalPadarias}</p>
-              </div>
-              <div className="p-3 bg-[#F5E6D3] text-[#D4A574] rounded-xl">
-                <Building2 className="w-6 h-6" />
-              </div>
+      {/* SIDEBAR NAVIGATION */}
+      <aside
+        className={`fixed md:sticky top-0 left-0 z-40 h-screen w-72 bg-[#111111] text-white flex flex-col justify-between border-r border-[#222222] transition-transform duration-300 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
+      >
+        <div className="p-6 space-y-6">
+          {/* Logo / Header */}
+          <div className="flex items-center space-x-3 pb-6 border-b border-gray-800">
+            <div className="w-12 h-12 bg-white rounded-2xl p-1.5 flex items-center justify-center border border-[#FF6B00] shadow-md">
+              <img src="https://i.imgur.com/r41aOzi.png" alt="Logo Padaria" className="w-full h-full object-contain" />
             </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-[#E0E0E0] shadow-xs flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Padarias Ativas</p>
-                <p className="text-3xl font-black text-[#27AE60] mt-1">{stats.padariasAtivas}</p>
-              </div>
-              <div className="p-3 bg-green-50 text-[#27AE60] rounded-xl">
-                <Power className="w-6 h-6" />
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-[#E0E0E0] shadow-xs flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Produtos Monitorados</p>
-                <p className="text-3xl font-black text-[#2C2C2C] mt-1">{stats.totalProdutos}</p>
-              </div>
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                <Package className="w-6 h-6" />
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-[#E0E0E0] shadow-xs flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Produtos Vencidos</p>
-                <p className="text-3xl font-black text-[#E74C3C] mt-1">{stats.produtosVencidos}</p>
-              </div>
-              <div className="p-3 bg-red-50 text-[#E74C3C] rounded-xl">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
+            <div>
+              <h1 className="font-black text-base text-white tracking-wide">SISTEMA PADARIA</h1>
+              <p className="text-[10px] text-[#FF6B00] font-extrabold uppercase tracking-wider">
+                Painel do Administrador
+              </p>
             </div>
           </div>
 
-          {/* Main Content Grid: Register Form + Activation Code Alert */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column: Form & Activation Code Banner */}
-            <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-4">
-                <div className="flex items-center space-x-2 border-b border-gray-100 pb-3">
-                  <PlusCircle className="w-5 h-5 text-[#E8571A]" />
-                  <h2 className="text-lg font-extrabold text-[#2C2C2C]">1. Cadastrar Nova Padaria</h2>
+          {/* Navigation Links */}
+          <nav className="space-y-2">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-[#FF6B00] text-white shadow-md font-black scale-[1.02]'
+                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-white' : 'text-[#FF6B00]'}`} />
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge && (
+                    <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-full ${item.badgeColor}`}>
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Footer Sidebar Actions */}
+        <div className="p-5 border-t border-gray-800 space-y-3">
+          <div className="bg-black/40 p-3 rounded-2xl border border-gray-800 text-xs space-y-1">
+            <p className="text-gray-400 font-medium text-[11px]">Status da Sessão:</p>
+            <p className="text-emerald-400 font-bold flex items-center space-x-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Administrador Autenticado</span>
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={async () => {
+                if (confirm('Deseja realmente limpar todos os registros do sistema?')) {
+                  await StorageService.clearAllSystemData();
+                  loadAdminData();
+                  setGeneratedCompany(null);
+                  alert('Sistema zerado!');
+                }
+              }}
+              className="flex-1 bg-red-950/60 hover:bg-red-900 text-red-300 font-bold py-2 rounded-xl text-[11px] border border-red-800/50 transition-colors flex items-center justify-center space-x-1 cursor-pointer"
+              title="Zerar banco de dados"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Zerar Dados</span>
+            </button>
+
+            <button
+              onClick={() => {
+                StorageService.setAdminAuthenticated(false);
+                setIsAuthenticated(false);
+              }}
+              className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl transition-colors cursor-pointer"
+              title="Sair do Painel Admin"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 p-4 sm:p-8 space-y-6 max-w-7xl mx-auto w-full">
+        {/* EDIT KEY MODAL */}
+        {editingCompanyKey && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-gray-200 space-y-4">
+              <div className="flex items-center justify-between border-b pb-3">
+                <div className="flex items-center space-x-2">
+                  <Key className="w-5 h-5 text-[#E8571A]" />
+                  <h3 className="font-extrabold text-base text-[#2C2C2C]">Alterar Chave de Ativação</h3>
+                </div>
+                <button
+                  onClick={() => setEditingCompanyKey(null)}
+                  className="p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <p className="text-gray-600">
+                  Empresa: <span className="font-extrabold text-[#2C2C2C]">{editingCompanyKey.empresa}</span>
+                </p>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Nova Chave de 8 Caracteres:
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={newKeyInput}
+                      onChange={(e) => setNewKeyInput(e.target.value.toUpperCase())}
+                      placeholder="Ex: PAD12345"
+                      maxLength={12}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 font-mono font-bold text-sm focus:ring-2 focus:ring-[#D4A574]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                        let code = '';
+                        for (let i = 0; i < 8; i++) {
+                          code += chars.charAt(Math.floor(Math.random() * chars.length));
+                        }
+                        setNewKeyInput(code);
+                      }}
+                      className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-bold transition-all cursor-pointer shrink-0"
+                      title="Gerar chave aleatória"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
-                <form onSubmit={handleCreateCompany} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#2C2C2C] mb-1">
-                      Nome da Padaria / Panificadora *
-                    </label>
-                    <input
-                      type="text"
-                      value={empresaName}
-                      onChange={(e) => setEmpresaName(e.target.value)}
-                      placeholder="Ex: Padaria São João"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#2C2C2C] mb-1">
-                      E-mail do Responsável *
-                    </label>
-                    <input
-                      type="email"
-                      value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
-                      placeholder="Ex: gerencia@padaria.com"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#2C2C2C] mb-1">
-                      Telefone / WhatsApp (opcional)
-                    </label>
-                    <input
-                      type="text"
-                      value={telefoneInput}
-                      onChange={(e) => setTelefoneInput(e.target.value)}
-                      placeholder="(11) 99999-8888"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#2C2C2C] mb-1">
-                      CNPJ da Panificadora (para o contrato)
-                    </label>
-                    <input
-                      type="text"
-                      value={cnpjInput}
-                      onChange={(e) => setCnpjInput(e.target.value)}
-                      placeholder="Ex: 12.345.678/0001-90"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm font-mono"
-                    />
-                  </div>
-
-                  {formError && (
-                    <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-lg font-medium">{formError}</p>
-                  )}
-
-                  <button
-                    type="submit"
-                    className="w-full bg-[#D4A574] hover:bg-[#c29363] text-white font-bold py-3 rounded-xl transition-all shadow-sm flex items-center justify-center space-x-2 cursor-pointer"
-                  >
-                    <Key className="w-4 h-4" />
-                    <span>Gerar Código de Ativação</span>
-                  </button>
-                </form>
+                {keyError && (
+                  <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-xl font-medium">{keyError}</p>
+                )}
               </div>
 
-              {/* Newly Generated Code Display Banner */}
-              {generatedCompany && (
-                <div className="bg-gradient-to-br from-[#2C2C2C] to-[#1a1a1a] text-white p-6 rounded-2xl shadow-md border border-[#D4A574] space-y-4 animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#D4A574] uppercase tracking-widest flex items-center space-x-1">
-                      <Sparkles className="w-4 h-4 text-[#E8571A]" />
-                      <span>Código de Ativação Gerado!</span>
-                    </span>
-                    <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-bold">
-                      ATIVO
-                    </span>
-                  </div>
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t">
+                <button
+                  onClick={() => setEditingCompanyKey(null)}
+                  className="px-4 py-2 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveCompanyKey}
+                  className="px-4 py-2 rounded-xl bg-[#2C2C2C] hover:bg-[#1a1a1a] text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-md"
+                >
+                  <Save className="w-4 h-4 text-[#D4A574]" />
+                  <span>Salvar Chave</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-                  <div>
-                    <p className="text-xs text-gray-300">Empresa Cadastrada:</p>
-                    <p className="text-base font-extrabold text-white">{generatedCompany.empresa}</p>
-                    <p className="text-xs text-gray-400">{generatedCompany.email}</p>
-                  </div>
+        {/* SECTION 1: CADASTRO E ATIVAÇÃO DE EMPRESAS */}
+        {activeTab === 'empresas' && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Top Overview Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total de Empresas</p>
+                  <p className="text-3xl font-black text-[#2C2C2C] mt-1">{stats.totalPadarias}</p>
+                </div>
+                <div className="p-3 bg-[#F5E6D3] text-[#D4A574] rounded-2xl">
+                  <Building2 className="w-6 h-6" />
+                </div>
+              </div>
 
-                  <div className="bg-black/40 p-4 rounded-xl border border-dashed border-[#D4A574] text-center space-y-2">
-                    <span className="text-xs text-gray-400">Código de Acesso de 8 Caracteres:</span>
-                    <div className="text-3xl font-mono font-black text-[#D4A574] tracking-widest">
-                      {generatedCompany.codigoAtivacao}
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Empresas Ativas</p>
+                  <p className="text-3xl font-black text-[#27AE60] mt-1">{stats.padariasAtivas}</p>
+                </div>
+                <div className="p-3 bg-green-50 text-[#27AE60] rounded-2xl">
+                  <Power className="w-6 h-6" />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Desativadas</p>
+                  <p className="text-3xl font-black text-gray-400 mt-1">
+                    {stats.totalPadarias - stats.padariasAtivas}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-100 text-gray-500 rounded-2xl">
+                  <Power className="w-6 h-6" />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Produtos Cadastrados</p>
+                  <p className="text-3xl font-black text-[#2C2C2C] mt-1">{stats.totalProdutos}</p>
+                </div>
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                  <Package className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            {/* Main Form & Table Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Form: Cadastrar Empresa */}
+              <div className="lg:col-span-1 space-y-6">
+                <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-xs space-y-4">
+                  <div className="flex items-center space-x-2 border-b border-gray-100 pb-3">
+                    <div className="p-2 bg-[#D4A574]/20 text-[#2C2C2C] rounded-xl font-black">
+                      <PlusCircle className="w-5 h-5 text-[#E8571A]" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-extrabold text-[#2C2C2C]">Cadastrar & Ativar Empresa</h2>
+                      <p className="text-xs text-gray-400">Gera a chave de 8 dígitos na hora</p>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleCopyCode(generatedCompany.codigoAtivacao)}
-                      className="flex-1 bg-[#D4A574] hover:bg-[#c29363] text-white font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 shadow-sm cursor-pointer"
-                    >
-                      {copiedCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                      <span>{copiedCode ? 'Copiado!' : 'Copiar Código'}</span>
-                    </button>
+                  <form onSubmit={handleCreateCompany} className="space-y-3.5">
+                    <div>
+                      <label className="block text-xs font-bold text-[#2C2C2C] mb-1">
+                        Nome da Empresa / Padaria *
+                      </label>
+                      <input
+                        type="text"
+                        value={empresaName}
+                        onChange={(e) => setEmpresaName(e.target.value)}
+                        placeholder="Ex: Panificadora Central"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-xs font-bold"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#2C2C2C] mb-1">
+                        E-mail do Responsável *
+                      </label>
+                      <input
+                        type="email"
+                        value={emailInput}
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        placeholder="Ex: contato@padariacentral.com"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-xs"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#2C2C2C] mb-1">
+                          WhatsApp / Fone
+                        </label>
+                        <input
+                          type="text"
+                          value={telefoneInput}
+                          onChange={(e) => setTelefoneInput(e.target.value)}
+                          placeholder="(11) 99999-8888"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-xs font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#2C2C2C] mb-1">
+                          CNPJ (Contrato)
+                        </label>
+                        <input
+                          type="text"
+                          value={cnpjInput}
+                          onChange={(e) => setCnpjInput(e.target.value)}
+                          placeholder="00.000.000/0001-00"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#2C2C2C] mb-1">
+                          Implantação (R$)
+                        </label>
+                        <input
+                          type="number"
+                          value={valorImpInput}
+                          onChange={(e) => setValorImpInput(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-xs font-bold"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#2C2C2C] mb-1">
+                          Mensalidade (R$)
+                        </label>
+                        <input
+                          type="number"
+                          value={valorMensalInput}
+                          onChange={(e) => setValorMensalInput(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-xs font-bold"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={teste1DiaInput}
+                          onChange={(e) => setTeste1DiaInput(e.target.checked)}
+                          className="rounded border-gray-300 text-[#E8571A] focus:ring-[#E8571A] w-4 h-4"
+                        />
+                        <span className="text-xs font-bold text-[#2C2C2C]">
+                          Habilitar Teste de 1 Dia (Isenção inicial)
+                        </span>
+                      </label>
+
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={integrarAsaasInput}
+                          onChange={(e) => setIntegrarAsaasInput(e.target.checked)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                        />
+                        <span className="text-xs font-bold text-blue-700">
+                          Gerar Cobrança e Link no Asaas
+                        </span>
+                      </label>
+                    </div>
+
+                    {formError && (
+                      <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-xl font-medium">{formError}</p>
+                    )}
 
                     <button
-                      onClick={() => onLoginAsBakery(generatedCompany.codigoAtivacao)}
-                      className="bg-[#E8571A] hover:bg-[#d04911] text-white font-bold px-3 py-2.5 rounded-xl text-xs transition-all flex items-center space-x-1 cursor-pointer"
-                      title="Testar acesso como esta padaria"
+                      type="submit"
+                      className="w-full bg-[#1C1917] hover:bg-[#2C2C2C] text-white font-extrabold py-3 rounded-2xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer"
                     >
-                      <ExternalLink className="w-4 h-4" />
-                      <span className="hidden sm:inline">Acessar App</span>
+                      <Key className="w-4 h-4 text-[#D4A574]" />
+                      <span>Cadastrar Empresa e Gerar Chave</span>
                     </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Right Column: Registered Companies Table */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 pb-4">
-                  <div>
-                    <h2 className="text-lg font-extrabold text-[#2C2C2C]">2. Empresas Cadastradas</h2>
-                    <p className="text-xs text-gray-500">Lista completa com status e códigos de ativação</p>
-                  </div>
-
-                  <div className="relative w-full sm:w-64">
-                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      placeholder="Buscar por nome ou código..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
-                    />
-                  </div>
+                  </form>
                 </div>
 
-                {/* Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-[#FAFAF8] text-gray-500 text-[11px] font-extrabold uppercase tracking-wider border-b border-gray-200">
-                        <th className="py-3 px-4">Padaria</th>
-                        <th className="py-3 px-4">Código</th>
-                        <th className="py-3 px-4">Cadastro</th>
-                        <th className="py-3 px-4">Status</th>
-                        <th className="py-3 px-4 text-right">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 text-xs text-[#2C2C2C]">
-                      {filteredCompanies.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="text-center py-8 text-gray-400">
-                            Nenhuma empresa encontrada.
-                          </td>
+                {/* Newly Generated Company Key Banner */}
+                {generatedCompany && (
+                  <div className="bg-gradient-to-br from-[#1C1917] to-[#2C2C2C] text-white p-6 rounded-3xl shadow-xl border border-[#D4A574] space-y-3 animate-fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#D4A574] uppercase tracking-widest flex items-center space-x-1">
+                        <Sparkles className="w-4 h-4 text-[#E8571A]" />
+                        <span>Empresa Cadastrada!</span>
+                      </span>
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold">
+                        ATIVO
+                      </span>
+                    </div>
+
+                    <div>
+                      <p className="text-base font-extrabold text-white">{generatedCompany.empresa}</p>
+                      <p className="text-xs text-gray-400">{generatedCompany.email}</p>
+                    </div>
+
+                    <div className="bg-black/50 p-4 rounded-2xl border border-dashed border-[#D4A574] text-center space-y-1">
+                      <span className="text-[11px] text-gray-400">Chave de Ativação (8 Caracteres):</span>
+                      <div className="text-3xl font-mono font-black text-[#D4A574] tracking-widest">
+                        {generatedCompany.codigoAtivacao}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleCopyCode(generatedCompany.codigoAtivacao)}
+                        className="flex-1 bg-[#D4A574] hover:bg-[#c29363] text-[#1C1917] font-extrabold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 shadow-sm cursor-pointer"
+                      >
+                        {copiedCode === generatedCompany.codigoAtivacao ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                        <span>{copiedCode === generatedCompany.codigoAtivacao ? 'Copiado!' : 'Copiar Chave'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => onLoginAsBakery(generatedCompany.codigoAtivacao)}
+                        className="bg-[#E8571A] hover:bg-[#d04911] text-white font-extrabold px-3 py-2.5 rounded-xl text-xs transition-all flex items-center space-x-1 cursor-pointer"
+                        title="Testar acesso como esta empresa"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Acessar</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Table: List of Companies & Keys */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 pb-4">
+                    <div>
+                      <h2 className="text-lg font-extrabold text-[#2C2C2C]">Empresas Cadastradas & Chaves de Acesso</h2>
+                      <p className="text-xs text-gray-500">Gerencie e ative/desative o acesso de cada padaria</p>
+                    </div>
+
+                    <div className="relative w-full sm:w-64">
+                      <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                      <input
+                        type="text"
+                        placeholder="Buscar empresa, chave ou e-mail..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-[#FAFAF8] text-gray-500 text-[11px] font-extrabold uppercase tracking-wider border-b border-gray-200">
+                          <th className="py-3 px-4">Empresa</th>
+                          <th className="py-3 px-4">Chave de Ativação</th>
+                          <th className="py-3 px-4">Data Cadastro</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-right">Ações</th>
                         </tr>
-                      ) : (
-                        filteredCompanies.map((c) => (
-                          <tr key={c.codigoAtivacao} className="hover:bg-gray-50/80 transition-colors">
-                            <td className="py-3.5 px-4 font-bold">
-                              <div>{c.empresa}</div>
-                              <div className="text-[11px] font-normal text-gray-500">{c.email}</div>
-                              {c.telefone && <div className="text-[10px] text-gray-400">{c.telefone}</div>}
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <div className="flex items-center space-x-1.5">
-                                <span className="font-mono font-bold text-[#E8571A] bg-orange-50 px-2 py-1 rounded border border-orange-200">
-                                  {c.codigoAtivacao}
-                                </span>
-                                <button
-                                  onClick={() => handleCopyCode(c.codigoAtivacao)}
-                                  className="text-gray-400 hover:text-[#2C2C2C] p-1 cursor-pointer"
-                                  title="Copiar Código"
-                                >
-                                  <Copy className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4 text-gray-500">{c.dataCadastro}</td>
-                            <td className="py-3.5 px-4">
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                                  c.ativo
-                                    ? 'bg-green-100 text-[#27AE60]'
-                                    : 'bg-gray-100 text-gray-500'
-                                }`}
-                              >
-                                {c.ativo ? 'Ativo' : 'Inativo'}
-                              </span>
-                            </td>
-                            <td className="py-3.5 px-4 text-right space-x-1">
-                              {/* Test Login shortcut button */}
-                              <button
-                                onClick={() => onLoginAsBakery(c.codigoAtivacao)}
-                                className="p-1.5 rounded-lg bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] transition-colors cursor-pointer"
-                                title="Acessar como esta padaria"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Toggle Active Status */}
-                              <button
-                                onClick={() => handleToggleStatus(c.codigoAtivacao)}
-                                className={`p-1.5 rounded-lg text-white transition-colors cursor-pointer ${
-                                  c.ativo ? 'bg-amber-500 hover:bg-amber-600' : 'bg-green-600 hover:bg-green-700'
-                                }`}
-                                title={c.ativo ? 'Desativar Empresa' : 'Reativar Empresa'}
-                              >
-                                <Power className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Delete */}
-                              <button
-                                onClick={() => handleDeleteCompany(c.codigoAtivacao, c.empresa)}
-                                className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition-colors cursor-pointer"
-                                title="Excluir Padaria"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 text-[#2C2C2C]">
+                        {filteredCompanies.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="text-center py-8 text-gray-400">
+                              Nenhuma empresa encontrada.
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        ) : (
+                          filteredCompanies.map((c) => (
+                            <tr key={c.codigoAtivacao} className="hover:bg-gray-50/80 transition-colors">
+                              {/* Empresa & Details */}
+                              <td className="py-3.5 px-4 font-bold">
+                                <div className="text-sm font-extrabold text-[#2C2C2C]">{c.empresa}</div>
+                                <div className="text-[11px] font-normal text-gray-500">{c.email}</div>
+                                {c.cnpj && (
+                                  <div className="text-[10px] text-gray-400 font-mono">CNPJ: {c.cnpj}</div>
+                                )}
+                              </td>
+
+                              {/* Activation Key with Copy & Edit */}
+                              <td className="py-3.5 px-4">
+                                <div className="flex items-center space-x-1.5">
+                                  <span className="font-mono font-black text-[#E8571A] bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-200 text-xs">
+                                    {c.codigoAtivacao}
+                                  </span>
+                                  <button
+                                    onClick={() => handleCopyCode(c.codigoAtivacao)}
+                                    className="p-1 text-gray-400 hover:text-gray-800 transition-colors cursor-pointer"
+                                    title="Copiar Chave"
+                                  >
+                                    {copiedCode === c.codigoAtivacao ? (
+                                      <Check className="w-3.5 h-3.5 text-green-600" />
+                                    ) : (
+                                      <Copy className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenEditKey(c)}
+                                    className="p-1 text-gray-400 hover:text-[#E8571A] transition-colors cursor-pointer"
+                                    title="Personalizar ou Alterar Chave de Ativação"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+
+                              {/* Registration Date */}
+                              <td className="py-3.5 px-4 text-gray-500 font-medium">
+                                {c.dataCadastro}
+                              </td>
+
+                              {/* Status Toggle Badge */}
+                              <td className="py-3.5 px-4">
+                                <button
+                                  onClick={() => handleToggleStatus(c.codigoAtivacao)}
+                                  className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase transition-all cursor-pointer ${
+                                    c.ativo
+                                      ? 'bg-green-100 text-[#27AE60] hover:bg-green-200'
+                                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                  }`}
+                                  title="Clique para ativar/desativar empresa"
+                                >
+                                  <Power className="w-3 h-3" />
+                                  <span>{c.ativo ? 'Ativo' : 'Desativado'}</span>
+                                </button>
+                              </td>
+
+                              {/* Actions */}
+                              <td className="py-3.5 px-4 text-right space-x-1">
+                                <button
+                                  onClick={() => onLoginAsBakery(c.codigoAtivacao)}
+                                  className="px-2.5 py-1.5 rounded-xl bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] font-bold text-[11px] transition-all cursor-pointer inline-flex items-center space-x-1"
+                                  title="Acessar aplicativo como esta empresa"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                  <span>Acessar</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleDeleteCompany(c.codigoAtivacao, c.empresa)}
+                                  className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer"
+                                  title="Excluir Empresa"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* COBRANÇA & FATURAMENTO TAB */}
-      {activeTab === 'cobranca' && (
-        <div className="animate-fade-in">
-          <AdminBilling companies={companies} stats={financialStats} onRefresh={loadAdminData} />
-        </div>
-      )}
+        {/* SECTION 2: FINANCEIRO & DASHBOARD COMPLETO */}
+        {activeTab === 'cobranca' && (
+          <div className="animate-fade-in">
+            <AdminBilling companies={companies} stats={financialStats} onRefresh={loadAdminData} />
+          </div>
+        )}
 
-      {/* CONTRATOS & DOCUMENTOS TAB */}
-      {activeTab === 'contratos' && (
-        <div className="animate-fade-in">
-          <AdminContracts companies={companies} onCompanyUpdate={loadAdminData} />
-        </div>
-      )}
+        {/* SECTION 3: CONTRATO & DOCUMENTOS */}
+        {activeTab === 'contratos' && (
+          <div className="animate-fade-in">
+            <AdminContracts companies={companies} onCompanyUpdate={loadAdminData} />
+          </div>
+        )}
 
-      {/* SUPORTE & TICKETS TAB */}
-      {activeTab === 'suporte' && (
-        <div className="animate-fade-in">
-          <AdminSupportTickets onRefresh={loadAdminData} />
-        </div>
-      )}
+        {/* SECTION 4: SUPORTE & TICKETS */}
+        {activeTab === 'suporte' && (
+          <div className="animate-fade-in">
+            <AdminSupportTickets onRefresh={loadAdminData} />
+          </div>
+        )}
 
-      {/* PLANO DE TREINAMENTO TAB */}
-      {activeTab === 'treinamento' && (
-        <div className="animate-fade-in">
-          <AdminTrainingPlan companies={companies} />
-        </div>
-      )}
+        {/* SECTION 5: PLANO DE TREINAMENTO */}
+        {activeTab === 'treinamento' && (
+          <div className="animate-fade-in">
+            <AdminTrainingPlan companies={companies} />
+          </div>
+        )}
+      </main>
     </div>
   );
 };

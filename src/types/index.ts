@@ -52,6 +52,12 @@ export interface BillingInfo {
   ultimoLinkPagamento?: string;
   tipoUltimoLink?: 'implementacao' | 'mensalidade';
   diaVencimentoMensal?: number; // ex: 15
+  teste1Dia?: boolean;
+  dataFimTeste?: string;
+  asaasCustomerId?: string;
+  asaasSubscriptionId?: string;
+  asaasPaymentLink?: string;
+  asaasEnvironment?: 'sandbox' | 'production';
 }
 
 export interface ContractInfo {
@@ -106,8 +112,15 @@ export interface AdminStats {
 }
 
 export interface FinancialStats {
+  totalClientes: number;
   totalClientesAtivos: number;
-  mrr: number; // Receita Mensal Recorrente
+  mrrTotalProjetado: number;
+  mrrAtivo: number;
+  mrr: number;
+  receitaImplementacaoPaga: number;
   receitaImplementacaoPendente: number;
   proximosVencimentos: number;
+  clientesAdimplentes: number;
+  clientesInadimplentes: number;
+  clientesCanceladosAsaas: number;
 }

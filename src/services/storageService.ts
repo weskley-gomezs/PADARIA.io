@@ -12,6 +12,7 @@ const KEYS = {
   ADMIN_AUTH: 'padarias_admin_authenticated',
   BAKERY_SESSION: 'padarias_active_session',
   ADMIN_PASSWORD: 'padarias_admin_password',
+  ASAAS_SETTINGS: 'padarias_asaas_settings',
 };
 
 const EXCLUDED_CODES = ['AB12CD34', 'PAD8X92M', 'DEMO9999', '6SSHQQTZ', '8FM8XCN6', 'CAVU5FKP'];
@@ -384,6 +385,15 @@ export class StorageService {
     setItem(KEYS.BAKERY_SESSION, code);
   }
 
+  // Asaas Settings
+  static getAsaasSettings(): { apiKey: string; environment: 'sandbox' | 'production' } {
+    return getItem(KEYS.ASAAS_SETTINGS, { apiKey: '', environment: 'sandbox' });
+  }
+
+  static setAsaasSettings(apiKey: string, environment: 'sandbox' | 'production'): void {
+    setItem(KEYS.ASAAS_SETTINGS, { apiKey: apiKey.trim(), environment });
+  }
+
   // Companies CRUD
   static getCompanies(): BakeryCompany[] {
     return getItem<BakeryCompany[]>(KEYS.COMPANIES, []);
@@ -395,7 +405,21 @@ export class StorageService {
     return companies.find((c) => c.codigoAtivacao.toUpperCase() === cleanCode);
   }
 
-  static async addCompany(empresa: string, email: string, telefone?: string, cnpj?: string): Promise<BakeryCompany> {
+  static async addCompany(
+    empresa: string,
+    email: string,
+    telefone?: string,
+    cnpj?: string,
+    valorImplementacao = 1500,
+    valorMensalidade = 199,
+    teste1Dia = false,
+    asaasInfo?: {
+      customerId?: string;
+      subscriptionId?: string;
+      paymentLink?: string;
+      asaasEnvironment?: 'sandbox' | 'production';
+    }
+  ): Promise<BakeryCompany> {
     const companies = StorageService.getCompanies();
     let code = generateActivationCode();
     while (companies.some((c) => c.codigoAtivacao === code)) {
@@ -404,27 +428,39 @@ export class StorageService {
 
     const todayStr = formatDateToISO(new Date());
     const nextMonth = new Date();
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    const nextMonthStr = formatDateToISO(nextMonth);
+    if (teste1Dia) {
+      nextMonth.setDate(nextMonth.getDate() + 1);
+    } else {
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+    }
+    const nextDueDateStr = formatDateToISO(nextMonth);
+
     const nextYear = new Date();
     nextYear.setFullYear(nextYear.getFullYear() + 1);
     const nextYearStr = formatDateToISO(nextYear);
 
     const defaultBilling: BillingInfo = {
       implementacaoPaga: false,
-      valorImplementacao: 1500,
+      valorImplementacao: Number(valorImplementacao) || 1500,
       assinaturaMensalAtiva: true,
-      valorMensalidade: 199,
-      dataProximaCobranca: nextMonthStr,
-      statusAssinatura: 'pendente',
+      valorMensalidade: Number(valorMensalidade) || 199,
+      dataProximaCobranca: nextDueDateStr,
+      statusAssinatura: teste1Dia ? 'ativo' : 'pendente',
+      teste1Dia: teste1Dia,
+      asaasCustomerId: asaasInfo?.customerId,
+      asaasSubscriptionId: asaasInfo?.subscriptionId,
+      asaasPaymentLink: asaasInfo?.paymentLink,
+      asaasEnvironment: asaasInfo?.asaasEnvironment,
+      ultimoLinkPagamento: asaasInfo?.paymentLink,
+      tipoUltimoLink: 'implementacao',
       historicoCobrancas: [
         {
           id: 'inv_' + Date.now(),
           data: todayStr,
-          valor: 1500,
+          valor: Number(valorImplementacao) || 1500,
           tipo: 'implementacao',
           status: 'pendente',
-          linkBoleto: `https://pagar.me/invoice/imp_${code}`,
+          linkBoleto: asaasInfo?.paymentLink || `https://sandbox.asaas.com/invoice/imp_${code}`,
         },
       ],
     };
@@ -445,6 +481,9 @@ export class StorageService {
         dataVencimentoContrato: nextYearStr,
         fornecedorNome: 'PADARIA.IO TECNOLOGIA E SISTEMAS - Weskley Gomes',
         clienteNome: empresa.trim(),
+        clienteCnpj: cnpj ? cnpj.trim() : '',
+        valorImplementacao: Number(valorImplementacao) || 1500,
+        valorMensalidade: Number(valorMensalidade) || 199,
       },
     };
 
@@ -558,29 +597,69 @@ export class StorageService {
   // Financial & Billing Methods
   static getFinancialStats(): FinancialStats {
     const companies = StorageService.getCompanies();
-    const activeClients = companies.filter((c) => c.ativo && c.financeiro?.statusAssinatura === 'ativo').length;
-    
-    const mrr = companies.reduce((acc, c) => {
-      if (c.ativo && c.financeiro?.statusAssinatura === 'ativo') {
-        return acc + (c.financeiro.valorMensalidade || 199);
+    const totalClientes = companies.length;
+    const totalClientesAtivos = companies.filter((c) => c.ativo).length;
+
+    // MRR Total Projetado: Soma de todas as mensalidades das empresas ativas (não canceladas)
+    const mrrTotalProjetado = companies.reduce((acc, c) => {
+      if (c.ativo && c.financeiro?.statusAssinatura !== 'cancelado') {
+        return acc + (c.financeiro?.valorMensalidade || 199);
       }
       return acc;
     }, 0);
 
-    const pendingImp = companies.reduce((acc, c) => {
+    // MRR Ativo (Pagando): Soma de quem tem statusAssinatura === 'ativo' ou 'concluido'
+    const mrrAtivo = companies.reduce((acc, c) => {
+      if (c.ativo && (c.financeiro?.statusAssinatura === 'ativo' || c.financeiro?.statusAssinatura === 'concluido')) {
+        return acc + (c.financeiro?.valorMensalidade || 199);
+      }
+      return acc;
+    }, 0);
+
+    // Usa MRR Ativo se houver, caso contrário o total projetado para não zerar o dashboard
+    const mrr = mrrAtivo > 0 ? mrrAtivo : mrrTotalProjetado;
+
+    // Receita de Implantação
+    const receitaImplementacaoPaga = companies.reduce((acc, c) => {
+      if (c.financeiro?.implementacaoPaga) {
+        return acc + (c.financeiro?.valorImplementacao || 1500);
+      }
+      return acc;
+    }, 0);
+
+    const receitaImplementacaoPendente = companies.reduce((acc, c) => {
       if (!c.financeiro?.implementacaoPaga) {
         return acc + (c.financeiro?.valorImplementacao || 1500);
       }
       return acc;
     }, 0);
 
-    const upcomingRenewals = companies.filter((c) => c.ativo && c.financeiro?.statusAssinatura !== 'cancelado').length;
+    const proximosVencimentos = companies.filter((c) => c.ativo && c.financeiro?.statusAssinatura !== 'cancelado').length;
+
+    const clientesAdimplentes = companies.filter(
+      (c) => c.ativo && (c.financeiro?.statusAssinatura === 'ativo' || c.financeiro?.statusAssinatura === 'concluido')
+    ).length;
+
+    const clientesInadimplentes = companies.filter(
+      (c) => c.ativo && (c.financeiro?.statusAssinatura === 'pendente' || c.financeiro?.statusAssinatura === 'vencido' || c.financeiro?.statusAssinatura === 'vencendo')
+    ).length;
+
+    const clientesCanceladosAsaas = companies.filter(
+      (c) => c.financeiro?.statusAssinatura === 'suspenso' || c.financeiro?.statusAssinatura === 'cancelado'
+    ).length;
 
     return {
-      totalClientesAtivos: activeClients,
+      totalClientes,
+      totalClientesAtivos,
+      mrrTotalProjetado,
+      mrrAtivo,
       mrr,
-      receitaImplementacaoPendente: pendingImp,
-      proximosVencimentos: upcomingRenewals,
+      receitaImplementacaoPaga,
+      receitaImplementacaoPendente,
+      proximosVencimentos,
+      clientesAdimplentes,
+      clientesInadimplentes,
+      clientesCanceladosAsaas,
     };
   }
 
