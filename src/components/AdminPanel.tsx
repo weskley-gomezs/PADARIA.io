@@ -58,6 +58,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
   const [cnpjInput, setCnpjInput] = useState<string>('');
   
   // Custom Billing & Asaas Form States
+  const defaultNextMonthDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split('T')[0];
+  };
+  const [dataInicioCobrancaInput, setDataInicioCobrancaInput] = useState<string>(defaultNextMonthDate());
   const [valorImpInput, setValorImpInput] = useState<string>('1500');
   const [valorMensalInput, setValorMensalInput] = useState<string>('199');
   const [teste1DiaInput, setTeste1DiaInput] = useState<boolean>(false);
@@ -70,6 +76,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
   const [editingCompanyKey, setEditingCompanyKey] = useState<BakeryCompany | null>(null);
   const [newKeyInput, setNewKeyInput] = useState<string>('');
   const [keyError, setKeyError] = useState<string>('');
+
+  // Custom Confirmation Modal & Toast state
+  const [confirmModal, setConfirmModal] = useState<{
+    type: 'clear_all' | 'delete_no_cnpj' | 'delete_single';
+    companyCode?: string;
+    companyName?: string;
+    count?: number;
+  } | null>(null);
+
+  const [toastNotification, setToastNotification] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+  } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToastNotification({ message, type });
+    setTimeout(() => setToastNotification(null), 4000);
+  };
 
   // Data states
   const [companies, setCompanies] = useState<BakeryCompany[]>([]);
@@ -145,6 +169,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
             valorImplementacao: valImp,
             valorMensalidade: valMensal,
             teste1Dia: teste1DiaInput,
+            dataInicioCobranca: dataInicioCobrancaInput,
           }),
         });
 
@@ -169,7 +194,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
         valImp,
         valMensal,
         teste1DiaInput,
-        asaasInfo
+        asaasInfo,
+        dataInicioCobrancaInput
       );
 
       setGeneratedCompany(newComp);
@@ -178,6 +204,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
       setTelefoneInput('');
       setCnpjInput('');
       setIntegrarAsaasInput(false);
+      showToast(`Empresa ${newComp.empresa} cadastrada com sucesso!`, 'success');
 
       // Trigger confetti
       confetti({
@@ -190,6 +217,57 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
     }
   };
 
+  const triggerDeleteWithoutCNPJ = () => {
+    const withoutCnpjCount = companies.filter((c) => {
+      const clean = (c.cnpj || '').replace(/\D/g, '');
+      return !clean || clean.length === 0;
+    }).length;
+
+    setConfirmModal({
+      type: 'delete_no_cnpj',
+      count: withoutCnpjCount,
+    });
+  };
+
+  const triggerClearAllData = () => {
+    setConfirmModal({
+      type: 'clear_all',
+    });
+  };
+
+  const triggerDeleteSingleCompany = (code: string, name: string) => {
+    setConfirmModal({
+      type: 'delete_single',
+      companyCode: code,
+      companyName: name,
+    });
+  };
+
+  const handleExecuteConfirmAction = async () => {
+    if (!confirmModal) return;
+    const { type, companyCode, companyName } = confirmModal;
+    setConfirmModal(null);
+
+    if (type === 'delete_no_cnpj') {
+      const deleted = await StorageService.deleteCompaniesWithoutCNPJ();
+      loadAdminData();
+      setGeneratedCompany(null);
+      showToast(`${deleted} cliente(s) sem CNPJ foram excluídos do Firestore (Dev e Prod) e localmente!`, 'success');
+    } else if (type === 'clear_all') {
+      await StorageService.clearAllSystemData();
+      loadAdminData();
+      setGeneratedCompany(null);
+      showToast('Todos os dados foram zerados com sucesso no banco de dados na nuvem (Firestore) e do armazenamento local!', 'success');
+    } else if (type === 'delete_single' && companyCode) {
+      await StorageService.deleteCompany(companyCode);
+      if (generatedCompany?.codigoAtivacao === companyCode) {
+        setGeneratedCompany(null);
+      }
+      loadAdminData();
+      showToast(`Empresa "${companyName || companyCode}" excluída do Firestore e do sistema!`, 'success');
+    }
+  };
+
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
@@ -199,16 +277,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
   const handleToggleStatus = async (code: string) => {
     await StorageService.toggleCompanyStatus(code);
     loadAdminData();
-  };
-
-  const handleDeleteCompany = async (code: string, name: string) => {
-    if (confirm(`Tem certeza que deseja excluir a empresa "${name}"? Todos os registros e produtos serão excluídos.`)) {
-      await StorageService.deleteCompany(code);
-      if (generatedCompany?.codigoAtivacao === code) {
-        setGeneratedCompany(null);
-      }
-      loadAdminData();
-    }
   };
 
   const handleOpenEditKey = (company: BakeryCompany) => {
@@ -408,32 +476,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
             </p>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={async () => {
-                if (confirm('Deseja realmente limpar todos os registros do sistema?')) {
-                  await StorageService.clearAllSystemData();
-                  loadAdminData();
-                  setGeneratedCompany(null);
-                  alert('Sistema zerado!');
-                }
-              }}
-              className="flex-1 bg-red-950/60 hover:bg-red-900 text-red-300 font-bold py-2 rounded-xl text-[11px] border border-red-800/50 transition-colors flex items-center justify-center space-x-1 cursor-pointer"
-              title="Zerar banco de dados"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Zerar Dados</span>
-            </button>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={triggerClearAllData}
+                className="flex-1 bg-red-950/60 hover:bg-red-900 text-red-300 font-bold py-2 rounded-xl text-[11px] border border-red-800/50 transition-colors flex items-center justify-center space-x-1 cursor-pointer"
+                title="Zerar todo o banco de dados (Dev e Prod no Firestore)"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Zerar Dados</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  StorageService.setAdminAuthenticated(false);
+                  setIsAuthenticated(false);
+                }}
+                className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl transition-colors cursor-pointer"
+                title="Sair do Painel Admin"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
 
             <button
-              onClick={() => {
-                StorageService.setAdminAuthenticated(false);
-                setIsAuthenticated(false);
-              }}
-              className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl transition-colors cursor-pointer"
-              title="Sair do Painel Admin"
+              onClick={triggerDeleteWithoutCNPJ}
+              className="w-full bg-amber-950/60 hover:bg-amber-900 text-amber-300 font-bold py-2 rounded-xl text-[11px] border border-amber-800/50 transition-colors flex items-center justify-center space-x-1 cursor-pointer"
+              title="Excluir todas as empresas sem CNPJ no Firestore"
             >
-              <LogOut className="w-4 h-4" />
+              <Users className="w-3.5 h-3.5" />
+              <span>Excluir Clientes sem CNPJ</span>
             </button>
           </div>
         </div>
@@ -664,6 +736,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
                       </div>
                     </div>
 
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#2C2C2C] mb-1">
+                        Data de Início da Cobrança da Mensalidade
+                      </label>
+                      <input
+                        type="date"
+                        value={dataInicioCobrancaInput}
+                        onChange={(e) => setDataInicioCobrancaInput(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-xs font-bold font-mono"
+                        required
+                      />
+                    </div>
+
                     <div className="space-y-1.5 pt-1">
                       <label className="flex items-center space-x-2 cursor-pointer">
                         <input
@@ -764,15 +849,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
                       <p className="text-xs text-gray-500">Gerencie e ative/desative o acesso de cada padaria</p>
                     </div>
 
-                    <div className="relative w-full sm:w-64">
-                      <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                      <input
-                        type="text"
-                        placeholder="Buscar empresa, chave ou e-mail..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
-                      />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={triggerDeleteWithoutCNPJ}
+                        className="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 transition-all flex items-center space-x-1 cursor-pointer"
+                        title="Excluir todas as empresas cadastradas sem CNPJ"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-amber-700" />
+                        <span>Excluir sem CNPJ</span>
+                      </button>
+
+                      <div className="relative w-full sm:w-64">
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                        <input
+                          type="text"
+                          placeholder="Buscar empresa, chave ou e-mail..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -867,7 +963,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
                                 </button>
 
                                 <button
-                                  onClick={() => handleDeleteCompany(c.codigoAtivacao, c.empresa)}
+                                  onClick={() => triggerDeleteSingleCompany(c.codigoAtivacao, c.empresa)}
                                   className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer"
                                   title="Excluir Empresa"
                                 >
@@ -911,6 +1007,85 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
         {activeTab === 'treinamento' && (
           <div className="animate-fade-in">
             <AdminTrainingPlan companies={companies} />
+          </div>
+        )}
+
+        {/* CUSTOM CONFIRMATION MODAL */}
+        {confirmModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 space-y-4 text-[#111111]">
+              <div className="flex items-center space-x-3 text-red-600">
+                <div className="p-3 bg-red-100 rounded-2xl">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-lg">
+                    {confirmModal.type === 'clear_all'
+                      ? 'Zerar Todos os Dados'
+                      : confirmModal.type === 'delete_no_cnpj'
+                      ? 'Excluir Clientes sem CNPJ'
+                      : 'Excluir Empresa'}
+                  </h3>
+                  <p className="text-xs text-gray-500 font-medium">Confirme a exclusão no sistema e no Firestore</p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 text-xs text-gray-700 leading-relaxed font-medium">
+                {confirmModal.type === 'clear_all' && (
+                  <span>
+                    <strong>ATENÇÃO EXTREMA:</strong> Esta ação irá excluir permanentemente <strong>TODAS AS EMPRESAS, PRODUTOS, VENDAS E CHAMADOS</strong>, tanto no banco de dados na nuvem (Firestore em ambiente de Construção e Produção) quanto no armazenamento local.
+                  </span>
+                )}
+
+                {confirmModal.type === 'delete_no_cnpj' && (
+                  <span>
+                    Deseja apagar permanentemente todas as empresas que <strong>não possuem CNPJ cadastrado</strong>?
+                    <br /><br />
+                    Esta operação removerá as empresas e seus registros vinculados do banco de dados <strong>Firestore (Dev e Prod)</strong> e da memória local.
+                  </span>
+                )}
+
+                {confirmModal.type === 'delete_single' && (
+                  <span>
+                    Deseja realmente excluir a empresa <strong>"{confirmModal.companyName || confirmModal.companyCode}"</strong>?
+                    <br /><br />
+                    Todos os produtos, histórico de vendas e registros vinculados serão excluídos permanentemente do Firestore e do armazenamento local.
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmModal(null)}
+                  className="flex-1 py-3 rounded-xl border border-gray-300 font-bold text-xs text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteConfirmAction}
+                  className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md transition-all cursor-pointer flex items-center justify-center space-x-1"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Confirmar Exclusão</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TOAST NOTIFICATION */}
+        {toastNotification && (
+          <div className="fixed bottom-6 right-6 z-50 bg-[#111111] text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-[#D4A574] flex items-center space-x-3 animate-slide-up">
+            <CheckCircle2 className="w-5 h-5 text-[#27AE60]" />
+            <span className="text-xs font-bold">{toastNotification.message}</span>
+            <button
+              onClick={() => setToastNotification(null)}
+              className="text-gray-400 hover:text-white font-bold text-xs ml-2 cursor-pointer"
+            >
+              ✕
+            </button>
           </div>
         )}
       </main>

@@ -266,6 +266,7 @@ try {
         valorImplementacao,
         valorMensalidade,
         teste1Dia,
+        dataInicioCobranca,
       } = req.body;
 
       const asaasApiKey = process.env.ASAAS_API_KEY;
@@ -339,12 +340,19 @@ try {
 
       console.log(`[ASAAS] Cliente Asaas obtido: ${customerId} (extRef: ${extRef})`);
 
-      // Calculate next due date (1 day trial if requested)
-      const today = new Date();
-      if (teste1Dia) {
-        today.setDate(today.getDate() + 1);
+      // Calculate next due date
+      let nextDueDate = '';
+      if (dataInicioCobranca && dataInicioCobranca.trim() !== '') {
+        nextDueDate = dataInicioCobranca.trim();
+      } else {
+        const today = new Date();
+        if (teste1Dia) {
+          today.setDate(today.getDate() + 1);
+        } else {
+          today.setMonth(today.getMonth() + 1);
+        }
+        nextDueDate = today.toISOString().split('T')[0];
       }
-      const nextDueDate = today.toISOString().split('T')[0];
 
       // 2. Create subscription in Asaas
       const subRes = await fetch(`${baseUrl}/subscriptions`, {

@@ -258,13 +258,43 @@ export class StorageService {
   }
 
   static async clearAllSystemData(): Promise<void> {
-    for (const code of EXCLUDED_CODES) {
-      await deleteDoc(doc(db, 'companies', code)).catch(() => {});
-    }
-    for (const pid of DEMO_PROD_IDS) {
-      await deleteDoc(doc(db, 'products', pid)).catch(() => {});
+    try {
+      // 1. Delete all companies from Firestore
+      const compSnap = await getDocs(collection(db, 'companies')).catch(() => null);
+      if (compSnap && !compSnap.empty) {
+        for (const d of compSnap.docs) {
+          await deleteDoc(doc(db, 'companies', d.id)).catch(() => {});
+        }
+      }
+
+      // 2. Delete all products from Firestore
+      const prodSnap = await getDocs(collection(db, 'products')).catch(() => null);
+      if (prodSnap && !prodSnap.empty) {
+        for (const d of prodSnap.docs) {
+          await deleteDoc(doc(db, 'products', d.id)).catch(() => {});
+        }
+      }
+
+      // 3. Delete all sales from Firestore
+      const salesSnap = await getDocs(collection(db, 'sales')).catch(() => null);
+      if (salesSnap && !salesSnap.empty) {
+        for (const d of salesSnap.docs) {
+          await deleteDoc(doc(db, 'sales', d.id)).catch(() => {});
+        }
+      }
+
+      // 4. Delete all tickets from Firestore
+      const ticketsSnap = await getDocs(collection(db, 'tickets')).catch(() => null);
+      if (ticketsSnap && !ticketsSnap.empty) {
+        for (const d of ticketsSnap.docs) {
+          await deleteDoc(doc(db, 'tickets', d.id)).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao limpar coleções no Firestore:', e);
     }
 
+    // 5. Reset local storage
     setItem(KEYS.COMPANIES, []);
     setItem(KEYS.PRODUCTS, []);
     setItem(KEYS.SALES_HISTORY, []);
@@ -434,7 +464,8 @@ export class StorageService {
       subscriptionId?: string;
       paymentLink?: string;
       asaasEnvironment?: 'sandbox' | 'production';
-    }
+    },
+    dataInicioCobranca?: string
   ): Promise<BakeryCompany> {
     const companies = StorageService.getCompanies();
     let code = generateActivationCode();
@@ -443,13 +474,19 @@ export class StorageService {
     }
 
     const todayStr = formatDateToISO(new Date());
-    const nextMonth = new Date();
-    if (teste1Dia) {
-      nextMonth.setDate(nextMonth.getDate() + 1);
+    let nextDueDateStr = '';
+
+    if (dataInicioCobranca && dataInicioCobranca.trim() !== '') {
+      nextDueDateStr = dataInicioCobranca.trim();
     } else {
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      const nextMonth = new Date();
+      if (teste1Dia) {
+        nextMonth.setDate(nextMonth.getDate() + 1);
+      } else {
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+      }
+      nextDueDateStr = formatDateToISO(nextMonth);
     }
-    const nextDueDateStr = formatDateToISO(nextMonth);
 
     const nextYear = new Date();
     nextYear.setFullYear(nextYear.getFullYear() + 1);
@@ -579,29 +616,99 @@ export class StorageService {
   }
 
   static async deleteCompany(code: string): Promise<void> {
-    let companies = StorageService.getCompanies();
-    companies = companies.filter((c) => c.codigoAtivacao !== code);
-    setItem(KEYS.COMPANIES, companies);
+    const cleanCode = code.trim().toUpperCase();
 
-    await deleteDoc(doc(db, 'companies', code)).catch((e) => {
-      handleFirestoreError(e, OperationType.DELETE, `companies/${code}`);
+    // 1. Delete company doc from Firestore
+    await deleteDoc(doc(db, 'companies', cleanCode)).catch((e) => {
+      handleFirestoreError(e, OperationType.DELETE, `companies/${cleanCode}`);
     });
 
+    // 2. Remove company from localStorage
+    let companies = StorageService.getCompanies();
+    companies = companies.filter((c) => c.codigoAtivacao.toUpperCase() !== cleanCode);
+    setItem(KEYS.COMPANIES, companies);
+
+    // 3. Remove products associated with this company in Firestore and localStorage
     let products = getItem<Product[]>(KEYS.PRODUCTS, []);
-    const productsToRemove = products.filter((p) => p.bakeryCode === code);
+    const productsToRemove = products.filter((p) => p.bakeryCode && p.bakeryCode.trim().toUpperCase() === cleanCode);
     for (const p of productsToRemove) {
       await deleteDoc(doc(db, 'products', p.id)).catch(() => {});
     }
-    products = products.filter((p) => p.bakeryCode !== code);
+    products = products.filter((p) => !p.bakeryCode || p.bakeryCode.trim().toUpperCase() !== cleanCode);
     setItem(KEYS.PRODUCTS, products);
 
+    // 4. Remove sales associated with this company in Firestore and localStorage
     let history = getItem<SaleHistoryItem[]>(KEYS.SALES_HISTORY, []);
-    const salesToRemove = history.filter((h) => h.bakeryCode === code);
+    const salesToRemove = history.filter((h) => h.bakeryCode && h.bakeryCode.trim().toUpperCase() === cleanCode);
     for (const h of salesToRemove) {
       await deleteDoc(doc(db, 'sales', h.id)).catch(() => {});
     }
-    history = history.filter((h) => h.bakeryCode !== code);
+    history = history.filter((h) => !h.bakeryCode || h.bakeryCode.trim().toUpperCase() !== cleanCode);
     setItem(KEYS.SALES_HISTORY, history);
+
+    // 5. Remove tickets associated with this company in Firestore and localStorage
+    let tickets = getItem<SupportTicket[]>(KEYS.TICKETS, []);
+    const ticketsToRemove = tickets.filter((t) => t.bakeryCode && t.bakeryCode.trim().toUpperCase() === cleanCode);
+    for (const t of ticketsToRemove) {
+      await deleteDoc(doc(db, 'tickets', t.id)).catch(() => {});
+    }
+    tickets = tickets.filter((t) => !t.bakeryCode || t.bakeryCode.trim().toUpperCase() !== cleanCode);
+    setItem(KEYS.TICKETS, tickets);
+
+    // 6. Reset active session if needed
+    if (StorageService.getActiveBakeryCode()?.trim().toUpperCase() === cleanCode) {
+      StorageService.setActiveBakeryCode(null);
+    }
+  }
+
+  static async deleteCompaniesWithoutCNPJ(): Promise<number> {
+    const deletedCodes = new Set<string>();
+
+    // 1. Scan Firestore companies directly
+    try {
+      const compSnap = await getDocs(collection(db, 'companies')).catch(() => null);
+      if (compSnap && !compSnap.empty) {
+        for (const d of compSnap.docs) {
+          const data = d.data() as BakeryCompany;
+          const cnpjClean = (data?.cnpj || '').replace(/\D/g, '');
+          if (!cnpjClean || cnpjClean.length === 0) {
+            const code = data?.codigoAtivacao || d.id;
+            if (code) {
+              await deleteDoc(doc(db, 'companies', d.id)).catch(() => {});
+              deletedCodes.add(code.trim().toUpperCase());
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao verificar empresas no Firestore:', e);
+    }
+
+    // 2. Scan LocalStorage companies
+    const localCompanies = StorageService.getCompanies();
+    for (const c of localCompanies) {
+      const cnpjClean = (c?.cnpj || '').replace(/\D/g, '');
+      if (!cnpjClean || cnpjClean.length === 0) {
+        if (c.codigoAtivacao) {
+          deletedCodes.add(c.codigoAtivacao.trim().toUpperCase());
+        }
+      }
+    }
+
+    // 3. Delete all matching companies and their products/sales/tickets
+    for (const code of deletedCodes) {
+      await StorageService.deleteCompany(code);
+    }
+
+    // 4. Update LocalStorage
+    let updatedCompanies = StorageService.getCompanies();
+    updatedCompanies = updatedCompanies.filter((c) => {
+      const clean = (c?.cnpj || '').replace(/\D/g, '');
+      return clean.length > 0;
+    });
+    setItem(KEYS.COMPANIES, updatedCompanies);
+
+    return deletedCodes.size;
   }
 
   static async updateCompanyCNPJ(code: string, cnpj: string): Promise<BakeryCompany | undefined> {
