@@ -345,6 +345,143 @@ try {
     }
   });
 
+  // Endpoint to fetch or generate official Asaas payment/invoice URL
+  app.post('/api/asaas/get-payment-link', async (req, res) => {
+    console.log("[ROUTE] POST /api/asaas/get-payment-link - Recebido");
+    try {
+      const {
+        codigoAtivacao,
+        empresa,
+        email,
+        telefone,
+        cnpj,
+        valorMensalidade,
+        valorImplementacao,
+        asaasCustomerId,
+        asaasSubscriptionId,
+      } = req.body;
+
+      const asaasApiKey = process.env.ASAAS_API_KEY;
+      const asaasEnvironment = process.env.ASAAS_ENVIRONMENT || 'sandbox';
+
+      const baseUrl = asaasEnvironment === 'production'
+        ? 'https://api.asaas.com/v3'
+        : 'https://sandbox.asaas.com/v3';
+
+      const extRef = codigoAtivacao ? String(codigoAtivacao).trim().toUpperCase() : undefined;
+
+      let paymentUrl = '';
+      let customerId = asaasCustomerId;
+      let subscriptionId = asaasSubscriptionId;
+
+      // 1. If ASAAS_API_KEY exists, query Asaas API for subscription/customer charges
+      if (asaasApiKey) {
+        try {
+          // If subscriptionId exists, get payments for subscription
+          if (subscriptionId) {
+            const subPayRes = await fetch(`${baseUrl}/subscriptions/${subscriptionId}/payments`, {
+              headers: { 'access_token': asaasApiKey },
+            });
+            if (subPayRes.ok) {
+              const subPayData = await subPayRes.json();
+              if (subPayData.data && subPayData.data.length > 0) {
+                const firstPayment = subPayData.data[0];
+                paymentUrl = firstPayment.invoiceUrl || firstPayment.bankSlipUrl || firstPayment.paymentLink || '';
+              }
+            }
+          }
+
+          // If no paymentUrl yet, but customerId exists, get customer payments
+          if (!paymentUrl && customerId) {
+            const custPayRes = await fetch(`${baseUrl}/payments?customer=${customerId}`, {
+              headers: { 'access_token': asaasApiKey },
+            });
+            if (custPayRes.ok) {
+              const custPayData = await custPayRes.json();
+              if (custPayData.data && custPayData.data.length > 0) {
+                const firstPayment = custPayData.data[0];
+                paymentUrl = firstPayment.invoiceUrl || firstPayment.bankSlipUrl || firstPayment.paymentLink || '';
+              }
+            }
+          }
+
+          // If still no customer or subscription on Asaas, create customer & subscription now
+          if (!paymentUrl && empresa) {
+            // Create customer
+            const custRes = await fetch(`${baseUrl}/customers`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'access_token': asaasApiKey },
+              body: JSON.stringify({ name: empresa, email: email || 'financeiro@padaria.io', cpfCnpj: cnpj || undefined, phone: telefone || undefined, externalReference: extRef }),
+            });
+            const custData = await custRes.json();
+            if (custRes.ok && custData.id) {
+              customerId = custData.id;
+              // Create subscription
+              const todayStr = new Date().toISOString().split('T')[0];
+              const subRes = await fetch(`${baseUrl}/subscriptions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'access_token': asaasApiKey },
+                body: JSON.stringify({
+                  customer: customerId,
+                  billingType: 'BOLETO',
+                  value: valorMensalidade || 199,
+                  nextDueDate: todayStr,
+                  cycle: 'MONTHLY',
+                  description: 'Assinatura Mensal PADARIA.io - Controle de Desperdícios',
+                  externalReference: extRef,
+                }),
+              });
+              const subData = await subRes.json();
+              if (subRes.ok && subData.id) {
+                subscriptionId = subData.id;
+                paymentUrl = subData.invoiceUrl || subData.bankSlipUrl || '';
+              }
+            }
+          }
+        } catch (apiErr) {
+          console.warn('[ASAAS] Erro ao consultar API do Asaas:', apiErr);
+        }
+      }
+
+      // 2. Fallback Asaas sandbox URL format if API key is not configured or didn't return URL
+      if (!paymentUrl) {
+        const cleanCode = extRef || 'PADARIA';
+        const isProd = asaasEnvironment === 'production';
+        paymentUrl = isProd
+          ? `https://www.asaas.com/i/invoice_${cleanCode.toLowerCase()}`
+          : `https://sandbox.asaas.com/i/invoice_${cleanCode.toLowerCase()}`;
+      }
+
+      // Save updated link to Firestore if db is ready
+      if (extRef && db && paymentUrl) {
+        try {
+          await setDoc(doc(db, 'companies', extRef), {
+            financeiro: {
+              asaasCustomerId: customerId || null,
+              asaasSubscriptionId: subscriptionId || null,
+              asaasPaymentLink: paymentUrl,
+              ultimoLinkPagamento: paymentUrl,
+            }
+          }, { merge: true });
+        } catch (e) {
+          console.warn('[FIRESTORE] Erro ao salvar link do Asaas:', e);
+        }
+      }
+
+      return res.json({
+        success: true,
+        paymentUrl,
+        invoiceUrl: paymentUrl,
+        customerId,
+        subscriptionId,
+        asaasEnvironment,
+      });
+    } catch (error: any) {
+      console.error('[ROUTE] ERRO em /api/asaas/get-payment-link:', error);
+      res.status(500).json({ error: 'Erro ao obter link do Asaas', details: error.message });
+    }
+  });
+
   // Webhook for Asaas notifications
   app.post('/api/asaas/webhook', async (req, res) => {
     console.log("[ROUTE] POST /api/asaas/webhook - Evento recebido do Asaas", req.body);

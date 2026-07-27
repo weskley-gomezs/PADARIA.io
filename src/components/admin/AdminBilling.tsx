@@ -142,17 +142,46 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
     }
   };
 
-  const handleCopyPaymentLink = (company: BakeryCompany) => {
+  const handleCopyPaymentLink = async (company: BakeryCompany) => {
     const fin = company.financeiro;
-    const link = fin?.asaasPaymentLink 
+    const existingLink = fin?.asaasPaymentLink 
       || fin?.ultimoLinkPagamento 
       || (fin?.historicoCobrancas && fin.historicoCobrancas[0]?.linkBoleto);
 
-    if (link) {
-      navigator.clipboard.writeText(link);
-      showToast(`📋 Link do Asaas para ${company.empresa} copiado com sucesso!`);
-    } else {
-      showToast(`⚠️ Nenhum link de pagamento do Asaas cadastrado para ${company.empresa}.`);
+    if (existingLink && existingLink.startsWith('http')) {
+      navigator.clipboard.writeText(existingLink);
+      showToast(`📋 Link do Asaas (${existingLink}) copiado com sucesso!`);
+      return;
+    }
+
+    try {
+      showToast(`🔄 Obtendo link do Asaas para ${company.empresa}...`);
+      const res = await fetch('/api/asaas/get-payment-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codigoAtivacao: company.codigoAtivacao,
+          empresa: company.empresa,
+          email: company.email,
+          telefone: company.telefone,
+          cnpj: company.cnpj,
+          valorMensalidade: fin?.valorMensalidade || 199,
+          valorImplementacao: fin?.valorImplementacao || 1500,
+          asaasCustomerId: fin?.asaasCustomerId,
+          asaasSubscriptionId: fin?.asaasSubscriptionId,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.paymentUrl) {
+        navigator.clipboard.writeText(data.paymentUrl);
+        showToast(`📋 Link do Asaas (${data.paymentUrl}) copiado para ${company.empresa}!`);
+        onRefresh();
+      } else {
+        showToast(`⚠️ Não foi possível obter o link do Asaas.`);
+      }
+    } catch (err: any) {
+      showToast(`Erro ao obter link do Asaas: ${err.message}`);
     }
   };
 
