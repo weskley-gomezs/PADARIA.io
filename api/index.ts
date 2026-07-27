@@ -6,7 +6,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import fs from 'fs';
 import { GoogleGenAI, Type } from '@google/genai';
-import { PaymentService } from '../src/services/paymentService';
+import { PaymentService } from '../src/services/paymentService.js';
 
 console.log("[INIT] Inicializando servidor Express em /api/index.ts...");
 const app = express();
