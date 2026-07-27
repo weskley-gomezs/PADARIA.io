@@ -1,9 +1,47 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer, setLogLevel } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+import fs from 'fs';
+import path from 'path';
 
-const app = initializeApp(firebaseConfig);
+function getFirebaseConfig() {
+  let config = null;
+  try {
+    const possiblePaths = [
+      path.join(process.cwd(), 'firebase-applet-config.json'),
+      path.join(process.cwd(), 'api', '..', 'firebase-applet-config.json'),
+      '/var/task/firebase-applet-config.json',
+    ];
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        const content = fs.readFileSync(p, 'utf8');
+        config = JSON.parse(content);
+        break;
+      }
+    }
+  } catch (err) {
+    console.warn('[FIREBASE] Could not read firebase-applet-config.json via fs:', err);
+  }
+
+  if (!config) {
+    config = {
+      projectId: "gen-lang-client-0055764381",
+      appId: "1:963456290796:web:55867b22f11d2ad646bac9",
+      apiKey: "AIzaSyB3mjERkgW_aAyAny_hfESGl6DlivVC8gc",
+      authDomain: "gen-lang-client-0055764381.firebaseapp.com",
+      firestoreDatabaseId: "ai-studio-padariaio-05de0e5c-f467-434d-8538-8f91ddb8777f",
+      storageBucket: "gen-lang-client-0055764381.firebasestorage.app",
+      messagingSenderId: "963456290796",
+      measurementId: "",
+      oAuthClientId: "963456290796-bd4mkf5navg98sa16r4psba0826hgn8u.apps.googleusercontent.com",
+      recaptchaSiteKey: ""
+    };
+  }
+  return config;
+}
+
+const firebaseConfig = getFirebaseConfig();
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // CRITICAL: Must include firestoreDatabaseId parameter
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
@@ -21,3 +59,4 @@ export async function testFirestoreConnection(): Promise<boolean> {
     return true;
   }
 }
+
