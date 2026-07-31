@@ -173,27 +173,31 @@ export default function App() {
       />
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#E0E0E0] py-6 text-center text-xs text-gray-500 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
-          <div className="flex items-center space-x-2">
-            <span className="font-extrabold text-[#2C2C2C]">PADARIA.io</span>
-            <span>•</span>
-            <span>Sistema de Gestão & Monitoramento Sanitário de Validade</span>
-          </div>
+      {currentView !== 'admin' && (
+        <footer className="bg-white border-t border-[#E0E0E0] py-6 text-center text-xs text-gray-500 mt-auto">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div className="flex items-center space-x-2">
+              <span className="font-extrabold text-[#2C2C2C]">PADARIA.io</span>
+              <span>•</span>
+              <span>Sistema de Gestão & Monitoramento Sanitário de Validade</span>
+            </div>
 
-          <div className="flex items-center space-x-4 text-gray-400">
-            <button onClick={() => handleNavigate('landing')} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
-              Início / Site
-            </button>
-            <button onClick={() => setIsPrivacyOpen(true)} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
-              Política de Privacidade
-            </button>
-            <button onClick={() => handleNavigate('admin')} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
-              Painel Admin
-            </button>
+            <div className="flex items-center space-x-4 text-gray-400">
+              <button onClick={() => handleNavigate('landing')} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
+                Início / Site
+              </button>
+              <button onClick={() => setIsPrivacyOpen(true)} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
+                Política de Privacidade
+              </button>
+              {isAdminLoggedIn && (
+                <button onClick={() => handleNavigate('admin')} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
+                  Painel Admin
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

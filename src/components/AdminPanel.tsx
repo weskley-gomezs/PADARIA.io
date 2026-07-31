@@ -370,15 +370,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
       id: 'empresas' as AdminTab,
       label: 'Cadastro & Chaves',
       icon: Building2,
-      badge: companies.length,
-      badgeColor: 'bg-[#FF6B00] text-white',
     },
     {
       id: 'cobranca' as AdminTab,
       label: 'Financeiro & Assinaturas',
       icon: DollarSign,
-      badge: 'R$ ' + (financialStats.mrr || 0).toLocaleString('pt-BR'),
-      badgeColor: 'bg-emerald-600 text-white',
     },
     {
       id: 'contratos' as AdminTab,
@@ -455,11 +451,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
                     <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-white' : 'text-[#FF6B00]'}`} />
                     <span>{item.label}</span>
                   </div>
-                  {item.badge && (
-                    <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-full ${item.badgeColor}`}>
-                      {item.badge}
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -477,35 +468,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={triggerClearAllData}
-                className="flex-1 bg-red-950/60 hover:bg-red-900 text-red-300 font-bold py-2 rounded-xl text-[11px] border border-red-800/50 transition-colors flex items-center justify-center space-x-1 cursor-pointer"
-                title="Zerar todo o banco de dados (Dev e Prod no Firestore)"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Zerar Dados</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  StorageService.setAdminAuthenticated(false);
-                  setIsAuthenticated(false);
-                }}
-                className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl transition-colors cursor-pointer"
-                title="Sair do Painel Admin"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-
             <button
-              onClick={triggerDeleteWithoutCNPJ}
-              className="w-full bg-amber-950/60 hover:bg-amber-900 text-amber-300 font-bold py-2 rounded-xl text-[11px] border border-amber-800/50 transition-colors flex items-center justify-center space-x-1 cursor-pointer"
-              title="Excluir todas as empresas sem CNPJ no Firestore"
+              onClick={() => {
+                StorageService.setAdminAuthenticated(false);
+                setIsAuthenticated(false);
+              }}
+              className="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white font-bold py-2.5 rounded-xl text-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer"
+              title="Sair do Painel Admin"
             >
-              <Users className="w-3.5 h-3.5" />
-              <span>Excluir Clientes sem CNPJ</span>
+              <LogOut className="w-4 h-4 text-[#FF6B00]" />
+              <span>Sair do Painel Admin</span>
             </button>
           </div>
         </div>
@@ -850,15 +822,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        onClick={triggerDeleteWithoutCNPJ}
-                        className="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 transition-all flex items-center space-x-1 cursor-pointer"
-                        title="Excluir todas as empresas cadastradas sem CNPJ"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-amber-700" />
-                        <span>Excluir sem CNPJ</span>
-                      </button>
-
                       <div className="relative w-full sm:w-64">
                         <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
                         <input

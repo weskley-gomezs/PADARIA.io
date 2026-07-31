@@ -80,17 +80,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span>App Padaria</span>
               </button>
 
-              <button
-                onClick={() => onNavigate('admin')}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  currentView === 'admin'
-                    ? 'bg-[#2C2C2C] text-white shadow-xs'
-                    : 'text-[#2C2C2C] hover:bg-gray-100'
-                }`}
-              >
-                <ShieldAlert className="w-3.5 h-3.5 text-[#FF6B00]" />
-                <span>Painel Admin</span>
-              </button>
+              {(currentView === 'admin' || isAdminLoggedIn) && (
+                <button
+                  onClick={() => onNavigate('admin')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    currentView === 'admin'
+                      ? 'bg-[#2C2C2C] text-white shadow-xs'
+                      : 'text-[#2C2C2C] hover:bg-gray-100'
+                  }`}
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 text-[#FF6B00]" />
+                  <span>Painel Admin</span>
+                </button>
+              )}
             </div>
 
             {/* View specific actions */}
@@ -184,7 +186,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200 bg-white px-4 py-3 space-y-3 animate-fade-in shadow-lg">
           <div className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider">Navegação do Sistema</div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className={`grid gap-2 ${currentView === 'admin' || isAdminLoggedIn ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <button
               onClick={() => {
                 onNavigate('landing');
@@ -211,18 +213,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>App</span>
             </button>
 
-            <button
-              onClick={() => {
-                onNavigate('admin');
-                setMobileMenuOpen(false);
-              }}
-              className={`flex items-center justify-center space-x-1 p-2.5 rounded-xl text-xs font-bold transition-all ${
-                currentView === 'admin' ? 'bg-[#2C2C2C] text-white' : 'bg-gray-100 text-gray-700'
-              }`}
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-[#FF6B00]" />
-              <span>Admin</span>
-            </button>
+            {(currentView === 'admin' || isAdminLoggedIn) && (
+              <button
+                onClick={() => {
+                  onNavigate('admin');
+                  setMobileMenuOpen(false);
+                }}
+                className={`flex items-center justify-center space-x-1 p-2.5 rounded-xl text-xs font-bold transition-all ${
+                  currentView === 'admin' ? 'bg-[#2C2C2C] text-white' : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-[#FF6B00]" />
+                <span>Admin</span>
+              </button>
+            )}
           </div>
 
           {currentView === 'app' && activeCompany && (

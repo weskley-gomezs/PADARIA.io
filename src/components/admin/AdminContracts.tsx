@@ -54,7 +54,7 @@ export const AdminContracts: React.FC<AdminContractsProps> = ({ companies, onCom
     }
   }, [selectedCompany]);
 
-  const handleSaveContractDetails = () => {
+  const handleSaveContractDetails = async () => {
     if (!selectedCompany) return;
 
     const updates: Partial<ContractInfo> = {
@@ -67,7 +67,7 @@ export const AdminContracts: React.FC<AdminContractsProps> = ({ companies, onCom
       observacoesAdicionais: obs.trim(),
     };
 
-    StorageService.updateCompanyContract(selectedCompany.codigoAtivacao, updates);
+    await StorageService.updateCompanyContract(selectedCompany.codigoAtivacao, updates);
 
     // Also update current local selectedCompany object
     selectedCompany.cnpj = cnpjInput.trim();
@@ -80,14 +80,20 @@ export const AdminContracts: React.FC<AdminContractsProps> = ({ companies, onCom
       ...updates,
     };
 
+    // Keep the financeiro object in memory in sync as well
+    if (selectedCompany.financeiro) {
+      selectedCompany.financeiro.valorImplementacao = Number(valorImp);
+      selectedCompany.financeiro.valorMensalidade = Number(valorMensal);
+    }
+
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
     if (onCompanyUpdate) onCompanyUpdate();
   };
 
-  const handleDownloadContract = () => {
+  const handleDownloadContract = async () => {
     if (!selectedCompany) return;
-    handleSaveContractDetails();
+    await handleSaveContractDetails();
     generateContractPDF(selectedCompany, cnpjInput.trim());
   };
 

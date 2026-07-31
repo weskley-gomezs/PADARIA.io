@@ -810,9 +810,21 @@ export class StorageService {
       ...updates,
     };
 
+    // Keep contract values in sync with billing values
+    if (comp.contrato) {
+      if (updates.valorImplementacao !== undefined) {
+        comp.contrato.valorImplementacao = updates.valorImplementacao;
+      }
+      if (updates.valorMensalidade !== undefined) {
+        comp.contrato.valorMensalidade = updates.valorMensalidade;
+      }
+    }
+
     setItem(KEYS.COMPANIES, companies);
     console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(comp));
-    await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch(() => {});
+    await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch((e) => {
+      handleFirestoreError(e, OperationType.WRITE, `companies/${code}`);
+    });
     return comp;
   }
 
@@ -896,9 +908,21 @@ export class StorageService {
       comp.cnpj = updates.clienteCnpj;
     }
 
+    // Keep billing values in sync with contract values
+    if (comp.financeiro) {
+      if (updates.valorImplementacao !== undefined) {
+        comp.financeiro.valorImplementacao = updates.valorImplementacao;
+      }
+      if (updates.valorMensalidade !== undefined) {
+        comp.financeiro.valorMensalidade = updates.valorMensalidade;
+      }
+    }
+
     setItem(KEYS.COMPANIES, companies);
     console.log("DADOS ANTES DO FIRESTORE", JSON.stringify(comp));
-    await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch(() => {});
+    await setDoc(doc(db, 'companies', code), removeUndefined(comp)).catch((e) => {
+      handleFirestoreError(e, OperationType.WRITE, `companies/${code}`);
+    });
     return comp;
   }
 

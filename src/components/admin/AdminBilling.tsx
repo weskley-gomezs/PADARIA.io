@@ -61,20 +61,25 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
     setEditingCode(company.codigoAtivacao);
     setEditStatus(company.financeiro?.statusAssinatura || 'pendente');
     setEditDueDate(company.financeiro?.dataProximaCobranca || formatDateToISO(new Date()));
-    setEditValorImp(company.financeiro?.valorImplementacao || 1500);
-    setEditValorMensal(company.financeiro?.valorMensalidade || 199);
+    setEditValorImp(company.financeiro?.valorImplementacao ?? 1500);
+    setEditValorMensal(company.financeiro?.valorMensalidade ?? 199);
   };
 
-  const handleSaveBillingStatus = (code: string) => {
-    StorageService.updateCompanyBilling(code, {
-      statusAssinatura: editStatus,
-      dataProximaCobranca: editDueDate,
-      valorImplementacao: Number(editValorImp) || 1500,
-      valorMensalidade: Number(editValorMensal) || 199,
-    });
-    setEditingCode(null);
-    onRefresh();
-    showToast(`Status, datas e valores financeiros atualizados com sucesso!`);
+  const handleSaveBillingStatus = async (code: string) => {
+    try {
+      await StorageService.updateCompanyBilling(code, {
+        statusAssinatura: editStatus,
+        dataProximaCobranca: editDueDate,
+        valorImplementacao: isNaN(Number(editValorImp)) ? 1500 : Number(editValorImp),
+        valorMensalidade: isNaN(Number(editValorMensal)) ? 199 : Number(editValorMensal),
+      });
+      setEditingCode(null);
+      onRefresh();
+      showToast(`Status, datas e valores financeiros atualizados com sucesso!`);
+    } catch (err: any) {
+      console.error("Erro ao salvar dados financeiros:", err);
+      showToast(`Erro ao salvar dados financeiros: ${err.message || err}`);
+    }
   };
 
   const handleOpenWhatsAppModal = (c: BakeryCompany) => {
@@ -91,14 +96,19 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
     }
   };
 
-  const handleMarkAsPaid = (code: string) => {
-    StorageService.updateCompanyBilling(code, {
-      implementacaoPaga: true,
-      statusAssinatura: 'ativo',
-      dataPagamentoImplementacao: new Date().toISOString(),
-    });
-    onRefresh();
-    showToast(`Pagamento de implementação e ativação confirmados!`);
+  const handleMarkAsPaid = async (code: string) => {
+    try {
+      await StorageService.updateCompanyBilling(code, {
+        implementacaoPaga: true,
+        statusAssinatura: 'ativo',
+        dataPagamentoImplementacao: new Date().toISOString(),
+      });
+      onRefresh();
+      showToast(`Pagamento de implementação e ativação confirmados!`);
+    } catch (err: any) {
+      console.error("Erro ao confirmar pagamento:", err);
+      showToast(`Erro ao confirmar pagamento: ${err.message || err}`);
+    }
   };
 
   const handleSimulateWebhook = async (company: BakeryCompany, eventType: 'PAYMENT_CONFIRMED' | 'SUBSCRIPTION_DELETED') => {
@@ -586,16 +596,6 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
                             >
                               <MessageSquare className="w-3.5 h-3.5" />
                               <span>WhatsApp</span>
-                            </button>
-
-                            {/* Copy Asaas Payment Link */}
-                            <button
-                              onClick={() => handleCopyPaymentLink(c)}
-                              className="px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] transition-all cursor-pointer inline-flex items-center space-x-1 border border-blue-200"
-                              title="Copiar Link de Pagamento do Asaas para o Cliente"
-                            >
-                              <Link2 className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Link Asaas</span>
                             </button>
 
                             <button
