@@ -27,11 +27,12 @@ import {
   CreditCard,
   Send,
   BarChart3,
+  Crown,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem } from '../types';
 import { StorageService } from '../services/storageService';
-import { formatDateToBR, getRelativeExpirationText, generateActivationCode } from '../utils/dateUtils';
+import { formatDateToBR, getRelativeExpirationText, generateActivationCode, calculateDaysRemaining } from '../utils/dateUtils';
 import { ProductModal } from './ProductModal';
 import { NotificationsModal } from './NotificationsModal';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
@@ -39,6 +40,8 @@ import { PrintReportModal } from './PrintReportModal';
 import { SupportModal } from './SupportModal';
 import { ImageScanner } from './ImageScanner';
 import { WasteChartSection } from './WasteChartSection';
+import { VipClubSection } from './VipClubSection';
+import { VipOfferModal } from './VipOfferModal';
 
 interface BakeryAppProps {
   presetCode?: string | null;
@@ -59,7 +62,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'analise' | 'insights' | 'relatorio' | 'config'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'analise' | 'insights' | 'relatorio' | 'config' | 'vip'>('dashboard');
   const [keepLoggedIn, setKeepLoggedIn] = useState<boolean>(true);
   const [analysisStartDate, setAnalysisStartDate] = useState<string>('');
   const [analysisEndDate, setAnalysisEndDate] = useState<string>('');
@@ -74,6 +77,14 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
   const [isPrivacyOpen, setIsPrivacyOpen] = useState<boolean>(false);
   const [isPrintReportOpen, setIsPrintReportOpen] = useState<boolean>(false);
   const [isSupportOpen, setIsSupportOpen] = useState<boolean>(false);
+  const [isVipOfferModalOpen, setIsVipOfferModalOpen] = useState<boolean>(false);
+  const [vipOfferProductInfo, setVipOfferProductInfo] = useState<{
+    productId: string;
+    nomeProduto: string;
+    categoria: string;
+    valorOriginal: number;
+    dataValidade: string;
+  } | null>(null);
 
   // Accordion UI state
   const [isSettingsExpanded, setIsSettingsExpanded] = useState<boolean>(false);
@@ -207,7 +218,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
         );
         showToast('Descarte atualizado com sucesso!');
       } else {
-        await StorageService.addProduct(
+        const newProduct = await StorageService.addProduct(
           company.codigoAtivacao,
           nome,
           quantidade,
@@ -221,10 +232,59 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           notas
         );
         showToast('Descarte registrado com sucesso!');
+
+        // Trigger VIP modal if expiring in <= 3 days
+        const daysLeft = calculateDaysRemaining(dataValidade);
+        if (daysLeft >= 0 && daysLeft <= 3) {
+          setVipOfferProductInfo({
+            productId: newProduct.id,
+            nomeProduto: newProduct.nome,
+            categoria: newProduct.categoria || 'Geral',
+            valorOriginal: valorTotal && valorTotal > 0 ? valorTotal : (valorKg && valorKg > 0 ? valorKg : 15.0),
+            dataValidade: newProduct.dataValidade,
+          });
+          setIsVipOfferModalOpen(true);
+        }
       }
       setProductToEdit(null);
     } catch (err: any) {
       alert(err.message || 'Erro ao salvar produto.');
+    }
+  };
+
+  const handleCreateVipOffer = async (data: {
+    valorOriginal: number;
+    valorPromocional: number;
+    desconto: number;
+    nomeProduto: string;
+    categoria: string;
+  }) => {
+    if (!company || !vipOfferProductInfo) return;
+
+    try {
+      await StorageService.addVipOffer(
+        company.codigoAtivacao,
+        vipOfferProductInfo.productId,
+        data.nomeProduto,
+        data.categoria,
+        data.valorOriginal,
+        data.valorPromocional,
+        data.desconto,
+        vipOfferProductInfo.dataValidade
+      );
+      
+      showToast(`Oferta de "${data.nomeProduto}" adicionada ao Clube VIP!`);
+      setIsVipOfferModalOpen(false);
+      setVipOfferProductInfo(null);
+      
+      setActiveTab('vip');
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    } catch (err: any) {
+      alert(err.message || 'Erro ao criar oferta VIP.');
     }
   };
 
@@ -271,6 +331,21 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
     } else {
       // If backend already created product, onSnapshot will pick it up automatically; otherwise create here
       showToast(`Descarte registrado: "${result.nome || 'Produto'}" adicionado ao registro de perdas.`);
+    }
+
+    // Trigger VIP modal if scanned product is expiring in <= 3 days
+    if (result.dataValidade) {
+      const daysLeft = calculateDaysRemaining(result.dataValidade);
+      if (daysLeft >= 0 && daysLeft <= 3) {
+        setVipOfferProductInfo({
+          productId: bestMatch ? bestMatch.id : 'scanned_' + Date.now(),
+          nomeProduto: result.nome || 'Produto Escaneado',
+          categoria: 'Geral',
+          valorOriginal: result.valorTotal && result.valorTotal > 0 ? result.valorTotal : (result.valorKg && result.valorKg > 0 ? result.valorKg : 15.0),
+          dataValidade: result.dataValidade,
+        });
+        setIsVipOfferModalOpen(true);
+      }
     }
 
     setIsWasteScannerOpen(false);
@@ -511,6 +586,15 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           <Settings className="w-3.5 h-3.5" />
           <span>⚙️ Config</span>
         </button>
+        <button
+          onClick={() => setActiveTab('vip')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'vip' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-amber-200'
+          }`}
+        >
+          <Crown className="w-3.5 h-3.5 text-amber-500" />
+          <span>👑 Clube VIP</span>
+        </button>
       </div>
 
       {activeTab === 'dashboard' && (
@@ -582,6 +666,268 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs">
             <h2 className="text-base sm:text-lg font-extrabold text-[#1F2937] mb-3">Evolução do Desperdício (Últimos 30 Dias)</h2>
             <WasteChartSection products={products} />
+          </div>
+
+          {/* 2. GERENCIAR PRODUTOS (TABELA INTERATIVA) */}
+          <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-4">
+            {/* Table Header & Controls */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-lg font-extrabold text-[#2C2C2C]">2. Registro de Descartes</h2>
+                <p className="text-xs text-gray-500">Tabela em tempo real de validade e saldo</p>
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Search */}
+                <div className="relative min-w-[200px]">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Buscar produto..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
+                  />
+                </div>
+
+                {/* Category Filter */}
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="px-3 py-1.5 text-xs rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
+                >
+                  <option value="all">Todas as Categorias</option>
+                  {categoriesList.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Mobile Product Card View (Visible on small screens) */}
+            <div className="md:hidden space-y-3">
+              {filteredProducts.length === 0 ? (
+                <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                  <p className="font-bold text-sm text-gray-700">Nenhum registro encontrado.</p>
+                  <p className="text-xs text-gray-500 mt-1">Toque em "+ Registrar" para adicionar um descarte.</p>
+                </div>
+              ) : (
+                filteredProducts.map((p) => (
+                  <div
+                    key={p.id}
+                    className={`p-4 rounded-2xl border transition-all space-y-3 ${
+                      p.status === 'vencido'
+                        ? 'bg-red-50/40 border-red-200'
+                        : p.status === 'vencendo'
+                        ? 'bg-amber-50/40 border-amber-200'
+                        : 'bg-white border-gray-200 shadow-xs'
+                    }`}
+                  >
+                    {/* Header: Title, Category & Status Pill */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="font-extrabold text-sm text-[#2C2C2C]">{p.nome}</h3>
+                        <div className="flex items-center space-x-1.5 mt-1">
+                          <span className="text-[10px] font-semibold bg-[#F5E6D3] text-[#2C2C2C] px-2 py-0.5 rounded-full">
+                            {p.categoria || 'Geral'}
+                          </span>
+                          {p.barcode && (
+                            <span className="text-[9px] font-mono text-gray-400">
+                              #{p.barcode.slice(-6)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                          p.status === 'vencido'
+                            ? 'bg-red-100 text-red-700'
+                            : p.status === 'vencendo'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-orange-100 text-orange-800'
+                        }`}
+                      >
+                        {p.status === 'vencido'
+                          ? 'Vencido'
+                          : p.status === 'vencendo'
+                          ? 'Vencendo'
+                          : 'Em dia'}
+                      </span>
+                    </div>
+
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-gray-100/80">
+                      <div className="bg-white/80 p-2 rounded-xl border border-gray-100">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase block">Quantidade</span>
+                        <span className="font-black text-[#2C2C2C] text-sm">{p.quantidade} un</span>
+                      </div>
+
+                      <div className="bg-white/80 p-2 rounded-xl border border-gray-100">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase block">Valor Total</span>
+                        <span className="font-black text-[#2C2C2C] text-sm">
+                          {p.valorTotal ? `R$ ${p.valorTotal.toFixed(2)}` : 'Não inf.'}
+                        </span>
+                      </div>
+
+                      <div className="col-span-2 flex items-center justify-between text-[11px] pt-1">
+                        <div className="text-gray-500">
+                          Validade: <strong className="text-[#2C2C2C]">{formatDateToBR(p.dataValidade)}</strong>
+                        </div>
+                        <div
+                          className={`font-bold ${
+                            p.status === 'vencido'
+                              ? 'text-red-600'
+                              : p.status === 'vencendo'
+                              ? 'text-amber-600'
+                              : 'text-gray-500'
+                          }`}
+                        >
+                          {getRelativeExpirationText(p.diasParaVencer)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Mobile Action Buttons */}
+                    <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
+                      <button
+                        onClick={() => {
+                          setProductToEdit(p);
+                          setIsProductModalOpen(true);
+                        }}
+                        className="flex-1 py-2 rounded-xl bg-[#F5E6D3] hover:bg-[#D4A574] text-[#2C2C2C] font-bold text-xs transition-colors flex items-center justify-center space-x-1"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>Editar</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteProduct(p.id, p.nome)}
+                        className="py-2 px-3 rounded-xl bg-red-100 hover:bg-red-200 text-red-600 font-bold text-xs transition-colors flex items-center justify-center space-x-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Excluir</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Products Desktop Table (Hidden on small screens) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#FAFAF8] text-gray-500 text-[11px] font-extrabold uppercase tracking-wider border-b border-gray-200">
+                    <th className="py-3.5 px-4">Produto</th>
+                    <th className="py-3.5 px-4">Quantidade</th>
+                    <th className="py-3.5 px-4">Datas (Fab / Validade)</th>
+                    <th className="py-3.5 px-4">Valores (Un. / Total)</th>
+                    <th className="py-3.5 px-4 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs text-[#2C2C2C]">
+                  {filteredProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-12 text-gray-400">
+                        <p className="font-bold text-sm">Nenhum registro encontrado.</p>
+                        <p className="text-xs mt-1">Clique em "+ Registrar Descarte" para adicionar.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProducts.map((p) => (
+                      <tr
+                        key={p.id}
+                        className={`transition-colors hover:bg-gray-50/80 ${
+                          p.status === 'vencido'
+                            ? 'bg-red-50/30'
+                            : p.status === 'vencendo'
+                            ? 'bg-amber-50/30'
+                            : ''
+                        }`}
+                      >
+                        {/* Produto Name & Category */}
+                        <td className="py-3.5 px-4 font-bold">
+                          <div className="text-sm font-extrabold text-[#2C2C2C]">{p.nome}</div>
+                          <div className="flex items-center space-x-2 mt-0.5">
+                            <span className="text-[10px] font-semibold bg-[#F5E6D3] text-[#2C2C2C] px-2 py-0.5 rounded-full">
+                              {p.categoria || 'Geral'}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Quantidade */}
+                        <td className="py-3.5 px-4">
+                          <span className="text-sm font-black text-[#2C2C2C] bg-gray-100 px-3 py-1 rounded-xl">
+                            {p.quantidade} un
+                          </span>
+                        </td>
+
+                        {/* Datas */}
+                        <td className="py-3.5 px-4">
+                          {p.dataFabricacao && (
+                            <div className="text-xs text-gray-500">Fab: {formatDateToBR(p.dataFabricacao)}</div>
+                          )}
+                          <div className="font-extrabold text-sm text-[#2C2C2C]">Val: {formatDateToBR(p.dataValidade)}</div>
+                          <div
+                            className={`text-[11px] font-bold ${
+                              p.status === 'vencido'
+                                ? 'text-red-600'
+                                : p.status === 'vencendo'
+                                ? 'text-amber-600'
+                                : 'text-gray-400'
+                            }`}
+                          >
+                            {getRelativeExpirationText(p.diasParaVencer)}
+                          </div>
+                        </td>
+
+                        {/* Valores */}
+                        <td className="py-3.5 px-4">
+                          {p.valorKg ? (
+                            <div className="text-xs text-gray-500">R$ {p.valorKg.toFixed(2)} / KG</div>
+                          ) : (
+                            <div className="text-xs text-gray-400">KG não inf.</div>
+                          )}
+                          {p.valorTotal ? (
+                            <div className="font-extrabold text-sm text-[#2C2C2C]">Total: R$ {p.valorTotal.toFixed(2)}</div>
+                          ) : (
+                            <div className="text-sm text-gray-400">-</div>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3.5 px-4 text-right space-x-1">
+                          {/* Editar */}
+                          <button
+                            onClick={() => {
+                              setProductToEdit(p);
+                              setIsProductModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] transition-colors cursor-pointer"
+                            title="Editar Produto"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Deletar */}
+                          <button
+                            onClick={() => handleDeleteProduct(p.id, p.nome)}
+                            className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition-colors cursor-pointer"
+                            title="Excluir Produto"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </>
       )}
@@ -839,6 +1185,10 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
         </div>
       )}
 
+      {activeTab === 'vip' && (
+        <VipClubSection bakeryCode={company.codigoAtivacao} />
+      )}
+
       {activeTab === 'config' && (
         <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-6">
           <div>
@@ -902,268 +1252,6 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
         </div>
       )}
 
-      {/* 2. GERENCIAR PRODUTOS (TABELA INTERATIVA) */}
-      <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-4">
-        {/* Table Header & Controls */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-100">
-          <div>
-            <h2 className="text-lg font-extrabold text-[#2C2C2C]">2. Registro de Descartes</h2>
-            <p className="text-xs text-gray-500">Tabela em tempo real de validade e saldo</p>
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Search */}
-            <div className="relative min-w-[200px]">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                placeholder="Buscar produto..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-1.5 text-xs rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
-            >
-              <option value="all">Todas as Categorias</option>
-              {categoriesList.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Mobile Product Card View (Visible on small screens) */}
-        <div className="md:hidden space-y-3">
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-              <p className="font-bold text-sm text-gray-700">Nenhum registro encontrado.</p>
-              <p className="text-xs text-gray-500 mt-1">Toque em "+ Registrar" para adicionar um descarte.</p>
-            </div>
-          ) : (
-            filteredProducts.map((p) => (
-              <div
-                key={p.id}
-                className={`p-4 rounded-2xl border transition-all space-y-3 ${
-                  p.status === 'vencido'
-                    ? 'bg-red-50/40 border-red-200'
-                    : p.status === 'vencendo'
-                    ? 'bg-amber-50/40 border-amber-200'
-                    : 'bg-white border-gray-200 shadow-xs'
-                }`}
-              >
-                {/* Header: Title, Category & Status Pill */}
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-extrabold text-sm text-[#2C2C2C]">{p.nome}</h3>
-                    <div className="flex items-center space-x-1.5 mt-1">
-                      <span className="text-[10px] font-semibold bg-[#F5E6D3] text-[#2C2C2C] px-2 py-0.5 rounded-full">
-                        {p.categoria || 'Geral'}
-                      </span>
-                      {p.barcode && (
-                        <span className="text-[9px] font-mono text-gray-400">
-                          #{p.barcode.slice(-6)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <span
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                      p.status === 'vencido'
-                        ? 'bg-red-100 text-red-700'
-                        : p.status === 'vencendo'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-orange-100 text-orange-800'
-                    }`}
-                  >
-                    {p.status === 'vencido'
-                      ? 'Vencido'
-                      : p.status === 'vencendo'
-                      ? 'Vencendo'
-                      : 'Em dia'}
-                  </span>
-                </div>
-
-                {/* Details Grid */}
-                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-gray-100/80">
-                  <div className="bg-white/80 p-2 rounded-xl border border-gray-100">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase block">Quantidade</span>
-                    <span className="font-black text-[#2C2C2C] text-sm">{p.quantidade} un</span>
-                  </div>
-
-                  <div className="bg-white/80 p-2 rounded-xl border border-gray-100">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase block">Valor Total</span>
-                    <span className="font-black text-[#2C2C2C] text-sm">
-                      {p.valorTotal ? `R$ ${p.valorTotal.toFixed(2)}` : 'Não inf.'}
-                    </span>
-                  </div>
-
-                  <div className="col-span-2 flex items-center justify-between text-[11px] pt-1">
-                    <div className="text-gray-500">
-                      Validade: <strong className="text-[#2C2C2C]">{formatDateToBR(p.dataValidade)}</strong>
-                    </div>
-                    <div
-                      className={`font-bold ${
-                        p.status === 'vencido'
-                          ? 'text-red-600'
-                          : p.status === 'vencendo'
-                          ? 'text-amber-600'
-                          : 'text-gray-500'
-                      }`}
-                    >
-                      {getRelativeExpirationText(p.diasParaVencer)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Mobile Action Buttons */}
-                <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
-                  <button
-                    onClick={() => {
-                      setProductToEdit(p);
-                      setIsProductModalOpen(true);
-                    }}
-                    className="flex-1 py-2 rounded-xl bg-[#F5E6D3] hover:bg-[#D4A574] text-[#2C2C2C] font-bold text-xs transition-colors flex items-center justify-center space-x-1"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    <span>Editar</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleDeleteProduct(p.id, p.nome)}
-                    className="py-2 px-3 rounded-xl bg-red-100 hover:bg-red-200 text-red-600 font-bold text-xs transition-colors flex items-center justify-center space-x-1"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Excluir</span>
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Products Desktop Table (Hidden on small screens) */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#FAFAF8] text-gray-500 text-[11px] font-extrabold uppercase tracking-wider border-b border-gray-200">
-                <th className="py-3.5 px-4">Produto</th>
-                <th className="py-3.5 px-4">Quantidade</th>
-                <th className="py-3.5 px-4">Datas (Fab / Validade)</th>
-                <th className="py-3.5 px-4">Valores (Un. / Total)</th>
-                <th className="py-3.5 px-4 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 text-xs text-[#2C2C2C]">
-              {filteredProducts.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-12 text-gray-400">
-                    <p className="font-bold text-sm">Nenhum registro encontrado.</p>
-                    <p className="text-xs mt-1">Clique em "+ Registrar Descarte" para adicionar.</p>
-                  </td>
-                </tr>
-              ) : (
-                filteredProducts.map((p) => (
-                  <tr
-                    key={p.id}
-                    className={`transition-colors hover:bg-gray-50/80 ${
-                      p.status === 'vencido'
-                        ? 'bg-red-50/30'
-                        : p.status === 'vencendo'
-                        ? 'bg-amber-50/30'
-                        : ''
-                    }`}
-                  >
-                    {/* Produto Name & Category */}
-                    <td className="py-3.5 px-4 font-bold">
-                      <div className="text-sm font-extrabold text-[#2C2C2C]">{p.nome}</div>
-                      <div className="flex items-center space-x-2 mt-0.5">
-                        <span className="text-[10px] font-semibold bg-[#F5E6D3] text-[#2C2C2C] px-2 py-0.5 rounded-full">
-                          {p.categoria || 'Geral'}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Quantidade */}
-                    <td className="py-3.5 px-4">
-                      <span className="text-sm font-black text-[#2C2C2C] bg-gray-100 px-3 py-1 rounded-xl">
-                        {p.quantidade} un
-                      </span>
-                    </td>
-
-                    {/* Datas */}
-                    <td className="py-3.5 px-4">
-                      {p.dataFabricacao && (
-                        <div className="text-xs text-gray-500">Fab: {formatDateToBR(p.dataFabricacao)}</div>
-                      )}
-                      <div className="font-extrabold text-sm text-[#2C2C2C]">Val: {formatDateToBR(p.dataValidade)}</div>
-                      <div
-                        className={`text-[11px] font-bold ${
-                          p.status === 'vencido'
-                            ? 'text-red-600'
-                            : p.status === 'vencendo'
-                            ? 'text-amber-600'
-                            : 'text-gray-400'
-                        }`}
-                      >
-                        {getRelativeExpirationText(p.diasParaVencer)}
-                      </div>
-                    </td>
-
-                    {/* Valores */}
-                    <td className="py-3.5 px-4">
-                      {p.valorKg ? (
-                        <div className="text-xs text-gray-500">R$ {p.valorKg.toFixed(2)} / KG</div>
-                      ) : (
-                        <div className="text-xs text-gray-400">KG não inf.</div>
-                      )}
-                      {p.valorTotal ? (
-                        <div className="font-extrabold text-sm text-[#2C2C2C]">Total: R$ {p.valorTotal.toFixed(2)}</div>
-                      ) : (
-                        <div className="text-sm text-gray-400">-</div>
-                      )}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-3.5 px-4 text-right space-x-1">
-                      {/* Editar */}
-                      <button
-                        onClick={() => {
-                          setProductToEdit(p);
-                          setIsProductModalOpen(true);
-                        }}
-                        className="p-1.5 rounded-lg bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] transition-colors cursor-pointer"
-                        title="Editar Produto"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* Deletar */}
-                      <button
-                        onClick={() => handleDeleteProduct(p.id, p.nome)}
-                        className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition-colors cursor-pointer"
-                        title="Excluir Produto"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       {/* MODALS */}
       <ProductModal
         isOpen={isProductModalOpen}
@@ -1188,6 +1276,18 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
       />
 
       <PrivacyPolicyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
+
+      {vipOfferProductInfo && (
+        <VipOfferModal
+          isOpen={isVipOfferModalOpen}
+          onClose={() => {
+            setIsVipOfferModalOpen(false);
+            setVipOfferProductInfo(null);
+          }}
+          onConfirm={handleCreateVipOffer}
+          productInfo={vipOfferProductInfo}
+        />
+      )}
 
       {company && (
         <>
@@ -1266,6 +1366,16 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
         >
           <Settings className="w-5 h-5" />
           <span className="text-[10px] mt-0.5">Config</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('vip')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'vip' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Crown className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">VIP</span>
         </button>
       </nav>
     </div>

@@ -1,4 +1,4 @@
-import { BakeryCompany, Product, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo } from '../types/index.js';
+import { BakeryCompany, Product, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer } from '../types/index.js';
 import { calculateDaysRemaining, getProductStatus, formatDateToISO, generateActivationCode } from '../utils/dateUtils.js';
 import { db, testFirestoreConnection } from './firebase.js';
 import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
@@ -29,6 +29,7 @@ const KEYS = {
   BAKERY_SESSION: 'padarias_active_session',
   ADMIN_PASSWORD: 'padarias_admin_password',
   ASAAS_SETTINGS: 'padarias_asaas_settings',
+  VIP_OFFERS: 'padarias_vip_offers_v1',
 };
 
 const EXCLUDED_CODES = ['AB12CD34', 'PAD8X92M', 'DEMO9999', '6SSHQQTZ', '8FM8XCN6', 'CAVU5FKP'];
@@ -71,6 +72,9 @@ export class StorageService {
     }
     if (!localStorage.getItem(KEYS.TICKETS)) {
       setItem(KEYS.TICKETS, []);
+    }
+    if (!localStorage.getItem(KEYS.VIP_OFFERS)) {
+      setItem(KEYS.VIP_OFFERS, []);
     }
     if (!localStorage.getItem(KEYS.ADMIN_PASSWORD)) {
       setItem(KEYS.ADMIN_PASSWORD, 'admin123');
@@ -383,6 +387,18 @@ export class StorageService {
         }
       } catch (e) {
         console.warn('Firestore fetch tickets warning:', e);
+      }
+
+      // 6. VIP Offers
+      try {
+        const vipSnap = await getDocs(collection(db, 'vipOffers'));
+        if (!vipSnap.empty) {
+          const remoteVipOffers: VipOffer[] = [];
+          vipSnap.forEach((d) => remoteVipOffers.push(d.data() as VipOffer));
+          setItem(KEYS.VIP_OFFERS, remoteVipOffers);
+        }
+      } catch (e) {
+        console.warn('Firestore fetch vipOffers warning:', e);
       }
     } catch (err: any) {
       if (err.message?.includes('Quota') || String(err).includes('Quota')) {
@@ -1224,6 +1240,163 @@ export class StorageService {
     setItem(KEYS.SALES_HISTORY, history);
   }
 
+  // VIP Offers CRUD
+  static subscribeVipOffers(callback: (offers: VipOffer[]) => void, bakeryCode?: string): Unsubscribe {
+    const colRef = collection(db, 'vipOffers');
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const offers: VipOffer[] = [];
+        snapshot.forEach((d) => {
+          const o = d.data() as VipOffer;
+          if (o && o.id) {
+            const daysRemaining = calculateDaysRemaining(o.dataValidade);
+            offers.push({
+              ...o,
+              diasParaVencer: daysRemaining,
+            });
+          }
+        });
+        setItem(KEYS.VIP_OFFERS, offers);
+
+        if (bakeryCode) {
+          const cleanCode = bakeryCode.trim().toUpperCase();
+          callback(offers.filter((o) => o.bakeryCode.toUpperCase() === cleanCode));
+        } else {
+          callback(offers);
+        }
+      },
+      (err) => {
+        if (err.message?.includes('Quota') || String(err).includes('Quota')) {
+          console.warn('Quota limit exceeded for vipOffers subscription, falling back to local storage.');
+        } else {
+          console.error('Error subscribing to vipOffers:', err);
+        }
+      }
+    );
+  }
+
+  static getVipOffers(bakeryCode?: string): VipOffer[] {
+    const all = getItem<VipOffer[]>(KEYS.VIP_OFFERS, []);
+    const updated = all.map((o) => {
+      const daysRemaining = calculateDaysRemaining(o.dataValidade);
+      return {
+        ...o,
+        diasParaVencer: daysRemaining,
+      };
+    });
+
+    if (bakeryCode) {
+      const cleanCode = bakeryCode.trim().toUpperCase();
+      return updated.filter((o) => o.bakeryCode.toUpperCase() === cleanCode);
+    }
+    return updated;
+  }
+
+  static async addVipOffer(
+    bakeryCode: string,
+    productId: string,
+    nomeProduto: string,
+    categoria: string,
+    valorOriginal: number,
+    valorPromocional: number,
+    desconto: number,
+    dataValidade: string
+  ): Promise<VipOffer> {
+    const offers = StorageService.getVipOffers();
+    const daysRemaining = calculateDaysRemaining(dataValidade);
+    
+    const newOffer: VipOffer = {
+      id: 'vip_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      bakeryCode: bakeryCode.trim().toUpperCase(),
+      productId,
+      nomeProduto: nomeProduto.trim(),
+      categoria: categoria || 'Geral',
+      valorOriginal: Number(valorOriginal),
+      valorPromocional: Number(valorPromocional),
+      desconto: Number(desconto),
+      dataValidade,
+      diasParaVencer: daysRemaining,
+      status: 'ativo',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    offers.unshift(newOffer);
+    setItem(KEYS.VIP_OFFERS, offers);
+
+    await setDoc(doc(db, 'vipOffers', newOffer.id), removeUndefined(newOffer)).catch((e) => {
+      handleFirestoreError(e, OperationType.WRITE, `vipOffers/${newOffer.id}`);
+    });
+
+    return newOffer;
+  }
+
+  static async updateVipOfferStatus(
+    id: string,
+    status: 'ativo' | 'vendido' | 'descartado',
+    additionalData?: { dataVenda?: string; valorVenda?: number }
+  ): Promise<VipOffer | null> {
+    const offers = StorageService.getVipOffers();
+    const index = offers.findIndex((o) => o.id === id);
+    if (index === -1) return null;
+
+    const updated: VipOffer = {
+      ...offers[index],
+      status,
+      updatedAt: new Date().toISOString(),
+      ...additionalData,
+    };
+
+    offers[index] = updated;
+    setItem(KEYS.VIP_OFFERS, offers);
+
+    await setDoc(doc(db, 'vipOffers', id), removeUndefined(updated)).catch((e) => {
+      handleFirestoreError(e, OperationType.WRITE, `vipOffers/${id}`);
+    });
+
+    return updated;
+  }
+
+  static async updateVipOffer(
+    id: string,
+    updates: {
+      valorOriginal?: number;
+      valorPromocional?: number;
+      desconto?: number;
+      nomeProduto?: string;
+    }
+  ): Promise<VipOffer | null> {
+    const offers = StorageService.getVipOffers();
+    const index = offers.findIndex((o) => o.id === id);
+    if (index === -1) return null;
+
+    const updated: VipOffer = {
+      ...offers[index],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+
+    offers[index] = updated;
+    setItem(KEYS.VIP_OFFERS, offers);
+
+    await setDoc(doc(db, 'vipOffers', id), removeUndefined(updated)).catch((e) => {
+      handleFirestoreError(e, OperationType.WRITE, `vipOffers/${id}`);
+    });
+
+    return updated;
+  }
+
+  static async deleteVipOffer(id: string): Promise<void> {
+    let offers = StorageService.getVipOffers();
+    offers = offers.filter((o) => o.id !== id);
+    setItem(KEYS.VIP_OFFERS, offers);
+
+    await deleteDoc(doc(db, 'vipOffers', id)).catch((e) => {
+      handleFirestoreError(e, OperationType.DELETE, `vipOffers/${id}`);
+    });
+  }
+
   static getAdminStats(): AdminStats {
     const companies = StorageService.getCompanies();
     const products = StorageService.getProducts();
@@ -1241,6 +1414,7 @@ export class StorageService {
     setItem(KEYS.PRODUCTS, []);
     setItem(KEYS.SALES_HISTORY, []);
     setItem(KEYS.TICKETS, []);
+    setItem(KEYS.VIP_OFFERS, []);
     setItem(KEYS.ADMIN_PASSWORD, 'admin123');
     setItem(KEYS.ADMIN_AUTH, false);
     setItem(KEYS.BAKERY_SESSION, null);

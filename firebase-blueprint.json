@@ -75,6 +75,29 @@
         "adminPassword": { "type": "string" },
         "updatedAt": { "type": "string" }
       }
+    },
+    "VipOffer": {
+      "title": "VipOffer",
+      "description": "Product promotion offer shared in the VIP Club",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bakeryCode": { "type": "string" },
+        "productId": { "type": "string" },
+        "nomeProduto": { "type": "string" },
+        "categoria": { "type": "string" },
+        "valorOriginal": { "type": "number" },
+        "valorPromocional": { "type": "number" },
+        "desconto": { "type": "number" },
+        "dataValidade": { "type": "string" },
+        "diasParaVencer": { "type": "number" },
+        "status": { "type": "string", "enum": ["ativo", "vendido", "descartado"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "dataVenda": { "type": "string" },
+        "valorVenda": { "type": "number" }
+      },
+      "required": ["id", "bakeryCode", "productId", "nomeProduto", "valorOriginal", "valorPromocional", "status"]
     }
   },
   "firestore": {
@@ -93,6 +116,10 @@
     "/tickets/{ticketId}": {
       "schema": "SupportTicket",
       "description": "Collection storing support tickets"
+    },
+    "/vipOffers/{offerId}": {
+      "schema": "VipOffer",
+      "description": "Collection storing VIP Club promotions and history"
     },
     "/settings/{settingId}": {
       "schema": "AdminSettings",

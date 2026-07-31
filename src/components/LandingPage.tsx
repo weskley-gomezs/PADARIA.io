@@ -3,31 +3,35 @@ import {
   ShieldCheck,
   Zap,
   Sparkles,
-  Smartphone,
-  Laptop,
-  Tablet,
   CheckCircle2,
   ArrowRight,
   Clock,
-  TrendingDown,
   FileText,
-  Search,
-  Cloud,
   Users,
   RefreshCw,
-  HelpCircle,
   ChevronDown,
   ChevronUp,
   MessageSquare,
-  Building,
   Check,
-  AlertTriangle,
   Menu,
   X,
   Lock,
+  Camera,
+  Crown,
+  Tag,
+  Share2,
+  DollarSign,
+  TrendingUp,
+  Image,
+  Flame,
+  ShoppingBag,
+  ArrowUpRight,
+  TrendingDown,
+  Sparkle,
+  Copy,
   Layers,
-  BarChart2,
-  Camera
+  BarChart3,
+  Award
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -44,8 +48,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [demoModalOpen, setDemoModalOpen] = useState(false);
-  const [activeMockupTab, setActiveMockupTab] = useState<'dashboard' | 'ia' | 'produtos' | 'relatorios' | 'perdas'>('dashboard');
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+
+  // Active step interactive preview in Hero/IA section
+  const [activeStep, setActiveStep] = useState<number>(1);
 
   // Demo Form State
   const [demoName, setDemoName] = useState('');
@@ -61,16 +67,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Auto cycle active step for Hero/IA demo preview
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveStep((prev) => (prev >= 5 ? 1 : prev + 1));
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   const handleDemoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!demoName || !demoBakery || !demoPhone) return;
-    
+
     setDemoSubmitted(true);
     const text = encodeURIComponent(
-      `Olá! Meu nome é ${demoName}, da padaria ${demoBakery} (Tel: ${demoPhone}). Gostaria de falar com um consultor sobre o sistema Padaria.io.`
+      `Olá! Meu nome é ${demoName}, da padaria ${demoBakery} (Tel: ${demoPhone}). Gostaria de agendar uma demonstração do sistema PADARIA.io.`
     );
     window.open(`https://wa.me/5561996507712?text=${text}`, '_blank');
-    
+
     setTimeout(() => {
       setDemoModalOpen(false);
       setDemoSubmitted(false);
@@ -80,96 +94,174 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     }, 2000);
   };
 
-  const whatsappUrl = "https://wa.me/5561996507712?text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20o%20sistema%20Padaria.io.";
+  const whatsappUrl =
+    "https://wa.me/5561996507712?text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20o%20sistema%20PADARIA.io.";
 
   return (
-    <div className="min-h-screen bg-white text-[#111111] font-sans selection:bg-[#FF6B00] selection:text-white">
-      {/* Navbar Transparente / Fixa */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white/90 backdrop-blur-md shadow-xs border-b border-gray-100 py-3.5' : 'bg-transparent py-5'
-      }`}>
+    <div className="min-h-screen bg-[#FDFBF7] text-[#1A1A1A] font-sans selection:bg-[#E8571A] selection:text-white overflow-x-hidden">
+      {/* NAVBAR */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? 'bg-white/90 backdrop-blur-md shadow-xs border-b border-gray-200/60 py-3'
+            : 'bg-transparent py-5'
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-200 flex items-center justify-center p-0 overflow-hidden">
-              <img 
-                src="https://i.imgur.com/r41aOzi.png" 
-                alt="Padaria.io Logo" 
+          <div
+            className="flex items-center space-x-3 cursor-pointer group"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          >
+            <div className="w-10 h-10 rounded-2xl bg-white shadow-sm border border-gray-200/80 flex items-center justify-center p-1 group-hover:scale-105 transition-transform">
+              <img
+                src="https://i.imgur.com/r41aOzi.png"
+                alt="PADARIA.io Logo"
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
             <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="font-black text-xl tracking-tight text-[#111111]">
-                  PADARIA<span className="text-[#FF6B00]">.io</span>
+              <div className="flex items-center space-x-1">
+                <span className="font-black text-xl tracking-tight text-[#1A1A1A]">
+                  PADARIA<span className="text-[#E8571A]">.io</span>
                 </span>
               </div>
-              <p className="text-[11px] text-gray-500 font-medium hidden sm:block">Inteligência em Gestão de Validade</p>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider hidden sm:block">
+                Gestão Inteligente & Clube VIP
+              </p>
             </div>
           </div>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold text-gray-700">
-            <a href="#problema" className="hover:text-black transition-colors">O Problema</a>
-            <a href="#solucao" className="hover:text-black transition-colors">Como Funciona</a>
-            <a href="#recursos" className="hover:text-black transition-colors">Recursos</a>
-            <a href="#beneficios" className="hover:text-black transition-colors">Benefícios</a>
-            <a href="#faq" className="hover:text-black transition-colors">FAQ</a>
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center space-x-8 text-xs font-bold text-gray-600">
+            <a
+              href="#comparacao"
+              className="hover:text-[#E8571A] transition-colors cursor-pointer"
+            >
+              Comparação
+            </a>
+            <a
+              href="#faturamento"
+              className="hover:text-[#E8571A] transition-colors cursor-pointer"
+            >
+              Recuperação
+            </a>
+            <a
+              href="#clube-vip"
+              className="hover:text-[#E8571A] transition-colors cursor-pointer"
+            >
+              Clube VIP
+            </a>
+            <a
+              href="#ia"
+              className="hover:text-[#E8571A] transition-colors cursor-pointer"
+            >
+              Tecnologia IA
+            </a>
+            <a
+              href="#beneficios"
+              className="hover:text-[#E8571A] transition-colors cursor-pointer"
+            >
+              Benefícios
+            </a>
+            <a
+              href="#resultados"
+              className="hover:text-[#E8571A] transition-colors cursor-pointer"
+            >
+              Resultados
+            </a>
           </nav>
 
-          {/* CTAs */}
+          {/* Action Buttons */}
           <div className="hidden md:flex items-center space-x-3">
             <button
-              onClick={onEnterApp}
-              className="px-4 py-2 text-xs font-bold text-gray-800 hover:text-black transition-colors cursor-pointer"
+              onClick={() => setDemoModalOpen(true)}
+              className="px-4 py-2 rounded-xl text-xs font-extrabold text-gray-700 hover:text-[#E8571A] hover:bg-orange-50/50 transition-all cursor-pointer border border-transparent hover:border-orange-200"
             >
-              Acessar Sistema
+              Ver Demonstração
             </button>
             <button
-              onClick={() => setDemoModalOpen(true)}
-              className="px-5 py-2.5 rounded-xl bg-[#FF6B00] hover:bg-[#00c864] text-black text-xs font-extrabold transition-all shadow-sm hover:shadow-md flex items-center space-x-1.5 cursor-pointer"
+              onClick={onEnterApp}
+              className="px-5 py-2.5 rounded-xl text-xs font-black bg-[#1F2937] hover:bg-[#111827] text-white transition-all shadow-md hover:shadow-lg flex items-center space-x-2 cursor-pointer border border-gray-800"
             >
-              <span>Falar com um Consultor</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>Acessar Sistema</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#E8571A]" />
             </button>
           </div>
 
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl text-gray-800 hover:bg-gray-100 cursor-pointer"
+            className="md:hidden p-2 rounded-xl text-gray-700 hover:bg-gray-100 cursor-pointer"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
-        {/* Mobile Dropdown */}
+        {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 px-6 py-6 space-y-4 shadow-xl animate-fade-in">
-            <a href="#problema" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-bold text-gray-800">O Problema</a>
-            <a href="#solucao" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-bold text-gray-800">Como Funciona</a>
-            <a href="#recursos" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-bold text-gray-800">Recursos</a>
-            <a href="#beneficios" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-bold text-gray-800">Benefícios</a>
-            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block text-sm font-bold text-gray-800">FAQ</a>
-            <div className="pt-4 border-t border-gray-100 flex flex-col space-y-3">
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onEnterApp();
-                }}
-                className="w-full py-3 rounded-xl bg-gray-100 text-gray-900 font-bold text-xs"
-              >
-                Acessar Sistema com Código
-              </button>
+          <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 pt-3 pb-6 space-y-3 animate-fade-in">
+            <a
+              href="#comparacao"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
+            >
+              Comparação
+            </a>
+            <a
+              href="#faturamento"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
+            >
+              Recuperação de Dinheiro
+            </a>
+            <a
+              href="#clube-vip"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
+            >
+              Clube VIP
+            </a>
+            <a
+              href="#ia"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
+            >
+              Tecnologia IA
+            </a>
+            <a
+              href="#beneficios"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
+            >
+              Benefícios
+            </a>
+            <a
+              href="#resultados"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
+            >
+              Resultados
+            </a>
+            <div className="pt-2 space-y-2 border-t border-gray-100">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   setDemoModalOpen(true);
                 }}
-                className="w-full py-3 rounded-xl bg-[#FF6B00] text-white font-extrabold text-xs flex items-center justify-center space-x-2"
+                className="w-full py-2.5 rounded-xl text-xs font-extrabold text-gray-800 bg-gray-100 hover:bg-gray-200 text-center"
               >
-                <span>Falar com um Consultor</span>
+                Ver Demonstração
+              </button>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onEnterApp();
+                }}
+                className="w-full py-3 rounded-xl text-xs font-black bg-[#E8571A] text-white text-center shadow-md flex items-center justify-center space-x-2"
+              >
+                <span>Acessar Sistema</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -178,913 +270,1145 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </header>
 
       {/* HERO SECTION */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden bg-gradient-to-b from-gray-50/50 via-white to-white">
-        {/* Subtle background glow */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#FF6B00]/10 blur-[120px] rounded-full pointer-events-none" />
+      <section className="pt-32 sm:pt-40 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
+        {/* Subtle decorative background gradient blobs */}
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-gradient-to-tr from-amber-200/30 via-orange-300/20 to-transparent blur-3xl pointer-events-none -z-10 rounded-full"></div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-4xl mx-auto space-y-6">
-            {/* Badge */}
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-black text-white text-xs font-extrabold shadow-sm">
-              <span className="text-[#FF6B00]">●</span>
-              <span>Inteligência Artificial aplicada à Gestão de Validade</span>
-            </div>
-
-            {/* Title */}
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-[#111111] tracking-tight leading-[1.1]">
-              Pare de perder dinheiro com <span className="underline decoration-[#FF6B00] decoration-4 underline-offset-8">produtos vencendo</span> todos os dias.
-            </h1>
-
-            {/* Subtitle */}
-            <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed font-medium">
-              Sistema inteligente que automatiza o controle de validade utilizando inteligência artificial para economizar tempo, eliminar perdas e organizar a operação da sua padaria.
-            </p>
-
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <button
-                onClick={() => setDemoModalOpen(true)}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#FF6B00] hover:bg-[#e66000] text-white font-black text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center space-x-2 cursor-pointer"
-              >
-                <span>Falar com um Consultor</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-black hover:bg-gray-900 text-white font-black text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-2 cursor-pointer"
-              >
-                <MessageSquare className="w-4 h-4 text-[#FF6B00]" />
-                <span>Falar no WhatsApp</span>
-              </a>
-            </div>
-
-            <p className="text-xs text-gray-400 font-semibold pt-2">
-              🔒 Contratação direta e personalizada • Sem cadastros automáticos ou cobranças online
-            </p>
+        <div className="text-center space-y-6 max-w-4xl mx-auto">
+          {/* Badge */}
+          <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-200/80 text-[#E8571A] text-xs font-extrabold tracking-wide uppercase shadow-2xs">
+            <Sparkles className="w-4 h-4 text-[#E8571A] animate-pulse" />
+            <span>Sistema Inteligente Anti-Prejuízo + Clube VIP</span>
           </div>
 
-          {/* Hero Mockup Preview (Dashboard Real) */}
-          <div className="mt-16 relative max-w-5xl mx-auto">
-            <div className="relative rounded-3xl bg-black p-3 sm:p-5 shadow-2xl border border-gray-800">
-              {/* Top window dots */}
-              <div className="flex items-center justify-between mb-3 px-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <div className="w-3 h-3 rounded-full bg-amber-500" />
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span className="text-[11px] font-mono text-gray-400 ml-2 hidden sm:inline">https://app.padaria.io/dashboard</span>
-                </div>
-                <div className="text-[11px] font-bold text-[#FF6B00] bg-[#FF6B00]/10 px-2.5 py-0.5 rounded-full border border-[#FF6B00]/20">
-                  ● Painel Operacional do Sistema
-                </div>
-              </div>
-
-              {/* Real Dashboard Image */}
-              <div className="rounded-2xl overflow-hidden border border-gray-800 bg-gray-950 shadow-inner">
-                <img
-                  src="https://i.imgur.com/SZmyvPr.png"
-                  alt="Dashboard Padaria.io"
-                  className="w-full h-auto object-cover rounded-xl"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            </div>
-
-            {/* Floating badges */}
-            <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-gray-200 hidden sm:flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center font-bold">
-                ⚡
-              </div>
-              <div>
-                <div className="text-xs font-black text-gray-900">Dashboard em Tempo Real</div>
-                <div className="text-[10px] text-gray-500 font-medium">Gestão inteligente de perdas e validade</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SEÇÃO PROBLEMA */}
-      <section id="problema" className="py-24 bg-gray-50 border-y border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200">
-              O Custo Oculto da Sua Padaria
+          {/* Main Headline */}
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-[#1A1A1A] tracking-tight leading-[1.08] uppercase">
+            PARE DE JOGAR <br className="hidden sm:block" />
+            <span className="bg-gradient-to-r from-[#E8571A] via-[#D44E15] to-[#B33B0A] bg-clip-text text-transparent">
+              DINHEIRO NO LIXO.
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#111111]">
-              Quanto a sua padaria perde por mês com produtos vencidos?
-            </h2>
-            <p className="text-gray-600 text-sm sm:text-base">
-              Em padarias tradicionais, o controle manual de validade é falho, consome horas preciosas e resulta em prejuízos evitáveis.
-            </p>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-base sm:text-xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed">
+            Com apenas uma foto da etiqueta, o <strong className="text-gray-900 font-black">PADARIA.io</strong> identifica produtos próximos ao vencimento, ajuda você a vendê-los antes da perda e controla automaticamente o desperdício.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <button
+              onClick={onEnterApp}
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-base font-extrabold shadow-xl shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.02] transition-all flex items-center justify-center space-x-3 cursor-pointer group"
+            >
+              <span>Teste grátis por 1 dia</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button
+              onClick={() => setDemoModalOpen(true)}
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white hover:bg-gray-50 text-[#1A1A1A] border-2 border-gray-200 text-base font-extrabold shadow-xs hover:shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+            >
+              <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+              <span>Ver demonstração</span>
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm space-y-4 hover:border-red-300 transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold text-lg">
-                ⚠️
-              </div>
-              <h3 className="text-lg font-black text-gray-900">Produtos Vencendo na Prateleira</h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Itens caros como queijos, frios, laticínios e doces estragam escondidos no fundo da geladeira porque ninguém conferiu a data a tempo.
-              </p>
-            </div>
-
-            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm space-y-4 hover:border-red-300 transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold text-lg">
-                📝
-              </div>
-              <h3 className="text-lg font-black text-gray-900">Controle Manual em Cadernos</h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Anotações em papel ou planilhas confusas que ninguém atualiza geram erros humanos frequentes e falta de visibilidade do estoque.
-              </p>
-            </div>
-
-            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm space-y-4 hover:border-red-300 transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold text-lg">
-                💸
-              </div>
-              <h3 className="text-lg font-black text-gray-900">Desperdício e Prejuízo Invisível</h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Dinheiro jogado no lixo todos os dias que poderia estar no lucro líquido da sua empresa e na remuneração da equipe.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SEÇÃO SOLUÇÃO (COMO FUNCIONA A IA) */}
-      <section id="solucao" className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#FF6B00] bg-black px-3 py-1 rounded-full">
-              Inteligência Artificial Aplicada
+          {/* Micro trust indicators */}
+          <div className="pt-3 flex items-center justify-center space-x-6 text-xs text-gray-500 font-bold">
+            <span className="flex items-center space-x-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <span>Sem necessidade de cartão</span>
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#111111]">
-              Como a Padaria.io resolve isso em segundos
+            <span className="flex items-center space-x-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <span>Ativação em 1 minuto</span>
+            </span>
+            <span className="flex items-center space-x-1.5 hidden sm:flex">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <span>100% Online</span>
+            </span>
+          </div>
+        </div>
+
+        {/* HERO VISUAL FLOW ILLUSTRATION */}
+        <div className="mt-14 max-w-5xl mx-auto bg-white rounded-3xl border border-gray-200/90 shadow-2xl p-6 sm:p-8 relative overflow-hidden">
+          <div className="text-center mb-6">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#E8571A] block">
+              COMO O PADARIA.IO FUNCIONA PASSO A PASSO
+            </span>
+            <h3 className="text-lg sm:text-xl font-black text-gray-900 mt-1">
+              Do Escaneamento à Recuperação do Faturamento
+            </h3>
+          </div>
+
+          {/* Stepper Flow Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 relative z-10">
+            {/* Step 1 */}
+            <div
+              onClick={() => setActiveStep(1)}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
+                activeStep === 1
+                  ? 'bg-orange-50/80 border-[#E8571A] shadow-md ring-2 ring-orange-400/20'
+                  : 'bg-gray-50/60 border-gray-200 hover:bg-gray-100/80'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="w-7 h-7 rounded-xl bg-[#E8571A] text-white text-xs font-black flex items-center justify-center">
+                  1
+                </span>
+                <Camera className="w-4 h-4 text-[#E8571A]" />
+              </div>
+              <p className="text-xs font-extrabold text-gray-900 leading-snug">
+                Fotografar Etiqueta
+              </p>
+              <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                Funcionário tira foto pelo celular
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div
+              onClick={() => setActiveStep(2)}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
+                activeStep === 2
+                  ? 'bg-amber-50/80 border-amber-500 shadow-md ring-2 ring-amber-400/20'
+                  : 'bg-gray-50/60 border-gray-200 hover:bg-gray-100/80'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="w-7 h-7 rounded-xl bg-amber-500 text-white text-xs font-black flex items-center justify-center">
+                  2
+                </span>
+                <Sparkles className="w-4 h-4 text-amber-500" />
+              </div>
+              <p className="text-xs font-extrabold text-gray-900 leading-snug">
+                IA Lê os Dados
+              </p>
+              <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                Extrai produto, lote e data de validade
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div
+              onClick={() => setActiveStep(3)}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
+                activeStep === 3
+                  ? 'bg-purple-50/80 border-purple-500 shadow-md ring-2 ring-purple-400/20'
+                  : 'bg-gray-50/60 border-gray-200 hover:bg-gray-100/80'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="w-7 h-7 rounded-xl bg-purple-600 text-white text-xs font-black flex items-center justify-center">
+                  3
+                </span>
+                <Crown className="w-4 h-4 text-purple-600" />
+              </div>
+              <p className="text-xs font-extrabold text-gray-900 leading-snug">
+                Entra no Clube VIP
+              </p>
+              <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                Gera oferta e mensagem promocional
+              </p>
+            </div>
+
+            {/* Step 4 */}
+            <div
+              onClick={() => setActiveStep(4)}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
+                activeStep === 4
+                  ? 'bg-emerald-50/80 border-emerald-500 shadow-md ring-2 ring-emerald-400/20'
+                  : 'bg-gray-50/60 border-gray-200 hover:bg-gray-100/80'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="w-7 h-7 rounded-xl bg-emerald-600 text-white text-xs font-black flex items-center justify-center">
+                  4
+                </span>
+                <DollarSign className="w-4 h-4 text-emerald-600" />
+              </div>
+              <p className="text-xs font-extrabold text-gray-900 leading-snug">
+                Produto Vendido
+              </p>
+              <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                Cliente compra com desconto atrativo
+              </p>
+            </div>
+
+            {/* Step 5 */}
+            <div
+              onClick={() => setActiveStep(5)}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
+                activeStep === 5
+                  ? 'bg-blue-50/80 border-blue-500 shadow-md ring-2 ring-blue-400/20'
+                  : 'bg-gray-50/60 border-gray-200 hover:bg-gray-100/80'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="w-7 h-7 rounded-xl bg-blue-600 text-white text-xs font-black flex items-center justify-center">
+                  5
+                </span>
+                <BarChart3 className="w-4 h-4 text-blue-600" />
+              </div>
+              <p className="text-xs font-extrabold text-gray-900 leading-snug">
+                Relatório de Economia
+              </p>
+              <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                Controle do dinheiro recuperado
+              </p>
+            </div>
+          </div>
+
+          {/* Live Dynamic Preview Area corresponding to activeStep */}
+          <div className="mt-6 p-6 rounded-2xl bg-gradient-to-br from-gray-900 to-[#1F2937] text-white shadow-inner relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-3 opacity-10">
+              <Sparkles className="w-40 h-40" />
+            </div>
+
+            {activeStep === 1 && (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in">
+                <div className="space-y-2 max-w-md">
+                  <span className="px-3 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-black rounded-full uppercase">
+                    Passo 1: Captura Rápida
+                  </span>
+                  <h4 className="text-xl font-black">Escaneamento via Câmera do Celular</h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Sem digitação manual exaustiva. O operador simplesmente aponta o celular para a etiqueta de fabricação ou caixa.
+                  </p>
+                </div>
+                <div className="bg-gray-800/80 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-gray-400">
+                    <span>📷 Câmera Ativa</span>
+                    <span className="text-emerald-400 animate-pulse">● Pronto</span>
+                  </div>
+                  <div className="h-28 bg-gray-900 rounded-xl border-2 border-dashed border-orange-500/50 flex flex-col items-center justify-center text-center p-2">
+                    <Camera className="w-8 h-8 text-orange-400 mb-1 animate-bounce" />
+                    <span className="text-[11px] font-bold text-gray-300">Enquadre a etiqueta de validade</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeStep === 2 && (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in">
+                <div className="space-y-2 max-w-md">
+                  <span className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black rounded-full uppercase">
+                    Passo 2: Inteligência Artificial
+                  </span>
+                  <h4 className="text-xl font-black">Processamento OCR & Visão Computacional</h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Nossa IA lê o nome do produto, o peso, o valor original e calcula instantaneamente os dias exatos para o vencimento.
+                  </p>
+                </div>
+                <div className="bg-gray-800/80 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-amber-400">
+                    <span>🤖 Leitura IA</span>
+                    <span className="text-xs font-black">100% Precisão</span>
+                  </div>
+                  <div className="space-y-1.5 text-xs bg-gray-900 p-3 rounded-xl border border-gray-700">
+                    <div className="flex justify-between text-gray-300">
+                      <span>Produto:</span>
+                      <strong className="text-white">Bolo de Fubá com Goiabada</strong>
+                    </div>
+                    <div className="flex justify-between text-gray-300">
+                      <span>Validade:</span>
+                      <strong className="text-amber-400">2 dias restantes</strong>
+                    </div>
+                    <div className="flex justify-between text-gray-300">
+                      <span>Preço Original:</span>
+                      <strong className="text-white">R$ 18,00</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeStep === 3 && (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in">
+                <div className="space-y-2 max-w-md">
+                  <span className="px-3 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-black rounded-full uppercase">
+                    Passo 3: Automação Comercial
+                  </span>
+                  <h4 className="text-xl font-black">Inclusão Automática no Clube VIP</h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    O sistema sugere o desconto ideal (ex: 20% OFF) e gera um card promocional com mensagem formatada para WhatsApp em 1 clique.
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-900/60 to-purple-800/40 p-4 rounded-2xl border border-purple-500/40 w-full md:w-80 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-black text-purple-300">
+                    <span>👑 Clube VIP Ativo</span>
+                    <span className="bg-purple-500 text-white text-[9px] px-2 py-0.5 rounded-full">20% OFF</span>
+                  </div>
+                  <div className="p-3 bg-purple-950/80 rounded-xl text-xs space-y-1 text-purple-100 border border-purple-500/30">
+                    <p className="font-bold">🥖 OFERTA DO CLUBE VIP</p>
+                    <p className="text-[11px] opacity-90">Bolo de Fubá de R$ 18,00 por apenas <strong>R$ 14,40</strong>!</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeStep === 4 && (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in">
+                <div className="space-y-2 max-w-md">
+                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black rounded-full uppercase">
+                    Passo 4: Dinheiro no Caixa
+                  </span>
+                  <h4 className="text-xl font-black">Venda Concluída com Sucesso</h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    O produto é vendido rapidamente ao invés de vencer na prateleira. O prejuízo vira faturamento limpo.
+                  </p>
+                </div>
+                <div className="bg-emerald-950/80 p-4 rounded-2xl border border-emerald-500/40 w-full md:w-80 text-center space-y-2">
+                  <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <p className="text-xs font-bold text-emerald-300">Venda Registrada!</p>
+                  <p className="text-2xl font-black text-white">+ R$ 14,40</p>
+                  <p className="text-[10px] text-emerald-400 font-medium">Recuperado antes do vencimento</p>
+                </div>
+              </div>
+            )}
+
+            {activeStep === 5 && (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in">
+                <div className="space-y-2 max-w-md">
+                  <span className="px-3 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-black rounded-full uppercase">
+                    Passo 5: Controle Financeiro
+                  </span>
+                  <h4 className="text-xl font-black">Dashboard & Histórico de Economia</h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Acompanhe em tempo real quanto dinheiro sua padaria deixou de perder neste mês e quais setores são mais eficientes.
+                  </p>
+                </div>
+                <div className="bg-gray-800/80 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-blue-400">
+                    <span>📊 Economia do Mês</span>
+                    <span className="text-emerald-400">+ 84% recuperado</span>
+                  </div>
+                  <div className="bg-gray-900 p-3 rounded-xl border border-gray-700 flex justify-between items-center">
+                    <span className="text-xs text-gray-400">Total Recuperado:</span>
+                    <strong className="text-xl font-black text-emerald-400">R$ 2.450,00</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* SEGUNDA SEÇÃO - COMPARAÇÃO (SEM PADARIA.IO vs COM PADARIA.IO) */}
+      <section id="comparacao" className="py-20 bg-white border-y border-gray-200/80 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-3 max-w-3xl mx-auto mb-14">
+            <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 border border-red-200 text-xs font-black uppercase tracking-wider">
+              A Escolha é Simples
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
+              O que acontece com o seu dinheiro hoje?
             </h2>
-            <p className="text-gray-600 text-sm sm:text-base">
-              Um fluxo ultrarrápido desenhado para a correria do dia a dia da padaria.
+            <p className="text-sm sm:text-base text-gray-500 font-medium">
+              Compare a rotina tradicional com a eficiência automatizada do PADARIA.io.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            <div className="bg-gray-50 p-6 rounded-3xl border border-gray-200 text-center space-y-3 relative">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-black text-[#FF6B00] font-black text-xs flex items-center justify-center shadow-md">
-                1
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* SEM PADARIA.IO */}
+            <div className="bg-gradient-to-b from-red-50/50 to-white rounded-3xl p-6 sm:p-8 border-2 border-red-200 shadow-sm space-y-6 relative">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center font-black text-lg">
+                  ❌
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-red-950 uppercase">SEM PADARIA.IO</h3>
+                  <p className="text-xs text-red-600 font-bold">O caminho tradicional para o prejuízo</p>
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-white mx-auto flex items-center justify-center text-xl shadow-xs mt-2">
-                📸
+
+              <div className="space-y-4 pt-2">
+                <div className="flex items-start space-x-3 p-3.5 bg-red-100/40 rounded-2xl border border-red-200/60">
+                  <span className="text-red-500 font-black">❌</span>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-gray-900">Produto vence na prateleira</h4>
+                    <p className="text-xs text-gray-600">Ninguém percebe a validade chegando ao fim a tempo.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3 p-3.5 bg-red-100/40 rounded-2xl border border-red-200/60">
+                  <span className="text-red-500 font-black">❌</span>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-gray-900">Vai direto para o lixo</h4>
+                    <p className="text-xs text-gray-600">Alimentos nobres e caros são descartados sem gerar 1 centavo.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3 p-3.5 bg-red-100/40 rounded-2xl border border-red-200/60">
+                  <span className="text-red-500 font-black">❌</span>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-gray-900">Prejuízo 100% absorvido</h4>
+                    <p className="text-xs text-gray-600">O custo de matéria-prima e mão de obra vai para o ralo.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3 p-3.5 bg-red-100/40 rounded-2xl border border-red-200/60">
+                  <span className="text-red-500 font-black">❌</span>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-gray-900">Sem nenhum controle</h4>
+                    <p className="text-xs text-gray-600">A gerência não sabe quanto está perdendo nem onde está errando.</p>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-extrabold text-sm text-gray-900">Fotografe a Etiqueta</h3>
-              <p className="text-[11px] text-gray-600">
-                O funcionário tira uma foto rápida da etiqueta do produto ou da embalagem pelo celular.
-              </p>
+
+              <div className="p-4 bg-red-50 rounded-2xl border border-red-200 text-center">
+                <span className="text-xs font-black text-red-700 uppercase block">
+                  Resultado Final:
+                </span>
+                <span className="text-sm font-extrabold text-red-900">
+                  Perda contínua de margem de lucro todos os meses.
+                </span>
+              </div>
             </div>
 
-            <div className="bg-gray-50 p-6 rounded-3xl border border-gray-200 text-center space-y-3 relative">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-black text-[#FF6B00] font-black text-xs flex items-center justify-center shadow-md">
-                2
+            {/* COM PADARIA.IO */}
+            <div className="bg-gradient-to-b from-emerald-50/50 to-white rounded-3xl p-6 sm:p-8 border-2 border-emerald-400 shadow-xl space-y-6 relative">
+              {/* Highlight Badge */}
+              <div className="absolute -top-3.5 right-6 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-full shadow-md">
+                Solução Inteligente
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-white mx-auto flex items-center justify-center text-xl shadow-xs mt-2">
-                🤖
-              </div>
-              <h3 className="font-extrabold text-sm text-gray-900">IA Identifica</h3>
-              <p className="text-[11px] text-gray-600">
-                A Inteligência Artificial reconhece o nome, data de fabricação, validade, preço e peso/kg instantaneamente.
-              </p>
-            </div>
 
-            <div className="bg-gray-50 p-6 rounded-3xl border border-gray-200 text-center space-y-3 relative">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-black text-[#FF6B00] font-black text-xs flex items-center justify-center shadow-md">
-                3
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-lg">
+                  ✅
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-emerald-950 uppercase">COM PADARIA.IO</h3>
+                  <p className="text-xs text-emerald-600 font-bold">Gestão inteligente e faturamento recuperado</p>
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-white mx-auto flex items-center justify-center text-xl shadow-xs mt-2">
-                ⚡
-              </div>
-              <h3 className="font-extrabold text-sm text-gray-900">Cadastro Automático</h3>
-              <p className="text-[11px] text-gray-600">
-                O produto é cadastrado no sistema em segundos, sem digitação manual demorada.
-              </p>
-            </div>
 
-            <div className="bg-gray-50 p-6 rounded-3xl border border-gray-200 text-center space-y-3 relative">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-black text-[#FF6B00] font-black text-xs flex items-center justify-center shadow-md">
-                4
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-white mx-auto flex items-center justify-center text-xl shadow-xs mt-2">
-                🔔
-              </div>
-              <h3 className="font-extrabold text-sm text-gray-900">Alerta de Validade</h3>
-              <p className="text-[11px] text-gray-600">
-                O sistema monitora os dias restantes e avisa a equipe antes que o produto vença.
-              </p>
-            </div>
+              <div className="space-y-4 pt-2">
+                <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
+                  <span className="text-emerald-600 font-black">✅</span>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-gray-900">Produto identificado dias antes</h4>
+                    <p className="text-xs text-gray-600">Escaneamento por foto antecipa o vencimento com precisão.</p>
+                  </div>
+                </div>
 
-            <div className="bg-gray-50 p-6 rounded-3xl border border-gray-200 text-center space-y-3 relative">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-black text-[#FF6B00] font-black text-xs flex items-center justify-center shadow-md">
-                5
+                <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
+                  <span className="text-emerald-600 font-black">✅</span>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-gray-900">Promoção sugerida e criada</h4>
+                    <p className="text-xs text-gray-600">Entra direto no Clube VIP com desconto atrativo calibrado.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
+                  <span className="text-emerald-600 font-black">✅</span>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-gray-900">Mensagem pronta para WhatsApp</h4>
+                    <p className="text-xs text-gray-600">Envio em 1 clique para a base de clientes do bairro.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
+                  <span className="text-emerald-600 font-black">✅</span>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-gray-900">Cliente compra & dinheiro recuperado</h4>
+                    <p className="text-xs text-gray-600">O produto é vendido com rapidez e o capital retorna para a padaria.</p>
+                  </div>
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-white mx-auto flex items-center justify-center text-xl shadow-xs mt-2">
-                📊
+
+              <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-center">
+                <span className="text-xs font-black text-emerald-700 uppercase block">
+                  Resultado Final:
+                </span>
+                <span className="text-sm font-extrabold text-emerald-900">
+                  Menos perdas, clientes fidelizados e mais dinheiro no caixa!
+                </span>
               </div>
-              <h3 className="font-extrabold text-sm text-gray-900">Dashboard em Tempo Real</h3>
-              <p className="text-[11px] text-gray-600">
-                Gestão completa de perdas, relatórios financeiros e tomada de decisão assertiva.
-              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* DASHBOARD TABS PREVIEW (MOCKUPS REAIS) */}
-      <section className="py-24 bg-[#111111] text-white">
+      {/* NOVA SEÇÃO - TRANSFORME DESPERDÍCIO EM FATURAMENTO */}
+      <section id="faturamento" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="bg-gradient-to-br from-[#1F2937] via-[#111827] to-[#030712] rounded-3xl p-8 sm:p-12 text-white shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#E8571A]/10 blur-3xl pointer-events-none rounded-full"></div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
+            <div className="lg:col-span-6 space-y-6">
+              <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-black uppercase">
+                <TrendingUp className="w-4 h-4" />
+                <span>Nova Filosofia de Lucro</span>
+              </div>
+
+              <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+                Transforme desperdício em <span className="text-[#E8571A]">faturamento.</span>
+              </h2>
+
+              <p className="text-sm sm:text-base text-gray-300 font-medium leading-relaxed">
+                Quando faltar poucos dias para um produto vencer, o sistema alerta a equipe e sugere automaticamente a inclusão no <strong className="text-white">Clube VIP</strong>.
+              </p>
+
+              <p className="text-xs sm:text-sm text-gray-400 font-medium">
+                Em questão de segundos, você gera e disponibiliza:
+              </p>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center font-black">
+                    🏷️
+                  </div>
+                  <div>
+                    <strong className="text-xs text-white block">Oferta Estratégica</strong>
+                    <span className="text-[10px] text-gray-400">Preço promocional calibrado</span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-black">
+                    🖼️
+                  </div>
+                  <div>
+                    <strong className="text-xs text-white block">Card / Panfleto</strong>
+                    <span className="text-[10px] text-gray-400">Arte digital instantânea</span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black">
+                    💬
+                  </div>
+                  <div>
+                    <strong className="text-xs text-white block">Mensagem Formatada</strong>
+                    <span className="text-[10px] text-gray-400">Pronta para WhatsApp</span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-black">
+                    🔥
+                  </div>
+                  <div>
+                    <strong className="text-xs text-white block">Promoção Ativa</strong>
+                    <span className="text-[10px] text-gray-400">Tudo pronto para divulgar</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  onClick={onEnterApp}
+                  className="px-6 py-3.5 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-xs font-black shadow-lg transition-all flex items-center space-x-2 cursor-pointer"
+                >
+                  <span>Ativar Clube VIP na minha padaria</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Illustrative Card/Flyer Mockup */}
+            <div className="lg:col-span-6 flex justify-center">
+              <div className="w-full max-w-sm bg-gradient-to-br from-[#E8571A] to-[#D4A574] rounded-3xl p-6 text-white shadow-2xl border-4 border-white/20 space-y-4 relative">
+                <div className="text-center space-y-1">
+                  <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest inline-block">
+                    ⭐ OFERTA DO CLUBE VIP ⭐
+                  </span>
+                  <h3 className="text-xl font-black uppercase tracking-tight">PADARIA DO BAIRRO</h3>
+                </div>
+
+                <div className="bg-white text-gray-800 rounded-2xl p-4 shadow-xl text-center space-y-2 relative">
+                  <span className="absolute -top-3 -right-3 bg-red-500 text-white font-black text-xs px-2.5 py-1 rounded-full shadow-md">
+                    25% OFF
+                  </span>
+                  <span className="text-[10px] text-[#E8571A] font-extrabold uppercase tracking-wider block">
+                    Vencimento em 2 dias
+                  </span>
+                  <h4 className="text-base font-black text-gray-900">Mini Sonhos com Doce de Leite (500g)</h4>
+                  <div className="flex items-center justify-center space-x-3 pt-1">
+                    <span className="text-xs text-gray-400 line-through">De R$ 20,00</span>
+                    <span className="text-sm font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                      Por R$ 15,00
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-center space-y-1 text-[11px] font-bold text-orange-100">
+                  <p>📲 Garanta o seu pelo WhatsApp da Padaria!</p>
+                  <p className="text-[9px] opacity-80">Retirada no balcão • Promoção por tempo limitado</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CLUBE VIP DA PADARIA */}
+      <section id="clube-vip" className="py-20 bg-white border-t border-gray-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#FF6B00]">
-              Telas Reais do Sistema
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-black text-white">
-              Simplicidade e poder em uma interface impecável
+          <div className="text-center space-y-3 max-w-3xl mx-auto">
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-black uppercase">
+              <Crown className="w-4 h-4 text-amber-500" />
+              <span>Ferramenta de Engajamento & Vendas</span>
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
+              Clube VIP da Padaria
             </h2>
-            <p className="text-gray-400 text-sm sm:text-base">
-              Explore as principais abas do sistema projetado para donos e operadores de padarias.
+            <p className="text-base text-gray-600 font-bold">
+              Fidelize clientes e venda mais todos os dias.
             </p>
           </div>
 
-          {/* Interactive Tabs */}
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <button
-              onClick={() => setActiveMockupTab('dashboard')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                activeMockupTab === 'dashboard' ? 'bg-[#FF6B00] text-black shadow-lg' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              📊 Dashboard Executivo
-            </button>
-            <button
-              onClick={() => setActiveMockupTab('ia')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                activeMockupTab === 'ia' ? 'bg-[#FF6B00] text-black shadow-lg' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              🤖 Leitor IA de Etiquetas
-            </button>
-            <button
-              onClick={() => setActiveMockupTab('produtos')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                activeMockupTab === 'produtos' ? 'bg-[#FF6B00] text-black shadow-lg' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              📦 Controle de Estoque
-            </button>
-            <button
-              onClick={() => setActiveMockupTab('relatorios')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                activeMockupTab === 'relatorios' ? 'bg-[#FF6B00] text-black shadow-lg' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              📋 Relatórios Executivos
-            </button>
-            <button
-              onClick={() => setActiveMockupTab('perdas')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                activeMockupTab === 'perdas' ? 'bg-[#FF6B00] text-black shadow-lg' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              📉 Gráficos de Perdas
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Divulgue Item 1 */}
+            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-amber-200/80 hover:border-amber-400 transition-all space-y-3 text-center group">
+              <div className="text-3xl group-hover:scale-110 transition-transform">🥖</div>
+              <h3 className="text-sm font-black text-gray-900">Pão saindo quentinho</h3>
+              <p className="text-xs text-gray-500 font-medium">
+                Avisos instantâneos de fornada para atrair vizinhos ao balcão.
+              </p>
+            </div>
+
+            {/* Divulgue Item 2 */}
+            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-amber-200/80 hover:border-amber-400 transition-all space-y-3 text-center group">
+              <div className="text-3xl group-hover:scale-110 transition-transform">🥐</div>
+              <h3 className="text-sm font-black text-gray-900">Pão de Queijo & Salgados</h3>
+              <p className="text-xs text-gray-500 font-medium">
+                Promoções de café da manhã e lanches da tarde.
+              </p>
+            </div>
+
+            {/* Divulgue Item 3 */}
+            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-amber-200/80 hover:border-amber-400 transition-all space-y-3 text-center group">
+              <div className="text-3xl group-hover:scale-110 transition-transform">🎂</div>
+              <h3 className="text-sm font-black text-gray-900">Bolos & Confeitaria</h3>
+              <p className="text-xs text-gray-500 font-medium">
+                Giro rápido de sobremesas e itens especiais.
+              </p>
+            </div>
+
+            {/* Divulgue Item 4 */}
+            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-amber-200/80 hover:border-amber-400 transition-all space-y-3 text-center group">
+              <div className="text-3xl group-hover:scale-110 transition-transform">☕</div>
+              <h3 className="text-sm font-black text-gray-900">Combos & Promoções</h3>
+              <p className="text-xs text-gray-500 font-medium">
+                Ofertas especiais para aumento de ticket médio.
+              </p>
+            </div>
+
+            {/* Divulgue Item 5 */}
+            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-orange-300 bg-orange-50/30 hover:border-orange-500 transition-all space-y-3 text-center group">
+              <div className="text-3xl group-hover:scale-110 transition-transform">💰</div>
+              <h3 className="text-sm font-black text-orange-950">Próximos ao Vencimento</h3>
+              <p className="text-xs text-orange-900 font-bold">
+                Descontos imperdíveis que queimam estoque antes da perda.
+              </p>
+            </div>
           </div>
 
-          {/* Mockup Display Box */}
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6 sm:p-10 shadow-2xl">
-            {activeMockupTab === 'dashboard' && (
-              <div className="space-y-6 animate-fade-in">
-                <div className="flex items-center justify-between pb-4 border-b border-gray-800">
-                  <div>
-                    <h3 className="text-lg font-black text-white">Dashboard Operacional do Sistema</h3>
-                    <p className="text-xs text-gray-400">Visão completa do painel de controle da padaria</p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-[#FF6B00]/20 text-[#FF6B00] text-xs font-bold border border-[#FF6B00]/30">
-                    ● Tela Real do Sistema
-                  </span>
-                </div>
-                <div className="rounded-2xl overflow-hidden border border-gray-800 bg-black shadow-2xl">
-                  <img
-                    src="https://i.imgur.com/SZmyvPr.png"
-                    alt="Dashboard do Sistema Padaria.io"
-                    className="w-full h-auto object-cover rounded-xl"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-              </div>
-            )}
-
-            {activeMockupTab === 'ia' && (
-              <div className="space-y-6 animate-fade-in">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-gray-800 gap-2">
-                  <div>
-                    <h3 className="text-lg font-black text-white">Inteligência Artificial Lendo Produtos em Tempo Real</h3>
-                    <p className="text-xs text-gray-400">Exemplos reais de leitura e extração automática de dados dos rótulos</p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-[#FF6B00]/20 text-[#FF6B00] text-xs font-bold border border-[#FF6B00]/30">
-                    ⚡ 3 Fotos Processadas pela IA
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Photo 1 */}
-                  <div className="bg-black/60 rounded-2xl border border-gray-800 overflow-hidden flex flex-col group hover:border-[#FF6B00] transition-all">
-                    <div className="relative aspect-3/4 overflow-hidden bg-gray-950">
-                      <img
-                        src="https://i.imgur.com/NMV1vLB.jpeg"
-                        alt="IA Lendo Produto 1"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#FF6B00] border border-[#FF6B00]/30">
-                        🤖 Leitura IA #1
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-2 text-xs">
-                      <div className="font-bold text-white flex items-center justify-between">
-                        <span>Leitura de Rótulo</span>
-                        <span className="text-[10px] text-green-400 font-mono">1.2s</span>
-                      </div>
-                      <p className="text-[11px] text-gray-400 leading-snug">
-                        Identificação precisa do nome do produto, data de validade e peso líquido impresso na etiqueta.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Photo 2 */}
-                  <div className="bg-black/60 rounded-2xl border border-gray-800 overflow-hidden flex flex-col group hover:border-[#FF6B00] transition-all">
-                    <div className="relative aspect-3/4 overflow-hidden bg-gray-950">
-                      <img
-                        src="https://i.imgur.com/Mu71dit.jpeg"
-                        alt="IA Lendo Produto 2"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#FF6B00] border border-[#FF6B00]/30">
-                        🤖 Leitura IA #2
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-2 text-xs">
-                      <div className="font-bold text-white flex items-center justify-between">
-                        <span>Reconhecimento de Balança</span>
-                        <span className="text-[10px] text-green-400 font-mono">1.1s</span>
-                      </div>
-                      <p className="text-[11px] text-gray-400 leading-snug">
-                        Extração automática de valores por KG, preço total e código de barras sem necessidade de digitação.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Photo 3 */}
-                  <div className="bg-black/60 rounded-2xl border border-gray-800 overflow-hidden flex flex-col group hover:border-[#FF6B00] transition-all">
-                    <div className="relative aspect-3/4 overflow-hidden bg-gray-950">
-                      <img
-                        src="https://i.imgur.com/LB9lhBY.jpeg"
-                        alt="IA Lendo Produto 3"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#FF6B00] border border-[#FF6B00]/30">
-                        🤖 Leitura IA #3
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-2 text-xs">
-                      <div className="font-bold text-white flex items-center justify-between">
-                        <span>Análise de Validade</span>
-                        <span className="text-[10px] text-green-400 font-mono">1.4s</span>
-                      </div>
-                      <p className="text-[11px] text-gray-400 leading-snug">
-                        Validação imediata da data de vencimento e cálculo automático de dias para descarte ou promoção.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeMockupTab === 'produtos' && (
-              <div className="space-y-6 animate-fade-in">
-                <div className="flex justify-between items-center pb-4 border-b border-gray-800">
-                  <h3 className="text-lg font-black text-white">Estoque & Descartes Ativos</h3>
-                  <span className="text-xs text-gray-400">Total: 42 registros</span>
-                </div>
-                <div className="space-y-2 text-xs">
-                  <div className="p-4 bg-black/50 rounded-xl border border-gray-800 flex justify-between items-center">
-                    <div>
-                      <div className="font-bold text-white">Queijo Mussarela Fatiado (Peça)</div>
-                      <div className="text-gray-400 text-[11px]">Categoria: Frios • Validade: 25/07/2026</div>
-                    </div>
-                    <span className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-400 font-bold">Vencendo Amanhã</span>
-                  </div>
-                  <div className="p-4 bg-black/50 rounded-xl border border-gray-800 flex justify-between items-center">
-                    <div>
-                      <div className="font-bold text-white">Presunto Cozido Extra</div>
-                      <div className="text-gray-400 text-[11px]">Categoria: Frios • Validade: 28/07/2026</div>
-                    </div>
-                    <span className="px-2.5 py-1 rounded bg-orange-500/20 text-[#FF6B00] font-bold">Estoque Normal</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeMockupTab === 'relatorios' && (
-              <div className="space-y-6 animate-fade-in text-center max-w-xl mx-auto py-8">
-                <div className="w-16 h-16 rounded-3xl bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto text-2xl font-bold">
-                  📋
-                </div>
-                <h3 className="text-xl font-black text-white">Relatórios Executivos em PDF</h3>
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  Gere relatórios profissionais prontos para impressão ou auditoria sanitária com um único clique. Controle total de perdas por período, operador e categoria.
-                </p>
-              </div>
-            )}
-
-            {activeMockupTab === 'perdas' && (
-              <div className="space-y-6 animate-fade-in text-center max-w-xl mx-auto py-8">
-                <div className="w-16 h-16 rounded-3xl bg-purple-500/20 text-purple-400 flex items-center justify-center mx-auto text-2xl font-bold">
-                  📉
-                </div>
-                <h3 className="text-xl font-black text-white">Gráficos de Evolução de Perdas</h3>
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  Visualize tendências semanais e mensais de desperdício para ajustar fornadas e compras com precisão cirúrgica.
-                </p>
-              </div>
-            )}
+          <div className="p-6 bg-amber-50/60 rounded-3xl border border-amber-200 text-center max-w-3xl mx-auto space-y-2">
+            <span className="text-xs font-black text-amber-800 uppercase tracking-widest block">
+              ⚡ Velocidade Absoluta
+            </span>
+            <p className="text-sm font-extrabold text-gray-900">
+              Crie, format e envie ofertas do Clube VIP em poucos segundos para seu canal do WhatsApp!
+            </p>
           </div>
         </div>
       </section>
 
-      {/* SEÇÃO RECURSOS (12 CARDS) */}
-      <section id="recursos" className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#FF6B00] bg-black px-3 py-1 rounded-full">
-              Recursos Avançados
+      {/* SEÇÃO IA - UMA FOTO. ALGUNS SEGUNDOS. TUDO ORGANIZADO */}
+      <section id="ia" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center space-y-3 max-w-3xl mx-auto mb-14">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-orange-50 text-[#E8571A] border border-orange-200 text-xs font-black uppercase">
+            <Sparkles className="w-4 h-4 text-[#E8571A]" />
+            <span>Visão Computacional Avançada</span>
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
+            Uma foto. Alguns segundos. Tudo organizado.
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            Entenda como nossa Inteligência Artificial simplifica a rotina da sua equipe.
+          </p>
+        </div>
+
+        {/* Timeline Visual Pipeline */}
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-3 text-center items-center">
+          {/* Node 1 */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center mx-auto font-black">
+              📷
+            </div>
+            <strong className="text-xs font-black text-gray-900 block">1. Foto</strong>
+            <span className="text-[10px] text-gray-500 font-medium">Captura simples da etiqueta</span>
+          </div>
+
+          <div className="hidden md:block text-gray-300 font-black">➔</div>
+
+          {/* Node 2 */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto font-black">
+              🤖
+            </div>
+            <strong className="text-xs font-black text-gray-900 block">2. IA</strong>
+            <span className="text-[10px] text-gray-500 font-medium">Leitura inteligente dos dados</span>
+          </div>
+
+          <div className="hidden md:block text-gray-300 font-black">➔</div>
+
+          {/* Node 3 */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mx-auto font-black">
+              📦
+            </div>
+            <strong className="text-xs font-black text-gray-900 block">3. Cadastrado</strong>
+            <span className="text-[10px] text-gray-500 font-medium">Produto salvo no sistema</span>
+          </div>
+
+          <div className="hidden md:block text-gray-300 font-black">➔</div>
+
+          {/* Node 4 */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto font-black">
+              ⏳
+            </div>
+            <strong className="text-xs font-black text-gray-900 block">4. Dias Restantes</strong>
+            <span className="text-[10px] text-gray-500 font-medium">Contagem regressiva exata</span>
+          </div>
+        </div>
+
+        {/* Second Row of Pipeline */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-center items-center mt-4 max-w-4xl mx-auto">
+          {/* Node 5 */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto font-black">
+              ⚡
+            </div>
+            <strong className="text-xs font-black text-gray-900 block">5. Status</strong>
+            <span className="text-[10px] text-gray-500 font-medium">Alerta visual automático</span>
+          </div>
+
+          <div className="hidden md:block text-gray-300 font-black">➔</div>
+
+          {/* Node 6 */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto font-black">
+              👑
+            </div>
+            <strong className="text-xs font-black text-gray-900 block">6. Oferta Sugerida</strong>
+            <span className="text-[10px] text-gray-500 font-medium">Clube VIP em 1 clique</span>
+          </div>
+
+          <div className="hidden md:block text-gray-300 font-black">➔</div>
+
+          {/* Node 7 */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-[#1F2937] text-white flex items-center justify-center mx-auto font-black">
+              📊
+            </div>
+            <strong className="text-xs font-black text-gray-900 block">7. Relatório</strong>
+            <span className="text-[10px] text-gray-500 font-medium">Controle total financeiro</span>
+          </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO BENEFÍCIOS (CARDS MODERNOS) */}
+      <section id="beneficios" className="py-20 bg-white border-t border-gray-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-3 max-w-3xl mx-auto">
+            <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200 text-xs font-black uppercase tracking-wider">
+              Recursos do Ecossistema
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#111111]">
-              Tudo o que sua padaria precisa para operar sem desperdícios
+            <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
+              Tudo o que sua padaria precisa para crescer
             </h2>
-            <p className="text-gray-600 text-sm sm:text-base">
-              Tecnologia de ponta desenvolvida sob medida para o setor de panificação.
+            <p className="text-sm sm:text-base text-gray-500 font-medium">
+              Ferramentas desenvolvidas especificamente para a realidade de panificadoras e confeitarias.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">✓</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Controle de Validade</h3>
-              <p className="text-xs text-gray-600">Acompanhamento rigoroso de datas críticas com alertas antecipados.</p>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">📉</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Controle de Perdas</h3>
-              <p className="text-xs text-gray-600">Registro detalhado de descartes, avarias e quebras operacionais.</p>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">🤖</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Cadastro Automático por IA</h3>
-              <p className="text-xs text-gray-600">Leitura instantânea de etiquetas por foto com inteligência artificial.</p>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">📊</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Dashboard Inteligente</h3>
-              <p className="text-xs text-gray-600">Métricas financeiras e operacionais em tempo real no painel.</p>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">📋</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Relatórios Executivos</h3>
-              <p className="text-xs text-gray-600">Exportação em PDF pronta para gerência e auditorias sanitárias.</p>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">📦</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Controle de Estoque</h3>
-              <p className="text-xs text-gray-600">Gestão simplificada de lotes e categorias de produtos.</p>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">📖</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Histórico Completo</h3>
-              <p className="text-xs text-gray-600">Rastreabilidade total de todas as movimentações e vendas.</p>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">🔔</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Alertas Automáticos</h3>
-              <p className="text-xs text-gray-600">Notificações visuais e sonoras para produtos próximos ao vencimento.</p>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">🔍</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Busca Rápida</h3>
-              <p className="text-xs text-gray-600">Encontre qualquer item instantaneamente por nome ou categoria.</p>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">☁️</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Sistema em Nuvem</h3>
-              <p className="text-xs text-gray-600">Segurança de dados de nível bancário e acesso de qualquer lugar.</p>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">👥</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Múltiplos Operadores</h3>
-              <p className="text-xs text-gray-600">Acesso simultâneo para balconistas, gerentes e administradores.</p>
-            </div>
-
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 hover:border-[#FF6B00] transition-all space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-black text-[#FF6B00] flex items-center justify-center font-bold">🔄</div>
-              <h3 className="font-extrabold text-sm text-gray-900">Atualizações Automáticas</h3>
-              <p className="text-xs text-gray-600">Novas funcionalidades adicionadas sem custo extra ou instalações.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SEÇÃO BENEFÍCIOS (NÚMEROS GRANDES) */}
-      <section id="beneficios" className="py-24 bg-gray-50 border-y border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#FF6B00] bg-black px-3 py-1 rounded-full">
-              Resultados Comprovados
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#111111]">
-              Impacto direto no lucro e na organização da padaria
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="bg-white p-10 rounded-3xl border border-gray-200 shadow-sm space-y-3">
-              <div className="text-5xl sm:text-6xl font-black text-[#111111] tracking-tight">
-                Até <span className="text-[#FF6B00]">80%</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Card 1 */}
+            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <DollarSign className="w-6 h-6" />
               </div>
-              <h3 className="font-extrabold text-base text-gray-900">Menos tempo no cadastro</h3>
-              <p className="text-xs text-gray-600">
-                A IA elimina a digitação manual, permitindo que sua equipe cadastre itens em segundos.
+              <h3 className="text-base font-black text-gray-900">Recupera faturamento</h3>
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Transforme itens que seriam descarrilados em receita real antes do vencimento.
               </p>
             </div>
 
-            <div className="bg-white p-10 rounded-3xl border border-gray-200 shadow-sm space-y-3">
-              <div className="text-5xl sm:text-6xl font-black text-[#111111] tracking-tight">
-                Redução
+            {/* Card 2 */}
+            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
+              <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <TrendingDown className="w-6 h-6" />
               </div>
-              <h3 className="font-extrabold text-base text-gray-900">Significativa do Desperdício</h3>
-              <p className="text-xs text-gray-600">
-                Identifique produtos antes de vencerem e recupere receita com campanhas direcionadas.
+              <h3 className="text-base font-black text-gray-900">Reduz desperdício</h3>
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Diminua em até 80% o volume de alimentos descartados no lixo todos os meses.
               </p>
             </div>
 
-            <div className="bg-white p-10 rounded-3xl border border-gray-200 shadow-sm space-y-3">
-              <div className="text-5xl sm:text-6xl font-black text-[#111111] tracking-tight">
-                100%
+            {/* Card 3 */}
+            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
+              <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <Clock className="w-6 h-6" />
               </div>
-              <h3 className="font-extrabold text-base text-gray-900">Informações Centralizadas</h3>
-              <p className="text-xs text-gray-600">
-                Gestão unificada em nuvem acessível pelo celular, tablet ou computador do caixa.
+              <h3 className="text-base font-black text-gray-900">Economiza tempo</h3>
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Elimine planilhas manuais e conferências demoradas na retaguarda.
+              </p>
+            </div>
+
+            {/* Card 4 */}
+            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
+              <div className="w-12 h-12 rounded-2xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black text-gray-900">IA Integrada</h3>
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Reconhecimento fotográfico inteligente de etiquetas, produtos e validades.
+              </p>
+            </div>
+
+            {/* Card 5 */}
+            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
+              <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <BarChart3 className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black text-gray-900">Relatórios Inteligentes</h3>
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Métricas claras de perdas evidadas, custos e desempenho por departamento.
+              </p>
+            </div>
+
+            {/* Card 6 */}
+            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <Crown className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black text-gray-900">Clube VIP Integrado</h3>
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Módulo completo para fidelizar clientes com ofertas relâmpago no WhatsApp.
+              </p>
+            </div>
+
+            {/* Card 7 */}
+            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
+              <div className="w-12 h-12 rounded-2xl bg-teal-100 text-teal-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <Layers className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black text-gray-900">Histórico Completo</h3>
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Rastreabilidade de todas as vendas e baixas efetuadas na padaria.
+              </p>
+            </div>
+
+            {/* Card 8 */}
+            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <Zap className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black text-gray-900">Dashboard em Tempo Real</h3>
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Acompanhamento instantâneo do estado de validade de toda a loja.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* SEÇÃO PROCESSO (COMO FUNCIONA A IMPLANTAÇÃO) */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#FF6B00] bg-black px-3 py-1 rounded-full">
-              Implantação Simples
+      {/* SEÇÃO RESULTADOS / INDICADORES */}
+      <section id="resultados" className="py-20 bg-gradient-to-b from-[#1F2937] to-[#111827] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-3 max-w-3xl mx-auto">
+            <span className="px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-black uppercase">
+              Resultados Reais
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#111111]">
-              Como funciona para começar
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight">
+              Impacto direto na saúde financeira da sua padaria
             </h2>
-            <p className="text-gray-600 text-sm sm:text-base">
-              Acompanhamento humanizado do início ao fim por nossos especialistas.
+            <p className="text-sm sm:text-base text-gray-300 font-medium">
+              Indicadores acumulados obtidos por panificadoras parceiras utilizando o PADARIA.io.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-gray-50 p-8 rounded-3xl border border-gray-200 space-y-4 relative">
-              <div className="text-3xl font-black text-gray-300">01</div>
-              <h3 className="font-black text-base text-gray-900">Entramos em contato</h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Você solicita a demonstração e nossa equipe entra em contato rapidamente para entender suas necessidades.
-              </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            {/* Indicator 1 */}
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-2 hover:bg-white/10 transition-all">
+              <span className="text-xs font-black text-emerald-400 uppercase tracking-widest block">
+                Produtos Recuperados
+              </span>
+              <p className="text-3xl sm:text-4xl font-black text-white">1.480+</p>
+              <span className="text-[11px] text-gray-400 block font-medium">Itens vendidos antes de vencer</span>
             </div>
 
-            <div className="bg-gray-50 p-8 rounded-3xl border border-gray-200 space-y-4 relative">
-              <div className="text-3xl font-black text-gray-300">02</div>
-              <h3 className="font-black text-base text-gray-900">Configuramos a padaria</h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Criamos o seu código de ativação exclusivo e preparamos o ambiente personalizado para sua panificadora.
-              </p>
+            {/* Indicator 2 */}
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-2 hover:bg-white/10 transition-all">
+              <span className="text-xs font-black text-blue-400 uppercase tracking-widest block">
+                Valor Recuperado
+              </span>
+              <p className="text-3xl sm:text-4xl font-black text-white">R$ 42.500+</p>
+              <span className="text-[11px] text-gray-400 block font-medium">Receita direta do Clube VIP</span>
             </div>
 
-            <div className="bg-gray-50 p-8 rounded-3xl border border-gray-200 space-y-4 relative">
-              <div className="text-3xl font-black text-gray-300">03</div>
-              <h3 className="font-black text-base text-gray-900">Treinamos sua equipe</h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Realizamos um treinamento rápido com seus operadores para uso do leitor de IA e controle diário.
-              </p>
+            {/* Indicator 3 */}
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-2 hover:bg-white/10 transition-all">
+              <span className="text-xs font-black text-orange-400 uppercase tracking-widest block">
+                Redução de Descarte
+              </span>
+              <p className="text-3xl sm:text-4xl font-black text-white">-78%</p>
+              <span className="text-[11px] text-gray-400 block font-medium">Queda no lixo da produção</span>
             </div>
 
-            <div className="bg-gray-50 p-8 rounded-3xl border border-gray-200 space-y-4 relative">
-              <div className="text-3xl font-black text-gray-300">04</div>
-              <h3 className="font-black text-base text-gray-900">Sistema pronto para uso</h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Sua padaria operando com controle total de validade e suporte contínuo da nossa equipe.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* DEPOIMENTOS PLACEHOLDERS */}
-      <section className="py-24 bg-gray-50 border-y border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#FF6B00] bg-black px-3 py-1 rounded-full">
-              Nossos Parceiros
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#111111]">
-              O que dizem os donos de padarias parceiras
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm space-y-6">
-              <div className="text-[#FF6B00] font-black text-xl">“</div>
-              <p className="text-xs text-gray-700 leading-relaxed italic font-medium">
-                "O leitor de etiquetas por IA mudou a rotina da nossa padaria. Reduzimos o tempo de cadastro pela metade e praticamente zeramos o descarte surpresa de frios."
-              </p>
-              <div className="pt-4 border-t border-gray-100">
-                <div className="font-extrabold text-sm text-gray-900">Carlos Eduardo</div>
-                <div className="text-[11px] text-gray-500">Panificadora Estrela do Bairro</div>
-              </div>
+            {/* Indicator 4 */}
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-2 hover:bg-white/10 transition-all">
+              <span className="text-xs font-black text-amber-400 uppercase tracking-widest block">
+                Economia Gerada
+              </span>
+              <p className="text-3xl sm:text-4xl font-black text-white">R$ 85.000+</p>
+              <span className="text-[11px] text-gray-400 block font-medium">Total preservado no caixa</span>
             </div>
 
-            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm space-y-6">
-              <div className="text-[#FF6B00] font-black text-xl">“</div>
-              <p className="text-xs text-gray-700 leading-relaxed italic font-medium">
-                "O suporte é excelente. O sistema é extremamente leve, funciona no celular de qualquer funcionário e nos deu clareza total sobre o estoque."
-              </p>
-              <div className="pt-4 border-t border-gray-100">
-                <div className="font-extrabold text-sm text-gray-900">Marcos Vinícius</div>
-                <div className="text-[11px] text-gray-500">Padaria & Confeitaria Sabor d'Ouro</div>
-              </div>
-            </div>
-
-            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm space-y-6">
-              <div className="text-[#FF6B00] font-black text-xl">“</div>
-              <p className="text-xs text-gray-700 leading-relaxed italic font-medium">
-                "Antes perdíamos muito dinheiro com produtos vencendo no fundo do estoque. Com os alertas automáticos da Padaria.io, conseguimos agir antes de perder o produto."
-              </p>
-              <div className="pt-4 border-t border-gray-100">
-                <div className="font-extrabold text-sm text-gray-900">Ana Paula Silveira</div>
-                <div className="text-[11px] text-gray-500">Panificadora Pão Dourado</div>
-              </div>
+            {/* Indicator 5 */}
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-2 hover:bg-white/10 transition-all">
+              <span className="text-xs font-black text-purple-400 uppercase tracking-widest block">
+                Tempo Economizado
+              </span>
+              <p className="text-3xl sm:text-4xl font-black text-white">15h/sem</p>
+              <span className="text-[11px] text-gray-400 block font-medium">Menos rotina operacional</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* FAQ SECTION */}
-      <section id="faq" className="py-24 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-4">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#FF6B00] bg-black px-3 py-1 rounded-full">
-              Dúvidas Frequentes
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#111111]">
-              Tudo o que você precisa saber
-            </h2>
+      <section className="py-20 bg-white border-t border-gray-200/80">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="text-center space-y-2">
+            <span className="text-xs font-black text-[#E8571A] uppercase tracking-wider">Tire suas Dúvidas</span>
+            <h2 className="text-3xl font-black text-gray-900">Perguntas Frequentes</h2>
           </div>
 
           <div className="space-y-4">
             {[
               {
-                q: "Preciso instalar alguma coisa no computador?",
-                a: "Não! A Padaria.io é 100% em nuvem. Você pode acessar direto pelo navegador do computador, tablet ou celular, sem instalações complexas."
+                q: "Como o sistema ajuda a recuperar o dinheiro dos produtos próximos ao vencimento?",
+                a: "Assim que um produto próximo ao vencimento é escaneado ou identificado, o PADARIA.io calcula um desconto ideal e cria uma oferta no Clube VIP. Você compartilha a oferta em 1 clique no WhatsApp da padaria e seus clientes compram rapidamente o produto no balcão."
               },
               {
-                q: "Funciona em celular?",
-                a: "Sim, o sistema é totalmente otimizado para celulares e tablets, permitindo que os funcionários tirem fotos das etiquetas diretamente na área de produção ou estoque."
+                q: "Preciso baixar algum aplicativo pesado no celular?",
+                a: "Não! O PADARIA.io é 100% web e roda direto no navegador do celular, tablet ou computador, sem ocupar espaço na memória do dispositivo."
               },
               {
-                q: "Posso usar em mais de um computador ou celular?",
-                a: "Sim! Vários operadores podem acessar simultaneamente utilizando o código de ativação exclusivo da sua padaria."
+                q: "Qualquer funcionário consegue usar a câmera para cadastrar?",
+                a: "Sim. A interface é extremamente simples e intuitiva. Basta abrir o scanner, tirar a foto da etiqueta e a IA faz todo o reconhecimento dos dados automaticamente."
               },
               {
-                q: "Como funciona o suporte técnico?",
-                a: "O suporte é humanizado e realizado diretamente via WhatsApp e canais dedicados com nossa equipe de consultores."
-              },
-              {
-                q: "Como é feita a implantação?",
-                a: "Nossa equipe cuida de toda a configuração inicial e cadastro da sua padaria. Você recebe o código de ativação pronto para uso."
-              },
-              {
-                q: "Quanto tempo leva para começar?",
-                a: "Em menos de 24 horas após o contato com nossa equipe, sua padaria já estará configurada e operando no sistema."
-              },
-              {
-                q: "A IA reconhece qualquer etiqueta?",
-                a: "Sim! Nossa inteligência artificial foi treinada para ler etiquetas de balança eletrônica, códigos de barras e embalagens de fabricantes."
+                q: "Como funciona o teste grátis?",
+                a: "Você pode acessar o sistema imediatamente e testar sem necessidade de cadastrar cartão de crédito ou assinar compromissos."
               }
-            ].map((faq, idx) => {
-              const isOpen = faqOpen === idx;
-              return (
-                <div
-                  key={idx}
-                  className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden transition-all"
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                className="border border-gray-200 rounded-2xl overflow-hidden transition-all bg-[#FDFBF7]"
+              >
+                <button
+                  onClick={() => setFaqOpen(faqOpen === idx ? null : idx)}
+                  className="w-full p-5 text-left font-black text-sm text-gray-900 flex justify-between items-center cursor-pointer hover:bg-gray-100/60"
                 >
-                  <button
-                    onClick={() => setFaqOpen(isOpen ? null : idx)}
-                    className="w-full p-6 text-left font-extrabold text-sm sm:text-base text-gray-900 flex items-center justify-between cursor-pointer"
-                  >
-                    <span>{faq.q}</span>
-                    <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-gray-200 shrink-0">
-                      {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </span>
-                  </button>
-                  {isOpen && (
-                    <div className="px-6 pb-6 text-xs sm:text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-4">
-                      {faq.a}
-                    </div>
+                  <span>{item.q}</span>
+                  {faqOpen === idx ? (
+                    <ChevronUp className="w-5 h-5 text-[#E8571A] shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-400 shrink-0" />
                   )}
-                </div>
-              );
-            })}
+                </button>
+                {faqOpen === idx && (
+                  <div className="px-5 pb-5 text-xs text-gray-600 font-medium leading-relaxed border-t border-gray-100 pt-3">
+                    {item.a}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA FINAL */}
-      <section className="py-24 bg-[#111111] text-white relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#FF6B00]/15 blur-[140px] rounded-full pointer-events-none" />
+      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="bg-gradient-to-r from-[#E8571A] via-[#D44E15] to-[#B33B0A] rounded-3xl p-8 sm:p-16 text-center text-white shadow-2xl relative overflow-hidden space-y-6">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-8">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/10 text-[#FF6B00] text-xs font-extrabold">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Padaria.io</span>
-          </div>
+          <span className="px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-black uppercase tracking-widest inline-block border border-white/30">
+            Decisão de Negócio
+          </span>
 
-          <h2 className="text-4xl sm:text-6xl font-black tracking-tight text-white">
-            Comece a reduzir perdas na sua padaria hoje mesmo.
+          <h2 className="text-3xl sm:text-6xl font-black tracking-tight leading-tight max-w-3xl mx-auto uppercase">
+            Sua padaria perde dinheiro todos os dias. <br />
+            <span className="text-amber-200">A pergunta é: Até quando?</span>
           </h2>
 
-          <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto">
-            Entre em contato com nossa equipe e agende uma demonstração personalizada para a sua panificadora.
+          <p className="text-sm sm:text-base text-orange-100 font-medium max-w-2xl mx-auto leading-relaxed">
+            Junte-se às padarias que já pararam de jogar alimentos fora e estão recuperando faturamento todos os meses.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={() => setDemoModalOpen(true)}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#FF6B00] hover:bg-[#00c864] text-black font-black text-sm transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 cursor-pointer"
+              onClick={onEnterApp}
+              className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-white text-[#1A1A1A] hover:bg-gray-100 text-base font-black shadow-2xl hover:scale-105 transition-all flex items-center justify-center space-x-3 cursor-pointer group"
             >
-              <span>Falar com um Consultor</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>Quero testar gratuitamente</span>
+              <ArrowRight className="w-5 h-5 text-[#E8571A] group-hover:translate-x-1 transition-transform" />
             </button>
-
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white hover:bg-gray-100 text-black font-black text-sm transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              <MessageSquare className="w-4 h-4 text-orange-600" />
-              <span>Falar com um Consultor</span>
-            </a>
           </div>
 
-          <p className="text-xs text-gray-500 pt-2 font-medium">
-            🔒 Atendimento direto e exclusivo • Sem planos automáticos ou taxas ocultas
+          <p className="text-xs text-orange-200 font-bold pt-2">
+            ⚡ Acesso imediato • Sem cartão de crédito
           </p>
         </div>
       </section>
 
-      {/* RODAPÉ */}
-      <footer className="bg-black text-gray-400 py-16 border-t border-gray-900 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-10">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg bg-white p-1">
-                <img src="https://i.imgur.com/r41aOzi.png" alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+      {/* FOOTER */}
+      <footer className="bg-[#111827] text-gray-400 py-12 border-t border-gray-800 text-xs font-medium">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-xl bg-white p-0.5 flex items-center justify-center">
+                <img
+                  src="https://i.imgur.com/r41aOzi.png"
+                  alt="PADARIA.io"
+                  className="w-full h-full object-contain"
+                  referrerPolicy="no-referrer"
+                />
               </div>
-              <span className="font-black text-white text-base">PADARIA<span className="text-[#FF6B00]">.io</span></span>
+              <span className="font-black text-lg text-white">
+                PADARIA<span className="text-[#E8571A]">.io</span>
+              </span>
             </div>
-            <p className="text-gray-500 text-[11px] leading-relaxed">
-              Sistema inteligente de monitoramento de validade e redução de desperdícios para o setor de panificação.
+
+            <div className="flex flex-wrap justify-center gap-6 text-gray-400">
+              <a href="#comparacao" className="hover:text-white transition-colors">
+                Comparação
+              </a>
+              <a href="#faturamento" className="hover:text-white transition-colors">
+                Recuperação
+              </a>
+              <a href="#clube-vip" className="hover:text-white transition-colors">
+                Clube VIP
+              </a>
+              <a href="#ia" className="hover:text-white transition-colors">
+                Tecnologia IA
+              </a>
+              <a href="#beneficios" className="hover:text-white transition-colors">
+                Benefícios
+              </a>
+              <a href="#resultados" className="hover:text-white transition-colors">
+                Resultados
+              </a>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={onOpenPrivacy}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Política de Privacidade
+              </button>
+              <span>•</span>
+              <button
+                onClick={onOpenAdmin}
+                className="hover:text-white transition-colors cursor-pointer flex items-center space-x-1"
+              >
+                <Lock className="w-3 h-3 text-[#E8571A]" />
+                <span>Portal Gestor</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row justify-between items-center text-[11px] text-gray-500 gap-4">
+            <p>© {new Date().getFullYear()} PADARIA.io - Todos os direitos reservados.</p>
+            <p className="flex items-center space-x-1">
+              <span>Inteligência em Gestão de Validade & Vendas</span>
             </p>
           </div>
-
-          <div className="space-y-3">
-            <div className="font-extrabold text-white text-xs uppercase tracking-wider">Empresa</div>
-            <p className="font-bold text-gray-300">Equipe de Atendimento</p>
-            <p className="text-gray-500 text-[11px]">Inovação e eficiência para o varejo de alimentos.</p>
-          </div>
-
-          <div className="space-y-3">
-            <div className="font-extrabold text-white text-xs uppercase tracking-wider">Contato & Suporte</div>
-            <p><a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[#FF6B00] transition-colors">WhatsApp: (61) 99650-7712</a></p>
-            <p><a href="mailto:weskleyg4000@gmail.com" className="hover:text-[#FF6B00] transition-colors">Email: contato@padaria.io</a></p>
-            <p className="text-gray-500">Instagram: @padaria.io</p>
-          </div>
-
-          <div className="space-y-3">
-            <div className="font-extrabold text-white text-xs uppercase tracking-wider">Legal & Sistema</div>
-            <p><button onClick={onOpenPrivacy} className="hover:text-white transition-colors cursor-pointer">Política de Privacidade</button></p>
-            <p><button onClick={onOpenPrivacy} className="hover:text-white transition-colors cursor-pointer">Termos de Uso</button></p>
-            <p><button onClick={onOpenAdmin} className="text-[#FF6B00] hover:underline font-bold cursor-pointer">Painel Administrativo</button></p>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-900 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-600">
-          <div>© 2026 Padaria.io • Todos os direitos reservados.</div>
-          <div className="mt-2 sm:mt-0">Padaria.io v2.5 • Produção</div>
         </div>
       </footer>
 
-      {/* DEMO REQUEST MODAL */}
+      {/* DEMO MODAL */}
       {demoModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-white rounded-3xl p-8 space-y-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-200 space-y-6 relative animate-scale-up text-gray-900">
             <button
               onClick={() => setDemoModalOpen(false)}
-              className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-1 rounded-lg"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center font-bold">
-                ✨
+            <div className="space-y-1">
+              <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-orange-50 text-[#E8571A] rounded-full text-[10px] font-black uppercase">
+                <Zap className="w-3.5 h-3.5" />
+                <span>Atendimento Especializado</span>
               </div>
-              <h3 className="text-2xl font-black text-gray-900">Falar com um Consultor</h3>
-              <p className="text-xs text-gray-600">
-                Preencha seus dados para conversarmos diretamente via WhatsApp com nossa equipe.
+              <h3 className="text-xl font-black text-gray-900">Agendar Demonstração</h3>
+              <p className="text-xs text-gray-500 font-medium">
+                Preencha os dados abaixo para conversar com um de nossos especialistas no WhatsApp.
               </p>
             </div>
 
             {demoSubmitted ? (
-              <div className="p-6 bg-orange-50 border border-orange-200 text-orange-800 rounded-2xl text-center space-y-2">
-                <CheckCircle2 className="w-8 h-8 text-orange-600 mx-auto" />
-                <div className="font-extrabold text-sm">Redirecionando para o WhatsApp...</div>
-                <p className="text-xs text-orange-700">Nossa equipe já recebeu seu pedido de demonstração.</p>
+              <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-200 text-center space-y-2">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto animate-bounce" />
+                <h4 className="font-black text-sm text-emerald-900">Redirecionando para o WhatsApp...</h4>
+                <p className="text-xs text-emerald-700">Aguarde alguns segundos.</p>
               </div>
             ) : (
               <form onSubmit={handleDemoSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Seu Nome</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Seu Nome</label>
                   <input
                     type="text"
                     required
                     value={demoName}
                     onChange={(e) => setDemoName(e.target.value)}
                     placeholder="Ex: Carlos Silva"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-xs font-medium focus:ring-2 focus:ring-[#E8571A] focus:outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Nome da Padaria</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Nome da Padaria</label>
                   <input
                     type="text"
                     required
                     value={demoBakery}
                     onChange={(e) => setDemoBakery(e.target.value)}
-                    placeholder="Ex: Padaria Estrela do Bairro"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+                    placeholder="Ex: Padaria Pão Doce"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-xs font-medium focus:ring-2 focus:ring-[#E8571A] focus:outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">WhatsApp / Telefone</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">WhatsApp de Contato</label>
                   <input
-                    type="text"
+                    type="tel"
                     required
                     value={demoPhone}
                     onChange={(e) => setDemoPhone(e.target.value)}
                     placeholder="Ex: (61) 99999-9999"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-xs font-medium focus:ring-2 focus:ring-[#E8571A] focus:outline-none"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-4 rounded-xl bg-[#FF6B00] hover:bg-[#00c864] text-black font-black text-xs transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer"
+                  className="w-full py-3.5 rounded-xl bg-[#E8571A] hover:bg-[#d44e15] text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
                 >
-                  <span>Enviar para WhatsApp</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Falar com Consultor no WhatsApp</span>
                 </button>
               </form>
             )}

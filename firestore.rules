@@ -22,6 +22,10 @@ service cloud.firestore {
       allow read, create, update, delete: if true;
     }
 
+    match /vipOffers/{offerId} {
+      allow read, create, update, delete: if true;
+    }
+
     match /settings/{settingId} {
       allow read, create, update, delete: if true;
     }

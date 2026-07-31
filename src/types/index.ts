@@ -124,3 +124,24 @@ export interface FinancialStats {
   clientesInadimplentes: number;
   clientesCanceladosAsaas: number;
 }
+
+export type VipOfferStatus = 'ativo' | 'vendido' | 'descartado';
+
+export interface VipOffer {
+  id: string;
+  bakeryCode: string;
+  productId: string;
+  nomeProduto: string;
+  categoria: string;
+  valorOriginal: number;
+  valorPromocional: number;
+  desconto: number; // percentage (e.g. 15 for 15%)
+  dataValidade: string; // YYYY-MM-DD
+  diasParaVencer: number;
+  status: VipOfferStatus;
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+  dataVenda?: string; // ISO string when status is 'vendido'
+  valorVenda?: number; // actual revenue from sale when status is 'vendido'
+}
+
