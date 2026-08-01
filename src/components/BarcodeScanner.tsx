@@ -37,12 +37,30 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
               onScan(decodedText);
             });
           },
-          (err) => {
-            // Ignored, happens constantly during scanning
-          }
+          () => {}
         );
       } catch (err: any) {
-        setError('Não foi possível acessar a câmera. Verifique as permissões.');
+        console.warn('Câmera em ambiente falhou, tentando fallback para câmera frontal/webcam...', err);
+        try {
+          const cameras = await Html5Qrcode.getCameras();
+          if (cameras && cameras.length > 0) {
+            const backCam = cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('traseira')) || cameras[0];
+            await scanner.start(
+              backCam.id,
+              { fps: 10, qrbox: { width: 250, height: 150 } } as any,
+              (decodedText) => {
+                scanner.stop().then(() => {
+                  onScan(decodedText);
+                });
+              },
+              () => {}
+            );
+          } else {
+            setError('Nenhuma câmera encontrada. Permita o acesso à câmera no seu navegador.');
+          }
+        } catch (e2) {
+          setError('Não foi possível acessar a câmera. Verifique as permissões no navegador.');
+        }
       }
     };
 

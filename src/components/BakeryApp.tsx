@@ -518,6 +518,18 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
               <span>Entrar no Sistema</span>
               <Sparkles className="w-4 h-4 text-[#D4A574]" />
             </button>
+
+            <div className="text-center pt-2">
+              <a
+                href="https://wa.me/5561996507712?text=Ol%C3%A1!%20Gostaria%20de%20saber%20mais%20e%20criar%20uma%20conta%20no%20PADARIA.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-semibold text-gray-600 hover:text-[#E8571A] transition-colors inline-flex items-center space-x-1"
+              >
+                <span>Não tem conta?</span>
+                <span className="text-[#E8571A] font-extrabold underline">Entre em contato Agora mesmo</span>
+              </a>
+            </div>
           </form>
 
           {/* Footer */}

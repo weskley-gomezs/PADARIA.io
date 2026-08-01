@@ -45,15 +45,22 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
+      let mediaStream: MediaStream;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } }
+        });
+      } catch {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
       setStream(mediaStream);
       setIsCameraActive(true);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        videoRef.current.play().catch(() => {});
       }
     } catch (err) {
+      console.warn('Câmera indisponível no VipScannerModal:', err);
       setIsCameraActive(false);
     }
   };

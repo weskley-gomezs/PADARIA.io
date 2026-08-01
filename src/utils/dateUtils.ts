@@ -21,11 +21,11 @@ export function calculateDaysRemaining(targetDateStr: string): number {
 /**
  * Determines product status based on days remaining:
  * > 3 days -> 'normal' (green)
- * 1 to 3 days -> 'vencendo' (yellow)
- * <= 0 days -> 'vencido' (red)
+ * 0 to 3 days -> 'vencendo' (yellow - valid for sale, expires today or within 3 days)
+ * < 0 days -> 'vencido' (red - past expiration date, must be discarded)
  */
 export function getProductStatus(daysRemaining: number): ProductStatus {
-  if (daysRemaining <= 0) {
+  if (daysRemaining < 0) {
     return 'vencido';
   } else if (daysRemaining <= 3) {
     return 'vencendo';

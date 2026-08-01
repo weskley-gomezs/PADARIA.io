@@ -54,7 +54,7 @@ export const VipClubSection: React.FC<VipClubSectionProps> = ({ bakeryCode }) =>
   useEffect(() => {
     const handleAutoExpire = async () => {
       const activeExpired = offers.filter(
-        (o) => o.status === 'ativo' && calculateDaysRemaining(o.dataValidade) <= 0
+        (o) => o.status === 'ativo' && calculateDaysRemaining(o.dataValidade) < 0
       );
       if (activeExpired.length > 0) {
         setSyncing(true);
