@@ -469,6 +469,294 @@ try {
     }
   });
 
+  // Endpoint to send single Implementation Fee Boleto via Asaas
+  app.post('/api/asaas/send-implementation-fee', async (req, res) => {
+    console.log("[ROUTE] POST /api/asaas/send-implementation-fee - Recebido");
+    try {
+      const {
+        codigoAtivacao,
+        empresa,
+        email,
+        telefone,
+        cnpj,
+        valorImplementacao,
+        dataVencimento,
+      } = req.body;
+
+      const asaasApiKey = process.env.ASAAS_API_KEY;
+      const asaasEnvironment = process.env.ASAAS_ENVIRONMENT || 'production';
+
+      if (!asaasApiKey) {
+        return res.status(400).json({
+          error: 'A chave de API do Asaas não está configurada no servidor (ASAAS_API_KEY).'
+        });
+      }
+
+      const baseUrl = asaasEnvironment === 'production'
+        ? 'https://api.asaas.com/v3'
+        : 'https://sandbox.asaas.com/v3';
+
+      const extRef = codigoAtivacao ? String(codigoAtivacao).trim().toUpperCase() : undefined;
+      const valImp = Number(valorImplementacao) || 1500;
+      const dueDateStr = dataVencimento && dataVencimento.trim() !== ''
+        ? dataVencimento.trim()
+        : new Date().toISOString().split('T')[0];
+
+      // 1. Get or Create Customer on Asaas
+      let customerId: string | null = null;
+      const custRes = await fetch(`${baseUrl}/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'access_token': asaasApiKey,
+        },
+        body: JSON.stringify({
+          name: empresa,
+          email: email,
+          cpfCnpj: cnpj || undefined,
+          phone: telefone || undefined,
+          externalReference: extRef,
+        }),
+      });
+
+      const custData = await parseAsaasResponse(custRes);
+      if (custRes.ok && custData.id) {
+        customerId = custData.id;
+      } else if (extRef || email) {
+        // Search for existing
+        let searchUrl = `${baseUrl}/customers?`;
+        if (extRef) searchUrl += `externalReference=${encodeURIComponent(extRef)}`;
+        else if (email) searchUrl += `&email=${encodeURIComponent(email)}`;
+
+        const searchRes = await fetch(searchUrl, { headers: { 'access_token': asaasApiKey } });
+        if (searchRes.ok) {
+          const searchData = await parseAsaasResponse(searchRes);
+          if (searchData.data && searchData.data.length > 0) {
+            customerId = searchData.data[0].id;
+          }
+        }
+      }
+
+      if (!customerId) {
+        return res.status(400).json({
+          error: custData.error || 'Não foi possível cadastrar ou localizar o cliente no Asaas.'
+        });
+      }
+
+      // 2. Create Implementation Payment Charge in Asaas
+      const payRes = await fetch(`${baseUrl}/payments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'access_token': asaasApiKey,
+        },
+        body: JSON.stringify({
+          customer: customerId,
+          billingType: 'BOLETO',
+          value: valImp,
+          dueDate: dueDateStr,
+          description: `Taxa de Implementação - PADARIA.io (${empresa})`,
+          externalReference: extRef,
+        }),
+      });
+
+      const payData = await parseAsaasResponse(payRes);
+      if (!payRes.ok) {
+        return res.status(payRes.status || 400).json({
+          error: payData.error || 'Erro ao gerar boleto de implementação no Asaas.',
+          details: payData
+        });
+      }
+
+      const paymentLink = payData.invoiceUrl || payData.bankSlipUrl || payData.paymentLink || '';
+
+      // 3. Update Firestore if db is ready
+      if (extRef && db) {
+        try {
+          const compData = {
+            financeiro: {
+              asaasCustomerId: customerId,
+              asaasPaymentLink: paymentLink,
+              ultimoLinkPagamento: paymentLink,
+              tipoUltimoLink: 'implementacao',
+              valorImplementacao: valImp,
+              implementacaoPaga: false,
+            }
+          };
+          await setDoc(doc(db, 'companies', extRef), removeUndefined(compData), { merge: true });
+        } catch (e) {
+          console.warn('[FIRESTORE] Erro ao atualizar implementação no Firestore:', e);
+        }
+      }
+
+      return res.json({
+        success: true,
+        paymentId: payData.id,
+        paymentUrl: paymentLink,
+        invoiceUrl: paymentLink,
+        valorImplementacao: valImp,
+        dataVencimento: dueDateStr,
+        message: `Boleto de implementação (R$ ${valImp.toFixed(2)}) enviado direto para o e-mail ${email} via Asaas!`
+      });
+    } catch (error: any) {
+      console.error('[ROUTE] ERRO em /api/asaas/send-implementation-fee:', error);
+      res.status(500).json({ error: 'Erro ao enviar taxa de implementação no Asaas', details: error.message });
+    }
+  });
+
+  // Endpoint to send/start Monthly Subscription Boleto via Asaas
+  app.post('/api/asaas/send-monthly-subscription', async (req, res) => {
+    console.log("[ROUTE] POST /api/asaas/send-monthly-subscription - Recebido");
+    try {
+      const {
+        codigoAtivacao,
+        empresa,
+        email,
+        telefone,
+        cnpj,
+        valorMensalidade,
+        dataVencimento,
+      } = req.body;
+
+      const asaasApiKey = process.env.ASAAS_API_KEY;
+      const asaasEnvironment = process.env.ASAAS_ENVIRONMENT || 'production';
+
+      if (!asaasApiKey) {
+        return res.status(400).json({
+          error: 'A chave de API do Asaas não está configurada no servidor (ASAAS_API_KEY).'
+        });
+      }
+
+      const baseUrl = asaasEnvironment === 'production'
+        ? 'https://api.asaas.com/v3'
+        : 'https://sandbox.asaas.com/v3';
+
+      const extRef = codigoAtivacao ? String(codigoAtivacao).trim().toUpperCase() : undefined;
+      const valMensal = Number(valorMensalidade) || 199;
+      const nextDueDateStr = dataVencimento && dataVencimento.trim() !== ''
+        ? dataVencimento.trim()
+        : new Date().toISOString().split('T')[0];
+
+      // 1. Get or Create Customer on Asaas
+      let customerId: string | null = null;
+      const custRes = await fetch(`${baseUrl}/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'access_token': asaasApiKey,
+        },
+        body: JSON.stringify({
+          name: empresa,
+          email: email,
+          cpfCnpj: cnpj || undefined,
+          phone: telefone || undefined,
+          externalReference: extRef,
+        }),
+      });
+
+      const custData = await parseAsaasResponse(custRes);
+      if (custRes.ok && custData.id) {
+        customerId = custData.id;
+      } else if (extRef || email) {
+        let searchUrl = `${baseUrl}/customers?`;
+        if (extRef) searchUrl += `externalReference=${encodeURIComponent(extRef)}`;
+        else if (email) searchUrl += `&email=${encodeURIComponent(email)}`;
+
+        const searchRes = await fetch(searchUrl, { headers: { 'access_token': asaasApiKey } });
+        if (searchRes.ok) {
+          const searchData = await parseAsaasResponse(searchRes);
+          if (searchData.data && searchData.data.length > 0) {
+            customerId = searchData.data[0].id;
+          }
+        }
+      }
+
+      if (!customerId) {
+        return res.status(400).json({
+          error: custData.error || 'Não foi possível cadastrar ou localizar o cliente no Asaas.'
+        });
+      }
+
+      // 2. Create Monthly Subscription on Asaas
+      const subRes = await fetch(`${baseUrl}/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'access_token': asaasApiKey,
+        },
+        body: JSON.stringify({
+          customer: customerId,
+          billingType: 'BOLETO',
+          value: valMensal,
+          nextDueDate: nextDueDateStr,
+          cycle: 'MONTHLY',
+          description: `Assinatura Mensal PADARIA.io - ${empresa}`,
+          externalReference: extRef,
+        }),
+      });
+
+      const subData = await parseAsaasResponse(subRes);
+      if (!subRes.ok) {
+        return res.status(subRes.status || 400).json({
+          error: subData.error || 'Erro ao criar assinatura mensal no Asaas.',
+          details: subData
+        });
+      }
+
+      let paymentLink = subData.invoiceUrl || subData.bankSlipUrl || '';
+
+      // If invoiceUrl isn't directly on subData, fetch the first payment generated for this sub
+      if (!paymentLink && subData.id) {
+        try {
+          const subPayRes = await fetch(`${baseUrl}/subscriptions/${subData.id}/payments`, {
+            headers: { 'access_token': asaasApiKey },
+          });
+          if (subPayRes.ok) {
+            const subPayData = await parseAsaasResponse(subPayRes);
+            if (subPayData.data && subPayData.data.length > 0) {
+              paymentLink = subPayData.data[0].invoiceUrl || subPayData.data[0].bankSlipUrl || '';
+            }
+          }
+        } catch (e) {
+          console.warn('[ASAAS] Aviso ao buscar boleto da assinatura:', e);
+        }
+      }
+
+      // 3. Update Firestore
+      if (extRef && db) {
+        try {
+          const compData = {
+            financeiro: {
+              asaasCustomerId: customerId,
+              asaasSubscriptionId: subData.id,
+              asaasPaymentLink: paymentLink || null,
+              ultimoLinkPagamento: paymentLink || null,
+              tipoUltimoLink: 'mensalidade',
+              valorMensalidade: valMensal,
+              dataProximaCobranca: nextDueDateStr,
+              statusAssinatura: 'pendente',
+            }
+          };
+          await setDoc(doc(db, 'companies', extRef), removeUndefined(compData), { merge: true });
+        } catch (e) {
+          console.warn('[FIRESTORE] Erro ao atualizar assinatura no Firestore:', e);
+        }
+      }
+
+      return res.json({
+        success: true,
+        subscriptionId: subData.id,
+        paymentUrl: paymentLink,
+        valorMensalidade: valMensal,
+        nextDueDate: nextDueDateStr,
+        message: `Assinatura mensal de R$ ${valMensal.toFixed(2)} ativada no Asaas com vencimento em ${nextDueDateStr}. Boleto enviado para ${email}!`
+      });
+    } catch (error: any) {
+      console.error('[ROUTE] ERRO em /api/asaas/send-monthly-subscription:', error);
+      res.status(500).json({ error: 'Erro ao enviar mensalidade no Asaas', details: error.message });
+    }
+  });
+
   // Endpoint to fetch or generate official Asaas payment/invoice URL
   app.post('/api/asaas/get-payment-link', async (req, res) => {
     console.log("[ROUTE] POST /api/asaas/get-payment-link - Recebido");

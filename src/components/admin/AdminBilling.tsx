@@ -26,6 +26,8 @@ import {
   DollarSign,
   XCircle,
   Filter,
+  X,
+  RefreshCw,
 } from 'lucide-react';
 import { BakeryCompany, BillingStatus, FinancialStats } from '../../types';
 import { StorageService } from '../../services/storageService';
@@ -51,6 +53,18 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
   const [editDueDate, setEditDueDate] = useState<string>('');
   const [editValorImp, setEditValorImp] = useState<number>(1500);
   const [editValorMensal, setEditValorMensal] = useState<number>(199);
+
+  // Implementation Fee Asaas Send Modal State
+  const [sendImpModalCompany, setSendImpModalCompany] = useState<BakeryCompany | null>(null);
+  const [sendImpValue, setSendImpValue] = useState<number>(1500);
+  const [sendImpDueDate, setSendImpDueDate] = useState<string>(formatDateToISO(new Date()));
+  const [isSendingImp, setIsSendingImp] = useState<boolean>(false);
+
+  // Monthly Subscription Asaas Send Modal State
+  const [sendSubModalCompany, setSendSubModalCompany] = useState<BakeryCompany | null>(null);
+  const [sendSubValue, setSendSubValue] = useState<number>(199);
+  const [sendSubDueDate, setSendSubDueDate] = useState<string>(formatDateToISO(new Date()));
+  const [isSendingSub, setIsSendingSub] = useState<boolean>(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -96,18 +110,112 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
     }
   };
 
-  const handleMarkAsPaid = async (code: string) => {
+  const handleToggleImpPaid = async (code: string, currentPaid: boolean) => {
     try {
       await StorageService.updateCompanyBilling(code, {
-        implementacaoPaga: true,
-        statusAssinatura: 'ativo',
-        dataPagamentoImplementacao: new Date().toISOString(),
+        implementacaoPaga: !currentPaid,
+        dataPagamentoImplementacao: !currentPaid ? new Date().toISOString() : undefined,
       });
       onRefresh();
-      showToast(`Pagamento de implementação e ativação confirmados!`);
+      showToast(!currentPaid ? `Taxa de implementação marcada como PAGA!` : `Taxa de implementação marcada como PENDENTE.`);
     } catch (err: any) {
-      console.error("Erro ao confirmar pagamento:", err);
-      showToast(`Erro ao confirmar pagamento: ${err.message || err}`);
+      showToast(`Erro ao alterar status da implementação: ${err.message || err}`);
+    }
+  };
+
+  const handleOpenSendImpModal = (c: BakeryCompany) => {
+    setSendImpModalCompany(c);
+    setSendImpValue(c.financeiro?.valorImplementacao ?? 1500);
+    setSendImpDueDate(formatDateToISO(new Date()));
+  };
+
+  const handleSendImplementationBoleto = async () => {
+    if (!sendImpModalCompany) return;
+    setIsSendingImp(true);
+    try {
+      const res = await fetch('/api/asaas/send-implementation-fee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codigoAtivacao: sendImpModalCompany.codigoAtivacao,
+          empresa: sendImpModalCompany.empresa,
+          email: sendImpModalCompany.email,
+          telefone: sendImpModalCompany.telefone,
+          cnpj: sendImpModalCompany.cnpj,
+          valorImplementacao: sendImpValue,
+          dataVencimento: sendImpDueDate,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Erro ao enviar taxa de implementação no Asaas.');
+      }
+
+      await StorageService.updateCompanyBilling(sendImpModalCompany.codigoAtivacao, {
+        valorImplementacao: sendImpValue,
+        asaasPaymentLink: data.paymentUrl,
+        ultimoLinkPagamento: data.paymentUrl,
+        tipoUltimoLink: 'implementacao',
+        implementacaoPaga: false,
+      });
+
+      setSendImpModalCompany(null);
+      onRefresh();
+      showToast(data.message || `Boleto de implementação enviado com sucesso para ${sendImpModalCompany.email}!`);
+    } catch (err: any) {
+      showToast(`Erro: ${err.message}`);
+    } finally {
+      setIsSendingImp(false);
+    }
+  };
+
+  const handleOpenSendSubModal = (c: BakeryCompany) => {
+    setSendSubModalCompany(c);
+    setSendSubValue(c.financeiro?.valorMensalidade ?? 199);
+    setSendSubDueDate(c.financeiro?.dataProximaCobranca || formatDateToISO(new Date()));
+  };
+
+  const handleSendMonthlyBoleto = async () => {
+    if (!sendSubModalCompany) return;
+    setIsSendingSub(true);
+    try {
+      const res = await fetch('/api/asaas/send-monthly-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codigoAtivacao: sendSubModalCompany.codigoAtivacao,
+          empresa: sendSubModalCompany.empresa,
+          email: sendSubModalCompany.email,
+          telefone: sendSubModalCompany.telefone,
+          cnpj: sendSubModalCompany.cnpj,
+          valorMensalidade: sendSubValue,
+          dataVencimento: sendSubDueDate,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Erro ao enviar mensalidade no Asaas.');
+      }
+
+      await StorageService.updateCompanyBilling(sendSubModalCompany.codigoAtivacao, {
+        valorMensalidade: sendSubValue,
+        dataProximaCobranca: sendSubDueDate,
+        asaasSubscriptionId: data.subscriptionId,
+        asaasPaymentLink: data.paymentUrl,
+        ultimoLinkPagamento: data.paymentUrl,
+        tipoUltimoLink: 'mensalidade',
+        statusAssinatura: 'pendente',
+      });
+
+      setSendSubModalCompany(null);
+      onRefresh();
+      showToast(data.message || `Assinatura mensal enviada e ativada para ${sendSubModalCompany.email}!`);
+    } catch (err: any) {
+      showToast(`Erro: ${err.message}`);
+    } finally {
+      setIsSendingSub(false);
     }
   };
 
@@ -440,22 +548,34 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
                             />
                           </div>
                         ) : (
-                          <div className="space-y-1">
-                            {fin.implementacaoPaga ? (
-                              <span className="inline-flex items-center space-x-1 text-green-700 font-bold bg-green-50 px-2.5 py-1 rounded-lg text-xs">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                                <span>R$ {(fin.valorImplementacao || 1500).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Pago)</span>
-                              </span>
-                            ) : (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center space-x-1">
                               <button
-                                onClick={() => handleMarkAsPaid(c.codigoAtivacao)}
-                                className="inline-flex items-center space-x-1 text-amber-800 font-bold bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer text-xs"
-                                title="Clique para confirmar pagamento da implementação"
+                                onClick={() => handleToggleImpPaid(c.codigoAtivacao, !!fin.implementacaoPaga)}
+                                className={`inline-flex items-center space-x-1 font-bold px-2.5 py-1 rounded-lg transition-colors cursor-pointer text-xs ${
+                                  fin.implementacaoPaga 
+                                    ? 'text-green-700 bg-green-50 hover:bg-green-100' 
+                                    : 'text-amber-800 bg-amber-50 hover:bg-amber-100'
+                                }`}
+                                title="Clique para alternar entre PAGO e PENDENTE"
                               >
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>R$ {(fin.valorImplementacao || 1500).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Pendente)</span>
+                                {fin.implementacaoPaga ? (
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                                ) : (
+                                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                )}
+                                <span>R$ {(fin.valorImplementacao || 1500).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({fin.implementacaoPaga ? 'Pago' : 'Pendente'})</span>
                               </button>
-                            )}
+                            </div>
+
+                            <button
+                              onClick={() => handleOpenSendImpModal(c)}
+                              className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] border border-blue-200 transition-all cursor-pointer flex items-center space-x-1"
+                              title="Enviar boleto da taxa de implementação via Asaas para o e-mail"
+                            >
+                              <Send className="w-3 h-3 text-blue-600" />
+                              <span>Enviar Boleto Imp.</span>
+                            </button>
                           </div>
                         )}
                       </td>
@@ -473,11 +593,22 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
                             />
                           </div>
                         ) : (
-                          <div>
-                            <span className="text-sm font-black text-[#111111]">
-                              R$ {(fin.valorMensalidade || 199).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </span>
-                            <span className="text-[10px] text-gray-400 block font-normal">/mês</span>
+                          <div className="space-y-1.5">
+                            <div>
+                              <span className="text-sm font-black text-[#111111]">
+                                R$ {(fin.valorMensalidade || 199).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                              <span className="text-[10px] text-gray-400 block font-normal">/mês</span>
+                            </div>
+
+                            <button
+                              onClick={() => handleOpenSendSubModal(c)}
+                              className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] border border-indigo-200 transition-all cursor-pointer flex items-center space-x-1"
+                              title="Definir vencimento e enviar boleto de mensalidade via Asaas"
+                            >
+                              <CreditCard className="w-3 h-3 text-indigo-600" />
+                              <span>Enviar Mensalidade</span>
+                            </button>
                           </div>
                         )}
                       </td>
@@ -640,6 +771,174 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
           </table>
         </div>
       </div>
+
+      {/* Modal: Enviar Taxa de Implementação via Asaas */}
+      {sendImpModalCompany && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                  <Send className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-[#111111]">Enviar Taxa de Implementação</h3>
+                  <p className="text-xs text-gray-500 font-medium">{sendImpModalCompany.empresa}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSendImpModalCompany(null)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Valor da Taxa de Implementação (R$)
+                </label>
+                <input
+                  type="number"
+                  value={sendImpValue}
+                  onChange={(e) => setSendImpValue(Number(e.target.value))}
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-[#111111] focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none"
+                  placeholder="1500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Data de Vencimento do Boleto
+                </label>
+                <input
+                  type="date"
+                  value={sendImpDueDate}
+                  onChange={(e) => setSendImpDueDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-[#111111] focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-blue-800 text-[11px] leading-relaxed">
+                <p className="font-bold mb-0.5">Envio Direto pelo Asaas (Azulzinho):</p>
+                <p>O boleto de <strong>R$ {sendImpValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong> será gerado e enviado diretamente para o e-mail <strong>{sendImpModalCompany.email}</strong> com vencimento em <strong>{formatDateToBR(sendImpDueDate)}</strong>.</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-2">
+              <button
+                onClick={() => setSendImpModalCompany(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                disabled={isSendingImp}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSendImplementationBoleto}
+                disabled={isSendingImp}
+                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-md flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {isSendingImp ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Gerando & Enviando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Enviar Boleto por E-mail</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Enviar / Ativar Mensalidade via Asaas */}
+      {sendSubModalCompany && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-[#111111]">Enviar Cobrança de Mensalidade</h3>
+                  <p className="text-xs text-gray-500 font-medium">{sendSubModalCompany.empresa}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSendSubModalCompany(null)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Valor da Mensalidade (R$)
+                </label>
+                <input
+                  type="number"
+                  value={sendSubValue}
+                  onChange={(e) => setSendSubValue(Number(e.target.value))}
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-[#111111] focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none"
+                  placeholder="199"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Vencimento da 1ª Mensalidade (Data que começa a contar)
+                </label>
+                <input
+                  type="date"
+                  value={sendSubDueDate}
+                  onChange={(e) => setSendSubDueDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-[#111111] focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-900 text-[11px] leading-relaxed">
+                <p className="font-bold mb-0.5">Assinatura Mensal Recorrente:</p>
+                <p>O 1º boleto no valor de <strong>R$ {sendSubValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong> será enviado para <strong>{sendSubModalCompany.email}</strong> com vencimento em <strong>{formatDateToBR(sendSubDueDate)}</strong>. O Asaas continuará enviando mensalmente a partir desta data.</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-2">
+              <button
+                onClick={() => setSendSubModalCompany(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                disabled={isSendingSub}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSendMonthlyBoleto}
+                disabled={isSendingSub}
+                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {isSendingSub ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Ativando Recorrência...</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Enviar & Ativar no Asaas</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

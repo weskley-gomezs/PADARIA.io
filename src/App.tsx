@@ -151,9 +151,13 @@ export default function App() {
       {/* Main View Area */}
       <main className="grow">
         {currentView === 'admin' ? (
-          <AdminPanel onLoginAsBakery={handleLoginAsBakeryFromAdmin} />
+          <AdminPanel 
+            onLoginAsBakery={handleLoginAsBakeryFromAdmin} 
+            isAdminLoggedIn={isAdminLoggedIn}
+            onLogoutAdmin={handleLogoutAdmin}
+          />
         ) : (
-          <BakeryApp presetCode={activeCode} />
+          <BakeryApp presetCode={activeCode} onLogout={handleLogoutBakery} />
         )}
       </main>
 

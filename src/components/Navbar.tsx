@@ -101,9 +101,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className="text-xs font-bold text-[#2C2C2C] truncate max-w-[140px]">
                     {activeCompany.empresa}
                   </span>
-                  <span className="text-[10px] font-mono text-[#FF6B00] font-semibold">
-                    CÓD: {activeCompany.codigoAtivacao}
-                  </span>
                 </div>
 
                 {/* Notifications Button */}
@@ -231,7 +228,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
               <div className="text-xs">
                 <p className="font-bold text-[#2C2C2C]">{activeCompany.empresa}</p>
-                <p className="text-[10px] text-gray-500 font-mono">Código: {activeCompany.codigoAtivacao}</p>
+                <p className="text-[10px] text-gray-500 font-semibold">Logado</p>
               </div>
 
               <button

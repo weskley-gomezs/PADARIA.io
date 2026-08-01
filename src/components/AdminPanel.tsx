@@ -39,11 +39,13 @@ import { AdminTrainingPlan } from './admin/AdminTrainingPlan';
 
 interface AdminPanelProps {
   onLoginAsBakery: (code: string) => void;
+  isAdminLoggedIn?: boolean;
+  onLogoutAdmin?: () => void;
 }
 
 type AdminTab = 'empresas' | 'cobranca' | 'contratos' | 'suporte' | 'treinamento';
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
+export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdminLoggedIn, onLogoutAdmin }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [passwordError, setPasswordError] = useState<string>('');
@@ -119,6 +121,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
+
+  useEffect(() => {
+    if (isAdminLoggedIn !== undefined) {
+      setIsAuthenticated(isAdminLoggedIn);
+    }
+  }, [isAdminLoggedIn]);
 
   useEffect(() => {
     const authStatus = StorageService.isAdminAuthenticated();
@@ -504,6 +512,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
               onClick={() => {
                 StorageService.setAdminAuthenticated(false);
                 setIsAuthenticated(false);
+                if (onLogoutAdmin) {
+                  onLogoutAdmin();
+                }
               }}
               className="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white font-bold py-2.5 rounded-xl text-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer"
               title="Sair do Painel Admin"
