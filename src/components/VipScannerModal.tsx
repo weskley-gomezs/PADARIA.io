@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, X, QrCode, Search, CheckCircle, AlertCircle, Clock, Sparkles, Loader2, Check } from 'lucide-react';
+import { Camera, X, QrCode, Search, CheckCircle, AlertCircle, Clock, Sparkles, Loader2, Check, RefreshCw, Upload } from 'lucide-react';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import confetti from 'canvas-confetti';
 import { VipOffer } from '../types';
 import { StorageService } from '../services/storageService';
@@ -21,13 +22,14 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
   const [activeOffers, setActiveOffers] = useState<VipOffer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOffer, setSelectedOffer] = useState<VipOffer | null>(null);
-  const [isScanning, setIsScanning] = useState(true);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [scanNotice, setScanNotice] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -36,45 +38,148 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
       setSearchTerm('');
       setSelectedOffer(null);
       setSuccessMsg(null);
-      setIsScanning(true);
-      startCamera();
+      setCameraError(null);
+      setScanNotice(null);
+      
+      // Give DOM time to render container div before mounting scanner
+      const timer = setTimeout(() => {
+        startScanner();
+      }, 100);
+      return () => {
+        clearTimeout(timer);
+        stopScanner();
+      };
     } else {
-      stopCamera();
+      stopScanner();
     }
   }, [isOpen, bakeryCode]);
 
-  const startCamera = async () => {
-    try {
-      let mediaStream: MediaStream;
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' } }
-        });
-      } catch {
-        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+  const handleBarcodeScanned = (decodedText: string) => {
+    const text = decodedText.trim().toLowerCase();
+    
+    // Check if any active offer matches this barcode directly
+    const offers = StorageService.getVipOffers(bakeryCode).filter(o => o.status === 'ativo');
+    const matchedOffer = offers.find(o => 
+      o.id.toLowerCase() === text ||
+      (o.productId && o.productId.toLowerCase() === text) ||
+      o.nomeProduto.toLowerCase().includes(text)
+    );
+
+    if (matchedOffer) {
+      setSelectedOffer(matchedOffer);
+      stopScanner();
+    } else {
+      // Check in product inventory if barcode matches product ID or product barcode
+      const products = StorageService.getProducts(bakeryCode);
+      const matchedProduct = products.find(p => p.id.toLowerCase() === text || (p.barcode && p.barcode.toLowerCase() === text));
+      
+      if (matchedProduct) {
+        const vipForProduct = offers.find(o => o.productId === matchedProduct.id);
+        if (vipForProduct) {
+          setSelectedOffer(vipForProduct);
+          stopScanner();
+          return;
+        }
       }
-      setStream(mediaStream);
-      setIsCameraActive(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.play().catch(() => {});
-      }
-    } catch (err) {
-      console.warn('Câmera indisponível no VipScannerModal:', err);
-      setIsCameraActive(false);
+
+      setSearchTerm(decodedText);
+      setScanNotice(`Código "${decodedText}" lido! Selecione a oferta correspondente na lista abaixo.`);
     }
   };
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+  const startScanner = async () => {
+    setCameraError(null);
+    setScanNotice(null);
+
+    const readerElem = document.getElementById('vip-barcode-reader');
+    if (!readerElem) return;
+
+    if (scannerRef.current?.isScanning) {
+      try {
+        await scannerRef.current.stop();
+      } catch (e) {
+        console.warn('Erro ao parar scanner anterior:', e);
+      }
+    }
+
+    try {
+      const html5Qrcode = new Html5Qrcode('vip-barcode-reader');
+      scannerRef.current = html5Qrcode;
+
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 150 },
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.QR_CODE
+        ],
+      };
+
+      try {
+        await html5Qrcode.start(
+          { facingMode: 'environment' },
+          config as any,
+          (decodedText) => handleBarcodeScanned(decodedText),
+          () => {}
+        );
+        setIsCameraActive(true);
+      } catch (err) {
+        console.warn('Falhou câmera traseira, buscando lista de câmeras...', err);
+        const cameras = await Html5Qrcode.getCameras();
+        if (cameras && cameras.length > 0) {
+          const backCam = cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('traseira')) || cameras[0];
+          await html5Qrcode.start(
+            backCam.id,
+            config as any,
+            (decodedText) => handleBarcodeScanned(decodedText),
+            () => {}
+          );
+          setIsCameraActive(true);
+        } else {
+          setIsCameraActive(false);
+          setCameraError('Nenhuma câmera encontrada. Clique no botão abaixo para dar permissão.');
+        }
+      }
+    } catch (err: any) {
+      console.warn('Erro ao acessar câmera no VipScannerModal:', err);
+      setIsCameraActive(false);
+      setCameraError('Acesso à câmera bloqueado ou pendente. Clique em "Ativar Câmera" ou envie uma foto do código.');
+    }
+  };
+
+  const stopScanner = () => {
+    if (scannerRef.current?.isScanning) {
+      scannerRef.current.stop().catch(() => {});
     }
     setIsCameraActive(false);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      let scanner = scannerRef.current;
+      if (!scanner) {
+        scanner = new Html5Qrcode('vip-barcode-reader');
+        scannerRef.current = scanner;
+      }
+      const result = await scanner.scanFileV2(file, false);
+      if (result && result.decodedText) {
+        handleBarcodeScanned(result.decodedText);
+      }
+    } catch (err) {
+      setScanNotice('Não foi possível identificar um código de barras legível nesta imagem. Tente tirar outra foto mais de perto.');
+    }
+  };
+
   const handleClose = () => {
-    stopCamera();
+    stopScanner();
     onClose();
   };
 
@@ -86,8 +191,7 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
 
   const handleSelectOffer = (offer: VipOffer) => {
     setSelectedOffer(offer);
-    setIsScanning(false);
-    stopCamera();
+    stopScanner();
   };
 
   const handleConfirmSale = async () => {
@@ -236,8 +340,7 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
                 <button
                   onClick={() => {
                     setSelectedOffer(null);
-                    setIsScanning(true);
-                    startCamera();
+                    startScanner();
                   }}
                   className="w-1/3 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
                   disabled={isConfirming}
@@ -263,32 +366,59 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
           ) : (
             /* SCANNER CAMERA & LIST LOOKUP */
             <div className="space-y-4">
-              {/* Camera Preview */}
-              <div className="bg-black rounded-2xl overflow-hidden relative min-h-[200px] flex items-center justify-center">
-                {isCameraActive ? (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-48 object-cover opacity-90"
-                  />
-                ) : (
-                  <div className="text-center p-6 text-gray-400 space-y-2">
-                    <Camera className="w-8 h-8 text-amber-500 mx-auto opacity-80" />
-                    <p className="text-xs font-semibold">Câmera indisponível ou permissão pendente</p>
-                    <p className="text-[10px] text-gray-500">Selecione o produto na lista abaixo para dar baixa</p>
-                  </div>
-                )}
-                {/* Scan Overlay Frame */}
-                {isCameraActive && (
-                  <div className="absolute inset-0 border-2 border-dashed border-amber-400/80 m-6 rounded-xl flex items-center justify-center pointer-events-none">
-                    <span className="bg-black/60 text-amber-300 text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wider">
-                      Aponte para o Código do Produto
-                    </span>
+              {/* Hidden File Input for Barcode Image Scanning */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+
+              {/* Camera Preview / Html5Qrcode Reader */}
+              <div className="bg-black rounded-2xl overflow-hidden relative min-h-[200px] flex flex-col items-center justify-center">
+                <div id="vip-barcode-reader" className="w-full h-48 bg-black" />
+
+                {!isCameraActive && (
+                  <div className="absolute inset-0 bg-gray-900/95 flex flex-col items-center justify-center p-4 text-center space-y-3 z-10">
+                    <Camera className="w-9 h-9 text-amber-500 animate-pulse" />
+                    <div>
+                      <p className="text-xs font-bold text-white">Câmera Aguardando Permissão ou Desativada</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        {cameraError || 'Toque no botão abaixo para permitir o acesso à câmera.'}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs pt-1">
+                      <button
+                        onClick={startScanner}
+                        className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-gray-900 font-black rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Ativar Câmera</span>
+                      </button>
+
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex-1 py-2 px-3 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Foto do Código</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
+
+              {/* Notice Banner */}
+              {scanNotice && (
+                <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 font-bold flex items-center justify-between">
+                  <span>{scanNotice}</span>
+                  <button onClick={() => setScanNotice(null)} className="text-amber-600 hover:text-amber-900">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
 
               {/* Search Bar */}
               <div className="relative">
