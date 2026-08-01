@@ -8,7 +8,19 @@ import { ImageScanner } from './ImageScanner';
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (nome: string, quantidade: number, dataValidade: string, categoria?: string, barcode?: string, valorKg?: number, dataFabricacao?: string, valorTotal?: number) => void;
+  onSave: (
+    nome: string,
+    quantidade: number,
+    dataValidade: string,
+    categoria?: string,
+    barcode?: string,
+    valorKg?: number,
+    dataFabricacao?: string,
+    valorTotal?: number,
+    motivo?: string,
+    notas?: string,
+    peso?: number
+  ) => void;
   productToEdit?: Product | null;
 }
 
@@ -34,6 +46,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [dataValidade, setDataValidade] = useState<string>('');
   const [categoria, setCategoria] = useState<string>('Panificação');
   const [barcode, setBarcode] = useState<string>('');
+  const [peso, setPeso] = useState<string>('');
   const [valorKg, setValorKg] = useState<string>('');
   const [valorTotal, setValorTotal] = useState<string>('');
   const [dataFabricacao, setDataFabricacao] = useState<string>('');
@@ -52,6 +65,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setDataValidade(productToEdit.dataValidade);
       setCategoria(productToEdit.categoria || 'Panificação');
       setBarcode(productToEdit.barcode || '');
+      setPeso(productToEdit.peso ? productToEdit.peso.toString() : '');
       setValorKg(productToEdit.valorKg ? productToEdit.valorKg.toString() : '');
       setValorTotal(productToEdit.valorTotal ? productToEdit.valorTotal.toString() : '');
       setDataFabricacao(productToEdit.dataFabricacao || '');
@@ -66,6 +80,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setDataValidade(formatDateToISO(future));
       setCategoria('Panificação');
       setBarcode('');
+      setPeso('');
       setValorKg('');
       setValorTotal('');
       setDataFabricacao('');
@@ -107,7 +122,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       dataFabricacao,
       valorTotal ? parseFloat(valorTotal) : undefined,
       motivo,
-      notas
+      notas,
+      peso ? parseFloat(peso) : undefined
     );
     onClose();
   };
@@ -285,8 +301,22 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             Produtos vencendo em até 3 dias receberão alerta amarelo.
           </p>
 
-          {/* Valores */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Peso e Valores */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[#2C2C2C] mb-1">
+                Peso (KG)
+              </label>
+              <input
+                type="number"
+                step="0.001"
+                min="0"
+                value={peso}
+                onChange={(e) => setPeso(e.target.value)}
+                placeholder="Ex: 0.350"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
+              />
+            </div>
             <div>
               <label className="block text-xs font-bold text-[#2C2C2C] mb-1">
                 Valor Total (R$)
@@ -298,12 +328,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 value={valorTotal}
                 onChange={(e) => setValorTotal(e.target.value)}
                 placeholder="Ex: 25.50"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
               />
             </div>
             <div>
               <label className="block text-xs font-bold text-[#2C2C2C] mb-1">
-                Valor por KG (R$)
+                Valor/KG (R$)
               </label>
               <input
                 type="number"
@@ -312,7 +342,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 value={valorKg}
                 onChange={(e) => setValorKg(e.target.value)}
                 placeholder="Ex: 15.90"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
               />
             </div>
           </div>
@@ -390,6 +420,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         <ImageScanner
           onScanResult={(result) => {
             if (result.nome) setNome(result.nome);
+            if (result.barcode) setBarcode(result.barcode);
+            if (result.peso !== undefined && result.peso !== null) setPeso(result.peso.toString());
             if (result.dataFabricacao) {
               const df = new Date(result.dataFabricacao);
               if (!isNaN(df.getTime())) {

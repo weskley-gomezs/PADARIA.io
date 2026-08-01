@@ -1114,7 +1114,8 @@ export class StorageService {
     dataFabricacao?: string,
     valorTotal?: number,
     motivo?: string,
-    notas?: string
+    notas?: string,
+    peso?: number
   ): Promise<Product> {
     const products = StorageService.getProducts();
     const bakeryProducts = products.filter((p) => p.bakeryCode === bakeryCode);
@@ -1135,6 +1136,7 @@ export class StorageService {
       diasParaVencer: daysRemaining,
       status: getProductStatus(daysRemaining),
       barcode: barcode ? barcode.trim() : '',
+      peso: peso,
       valorKg: valorKg,
       dataFabricacao: dataFabricacao,
       valorTotal: valorTotal,
@@ -1163,7 +1165,8 @@ export class StorageService {
     dataFabricacao?: string,
     valorTotal?: number,
     motivo?: string,
-    notas?: string
+    notas?: string,
+    peso?: number
   ): Promise<Product> {
     const products = StorageService.getProducts();
     const index = products.findIndex((p) => p.id === id);
@@ -1181,6 +1184,7 @@ export class StorageService {
       diasParaVencer: daysRemaining,
       status: getProductStatus(daysRemaining),
       barcode: barcode !== undefined ? barcode.trim() : products[index].barcode,
+      peso: peso !== undefined ? peso : products[index].peso,
       valorKg: valorKg !== undefined ? valorKg : products[index].valorKg,
       dataFabricacao: dataFabricacao !== undefined ? dataFabricacao : products[index].dataFabricacao,
       valorTotal: valorTotal !== undefined ? valorTotal : products[index].valorTotal,

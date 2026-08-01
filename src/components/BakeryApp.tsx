@@ -207,7 +207,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
     dataFabricacao?: string,
     valorTotal?: number,
     motivo?: string,
-    notas?: string
+    notas?: string,
+    peso?: number
   ) => {
     if (!company) return;
 
@@ -224,7 +225,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           dataFabricacao,
           valorTotal,
           motivo,
-          notas
+          notas,
+          peso
         );
         showToast('Descarte atualizado com sucesso!');
       } else {
@@ -239,7 +241,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           dataFabricacao,
           valorTotal,
           motivo,
-          notas
+          notas,
+          peso
         );
         showToast('Descarte registrado com sucesso!');
 
@@ -310,15 +313,27 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
     nome: string;
     dataFabricacao?: string;
     dataValidade?: string;
+    peso?: number;
     valorKg?: number;
     valorTotal?: number;
+    barcode?: string;
   }) => {
     if (!company) return;
 
     const normalizeStr = (s: string) => s.toLowerCase().trim();
-    let bestMatch = products.find(
-      (p) => result.nome && normalizeStr(p.nome).includes(normalizeStr(result.nome))
-    );
+    const scannedBarcode = result.barcode ? result.barcode.trim() : '';
+
+    // 1. FIRST attempt to match existing product by barcode!
+    let bestMatch = scannedBarcode
+      ? products.find((p) => p.barcode && p.barcode.trim() === scannedBarcode)
+      : undefined;
+
+    // 2. FALLBACK to matching by product name if no barcode match
+    if (!bestMatch && result.nome) {
+      bestMatch = products.find(
+        (p) => normalizeStr(p.nome).includes(normalizeStr(result.nome))
+      );
+    }
 
     if (bestMatch) {
       const newQty = Math.max(0, bestMatch.quantidade - 1);
@@ -329,10 +344,13 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           newQty,
           result.dataValidade || bestMatch.dataValidade,
           bestMatch.categoria,
-          bestMatch.barcode,
+          scannedBarcode || bestMatch.barcode,
           result.valorKg !== undefined ? result.valorKg : bestMatch.valorKg,
           result.dataFabricacao || bestMatch.dataFabricacao,
-          result.valorTotal !== undefined ? result.valorTotal : bestMatch.valorTotal
+          result.valorTotal !== undefined ? result.valorTotal : bestMatch.valorTotal,
+          bestMatch.motivo,
+          bestMatch.notas,
+          result.peso !== undefined ? result.peso : bestMatch.peso
         );
       } else {
         await StorageService.deleteProduct(bestMatch.id);
@@ -778,13 +796,18 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <h3 className="font-extrabold text-sm text-[#2C2C2C]">{p.nome}</h3>
-                        <div className="flex items-center space-x-1.5 mt-1">
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
                           <span className="text-[10px] font-semibold bg-[#F5E6D3] text-[#2C2C2C] px-2 py-0.5 rounded-full">
                             {p.categoria || 'Geral'}
                           </span>
                           {p.barcode && (
-                            <span className="text-[9px] font-mono text-gray-400">
-                              #{p.barcode.slice(-6)}
+                            <span className="text-[10px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.5 rounded">
+                              EAN: {p.barcode}
+                            </span>
+                          )}
+                          {p.peso !== undefined && p.peso !== null && (
+                            <span className="text-[10px] font-semibold bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
+                              {p.peso} kg
                             </span>
                           )}
                         </div>
@@ -897,13 +920,23 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
                             : ''
                         }`}
                       >
-                        {/* Produto Name & Category */}
+                        {/* Produto Name & Category & Barcode & Weight */}
                         <td className="py-3.5 px-4 font-bold">
                           <div className="text-sm font-extrabold text-[#2C2C2C]">{p.nome}</div>
-                          <div className="flex items-center space-x-2 mt-0.5">
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
                             <span className="text-[10px] font-semibold bg-[#F5E6D3] text-[#2C2C2C] px-2 py-0.5 rounded-full">
                               {p.categoria || 'Geral'}
                             </span>
+                            {p.barcode && (
+                              <span className="text-[10px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.5 rounded">
+                                EAN: {p.barcode}
+                              </span>
+                            )}
+                            {p.peso !== undefined && p.peso !== null && (
+                              <span className="text-[10px] font-semibold bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
+                                {p.peso} kg
+                              </span>
+                            )}
                           </div>
                         </td>
 

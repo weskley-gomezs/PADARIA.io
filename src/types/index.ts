@@ -11,6 +11,7 @@ export interface Product {
   status: ProductStatus;
   diasParaVencer: number;
   barcode?: string;
+  peso?: number;
   valorKg?: number;
   dataFabricacao?: string;
   valorTotal?: number;

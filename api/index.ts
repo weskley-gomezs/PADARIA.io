@@ -117,7 +117,7 @@ try {
               },
             },
             {
-              text: "Você é um assistente de controle de perdas e descarte de padaria. Leia o rótulo do produto na imagem e extraia o nome do produto, a data de fabricação (se houver), a data de validade (se houver), o valor total do produto (se houver), e o valor por KG (se houver). Formate as datas para YYYY-MM-DD. O valor KG e o valor total devem ser numéricos. Retorne em formato JSON. Extraia todos os dados visíveis com precisão, sem recusar nenhum produto.",
+              text: "Você é um assistente especialista de leitura de etiquetas e rótulos de padaria/supermercado. Analise a imagem fornecida da etiqueta do produto e extraia os seguintes 7 dados com extrema precisão:\n1. nome: O nome do produto impresso na etiqueta (ex: PÃO DE QUEIJO, BOLO DE CENOURA, QUEIJO MUSSARELA, PRESUNTO).\n2. dataFabricacao: Data de fabricação no formato YYYY-MM-DD. Deixe em branco se não houver.\n3. dataValidade: Data de validade no formato YYYY-MM-DD. Deixe em branco se não houver.\n4. peso: O peso líquido do produto impresso na etiqueta em Quilos (KG) como número. Exemplo: se for 350g ou 0,350kg, retorne 0.35. Se for 1,200kg, retorne 1.2.\n5. valorKg: O preço por quilo (R$/KG) impresso na etiqueta como número.\n6. valorTotal: O valor total / preço final cobrado pelo produto (R$) impresso na etiqueta como número.\n7. barcode: O código de barras impresso na etiqueta. Pode ser um EAN-13 (ex: 7891234567890) ou o código numérico impresso abaixo do código de barras da balança (ex: 200012345678). Extraia apenas os dígitos numéricos sem caracteres especiais.\n\nRetorne rigorosamente em formato JSON. Extraia todos os dados visíveis sem omitir nada.",
             },
           ],
         },
@@ -128,23 +128,31 @@ try {
             properties: {
               nome: {
                 type: Type.STRING,
-                description: "O nome do produto identificado na embalagem.",
+                description: "O nome do produto identificado na embalagem/etiqueta.",
               },
               dataFabricacao: {
                 type: Type.STRING,
-                description: "A data de fabricação impressa na embalagem no formato YYYY-MM-DD. Deixe vazio se não for possível identificar.",
+                description: "A data de fabricação impressa no formato YYYY-MM-DD.",
               },
               dataValidade: {
                 type: Type.STRING,
-                description: "A data de validade impressa na embalagem no formato YYYY-MM-DD. Deixe vazio se não for possível identificar.",
+                description: "A data de validade impressa no formato YYYY-MM-DD.",
+              },
+              peso: {
+                type: Type.NUMBER,
+                description: "O peso do produto em KG (ex: 0.35 para 350g, 1.20 para 1.20kg).",
               },
               valorKg: {
                 type: Type.NUMBER,
-                description: "O valor por quilo do produto, se houver.",
+                description: "O valor por quilo do produto (R$/KG) em formato numérico.",
               },
               valorTotal: {
                 type: Type.NUMBER,
-                description: "O valor total do produto (ex: preço final), se houver.",
+                description: "O valor total do produto (preço final R$) em formato numérico.",
+              },
+              barcode: {
+                type: Type.STRING,
+                description: "O código de barras numérico impresso na etiqueta (ex: 7891234567890 ou código da balança).",
               },
             },
             required: ["nome"],
@@ -182,7 +190,8 @@ try {
           dataCadastro: todayStr,
           diasParaVencer: daysRemaining,
           status: status,
-          barcode: '',
+          barcode: result.barcode ? String(result.barcode).trim() : '',
+          peso: typeof result.peso === 'number' ? result.peso : null,
           valorKg: typeof result.valorKg === 'number' ? result.valorKg : null,
           dataFabricacao: result.dataFabricacao || null,
           valorTotal: typeof result.valorTotal === 'number' ? result.valorTotal : null,

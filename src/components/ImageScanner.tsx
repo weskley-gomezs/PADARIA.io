@@ -4,7 +4,15 @@ import { calculateDaysRemaining, formatDateToBR } from '../utils/dateUtils';
 
 interface ImageScannerProps {
   bakeryCode?: string;
-  onScanResult: (result: { nome: string; dataFabricacao?: string; dataValidade?: string; valorKg?: number; valorTotal?: number }) => void;
+  onScanResult: (result: {
+    nome: string;
+    dataFabricacao?: string;
+    dataValidade?: string;
+    peso?: number;
+    valorKg?: number;
+    valorTotal?: number;
+    barcode?: string;
+  }) => void;
   onClose: () => void;
 }
 
@@ -12,8 +20,10 @@ interface ScanAnalysis {
   nome: string;
   dataFabricacao?: string;
   dataValidade?: string;
+  peso?: number;
   valorKg?: number;
   valorTotal?: number;
+  barcode?: string;
   daysRemaining?: number;
   isExpired: boolean;
 }
@@ -89,8 +99,10 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
         nome: data.nome || 'Produto Sem Nome',
         dataFabricacao: data.dataFabricacao || '',
         dataValidade: valDate,
-        valorKg: data.valorKg,
-        valorTotal: data.valorTotal,
+        peso: typeof data.peso === 'number' ? data.peso : undefined,
+        valorKg: typeof data.valorKg === 'number' ? data.valorKg : undefined,
+        valorTotal: typeof data.valorTotal === 'number' ? data.valorTotal : undefined,
+        barcode: data.barcode || '',
         daysRemaining,
         isExpired,
       });
@@ -109,8 +121,10 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
       nome: scanAnalysis.nome,
       dataFabricacao: scanAnalysis.dataFabricacao,
       dataValidade: scanAnalysis.dataValidade,
+      peso: scanAnalysis.peso,
       valorKg: scanAnalysis.valorKg,
       valorTotal: scanAnalysis.valorTotal,
+      barcode: scanAnalysis.barcode,
     });
   };
 
@@ -252,6 +266,12 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
                 <span className="font-bold text-gray-500">Produto:</span>
                 <span className="font-extrabold text-gray-900">{scanAnalysis.nome}</span>
               </div>
+              {scanAnalysis.barcode && (
+                <div className="flex justify-between border-b border-gray-200 pb-1.5">
+                  <span className="font-bold text-gray-500">Código de Barras:</span>
+                  <span className="font-mono font-bold text-amber-900 bg-amber-100/80 px-1.5 py-0.5 rounded">{scanAnalysis.barcode}</span>
+                </div>
+              )}
               {scanAnalysis.dataFabricacao && (
                 <div className="flex justify-between border-b border-gray-200 pb-1.5">
                   <span className="font-bold text-gray-500">Data de Fabricação:</span>
@@ -266,12 +286,22 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
                   </span>
                 </div>
               )}
-              {(scanAnalysis.valorTotal || scanAnalysis.valorKg) && (
+              {scanAnalysis.peso !== undefined && scanAnalysis.peso !== null && (
+                <div className="flex justify-between border-b border-gray-200 pb-1.5">
+                  <span className="font-bold text-gray-500">Peso do Produto:</span>
+                  <span className="font-bold text-gray-900">{scanAnalysis.peso} kg ({Math.round(scanAnalysis.peso * 1000)}g)</span>
+                </div>
+              )}
+              {scanAnalysis.valorKg !== undefined && scanAnalysis.valorKg !== null && (
+                <div className="flex justify-between border-b border-gray-200 pb-1.5">
+                  <span className="font-bold text-gray-500">Valor do Quilo (R$/KG):</span>
+                  <span className="font-bold text-gray-900">R$ {scanAnalysis.valorKg.toFixed(2)} /kg</span>
+                </div>
+              )}
+              {scanAnalysis.valorTotal !== undefined && scanAnalysis.valorTotal !== null && (
                 <div className="flex justify-between">
-                  <span className="font-bold text-gray-500">Valor / Preço:</span>
-                  <span className="font-black text-gray-900">
-                    {scanAnalysis.valorTotal ? `R$ ${scanAnalysis.valorTotal.toFixed(2)}` : `R$ ${scanAnalysis.valorKg?.toFixed(2)}/kg`}
-                  </span>
+                  <span className="font-bold text-gray-500">Valor Total do Produto:</span>
+                  <span className="font-black text-gray-900 text-sm text-emerald-800">R$ {scanAnalysis.valorTotal.toFixed(2)}</span>
                 </div>
               )}
             </div>
