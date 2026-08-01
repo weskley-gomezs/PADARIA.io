@@ -393,17 +393,17 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-gray-100 relative animate-scale-up">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-gray-100 relative animate-scale-up max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="p-4 bg-gray-900 text-white flex items-center justify-between">
+        <div className="p-3.5 sm:p-4 bg-gray-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl">
-              <QrCode className="w-5 h-5" />
+            <div className="p-1.5 sm:p-2 bg-amber-500/20 text-amber-400 rounded-xl">
+              <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm sm:text-base">Scanner Clube VIP</h3>
-              <p className="text-[11px] text-gray-400">Escaneamento rápido com adição ao total</p>
+              <h3 className="font-extrabold text-xs sm:text-base">Scanner Clube VIP</h3>
+              <p className="text-[10px] sm:text-[11px] text-gray-400">Escaneamento rápido com adição ao total</p>
             </div>
           </div>
           <button
@@ -415,7 +415,7 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+        <div className="p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1">
           {successMsg ? (
             /* SUCCESS MESSAGE SCREEN */
             <div className="py-12 text-center space-y-3">
@@ -512,28 +512,28 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
 
               {/* ACTION BUTTONS FOR CHECKOUT */}
               <div className="space-y-2 pt-1">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col sm:grid sm:grid-cols-2 gap-2">
                   <button
                     onClick={() => {
                       setIsCheckoutView(false);
                       setTimeout(() => startScanner(), 100);
                     }}
-                    className="py-3 px-3 bg-amber-500 hover:bg-amber-600 text-gray-900 font-extrabold rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
+                    className="w-full py-3 px-3 bg-amber-500 hover:bg-amber-600 text-gray-900 font-extrabold rounded-xl text-xs sm:text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer active:scale-98"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 shrink-0" />
                     <span>Adicionar Outro Item</span>
                   </button>
 
                   <button
                     onClick={handleConfirmFinalSale}
                     disabled={isConfirming}
-                    className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                    className="w-full py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs sm:text-xs transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 active:scale-98"
                   >
                     {isConfirming ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        <Check className="w-4 h-4" />
+                        <Check className="w-4 h-4 shrink-0" />
                         <span>Finalizar Venda</span>
                       </>
                     )}
@@ -552,8 +552,8 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
             </div>
           ) : selectedOffer ? (
             /* PRODUCT FOUND CARD - ASK TO ADD OR CHECKOUT */
-            <div className="space-y-4">
-              <div className="p-4 bg-amber-50/60 border-2 border-amber-300/80 rounded-2xl space-y-3">
+            <div className="space-y-3.5 sm:space-y-4">
+              <div className="p-3.5 sm:p-4 bg-amber-50/60 border-2 border-amber-300/80 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500 text-white uppercase tracking-wider">
                     🔥 ITEM IDENTIFICADO
@@ -565,7 +565,7 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-black text-gray-900 leading-tight">
+                  <h4 className="text-base sm:text-lg font-black text-gray-900 leading-tight">
                     {selectedOffer.nomeProduto}
                   </h4>
                   <div className="flex items-center gap-2 mt-1">
@@ -592,7 +592,7 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
                     <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider block">
                       Preço Promocional
                     </span>
-                    <span className="text-xl font-black text-emerald-600">
+                    <span className="text-lg sm:text-xl font-black text-emerald-600">
                       R$ {selectedOffer.valorPromocional.toFixed(2)}
                     </span>
                   </div>
@@ -608,20 +608,20 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
 
               {/* PROMPT ACTION BUTTONS */}
               <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col sm:grid sm:grid-cols-2 gap-2">
                   <button
                     onClick={handleAddToCartAndScanNext}
-                    className="py-3 px-3 bg-amber-500 hover:bg-amber-600 text-gray-900 font-black rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
+                    className="w-full py-3 px-3 bg-amber-500 hover:bg-amber-600 text-gray-900 font-black rounded-xl text-xs sm:text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer active:scale-98"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 shrink-0" />
                     <span>Adicionar + Ler Próximo</span>
                   </button>
 
                   <button
                     onClick={handleAddToCartAndCheckout}
-                    className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
+                    className="w-full py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs sm:text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer active:scale-98"
                   >
-                    <ShoppingCart className="w-4 h-4" />
+                    <ShoppingCart className="w-4 h-4 shrink-0" />
                     <span>Finalizar e Ver Total</span>
                   </button>
                 </div>
@@ -644,15 +644,15 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
             </div>
           ) : (
             /* SCANNER CAMERA & LIST LOOKUP */
-            <div className="space-y-4">
+            <div className="space-y-3.5 sm:space-y-4">
               {/* RUNNING CART BANNER IF CART NOT EMPTY */}
               {cart.length > 0 && (
-                <div className="p-3 bg-emerald-50 border-2 border-emerald-300 rounded-2xl flex items-center justify-between shadow-xs">
-                  <div>
+                <div className="p-3 bg-emerald-50 border-2 border-emerald-300 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-2 shadow-xs">
+                  <div className="flex items-center justify-between sm:block">
                     <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider block">
                       🛒 CARRINHO EM ANDAMENTO
                     </span>
-                    <span className="text-sm font-extrabold text-emerald-900">
+                    <span className="text-xs sm:text-sm font-extrabold text-emerald-900">
                       {cart.length} {cart.length === 1 ? 'item' : 'itens'} • R$ {totalCartValue.toFixed(2)}
                     </span>
                   </div>
@@ -663,13 +663,13 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
                         stopScanner();
                         setIsCheckoutView(true);
                       }}
-                      className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+                      className="flex-1 sm:flex-initial py-2 sm:py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs transition-all cursor-pointer shadow-xs text-center"
                     >
                       Ver Total / Finalizar
                     </button>
                     <button
                       onClick={handleCancelAll}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer shrink-0"
                       title="Limpar carrinho"
                     >
                       <X className="w-4 h-4" />
