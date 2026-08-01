@@ -28,6 +28,11 @@ import {
   Send,
   BarChart3,
   Crown,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Check,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem } from '../types';
@@ -51,7 +56,9 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
   // Session State
   const [activeCode, setActiveCode] = useState<string | null>(presetCode || null);
   const [company, setCompany] = useState<BakeryCompany | null>(null);
-  const [codeInput, setCodeInput] = useState<string>('');
+  const [emailInput, setEmailInput] = useState<string>('');
+  const [passwordInput, setPasswordInput] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string>('');
 
   // Data States
@@ -115,8 +122,9 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           setLoginError('Empresa inativa. Entre em contato com o suporte/administrador.');
           setCompany(null);
         } else {
-          setLoginError('Código de ativação não encontrado.');
           setCompany(null);
+          StorageService.setActiveBakeryCode('');
+          setActiveCode(null);
         }
       } else {
         setCompany(null);
@@ -157,16 +165,17 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-    const cleanCode = codeInput.trim().toUpperCase();
+    const cleanEmail = emailInput.trim().toLowerCase();
+    const cleanPass = passwordInput.trim();
 
-    if (cleanCode.length !== 8) {
-      setLoginError('O código de ativação deve conter exatamente 8 caracteres.');
+    if (!cleanEmail || !cleanPass) {
+      setLoginError('Por favor, preencha o e-mail e a senha de acesso.');
       return;
     }
 
-    const comp = StorageService.getCompanyByCode(cleanCode);
+    const comp = StorageService.getCompanyByCredentials(cleanEmail, cleanPass);
     if (!comp) {
-      setLoginError('Código de ativação inválido. Verifique com o seu administrador.');
+      setLoginError('E-mail ou senha incorretos. Verifique suas credenciais ou solicite apoio ao suporte.');
       return;
     }
 
@@ -175,9 +184,10 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
       return;
     }
 
-    StorageService.setActiveBakeryCode(cleanCode);
-    setActiveCode(cleanCode);
-    setCodeInput('');
+    StorageService.setActiveBakeryCode(comp.codigoAtivacao);
+    setActiveCode(comp.codigoAtivacao);
+    setEmailInput('');
+    setPasswordInput('');
   };
 
   const handleLogout = () => {
@@ -434,21 +444,45 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-extrabold text-[#1F2937] uppercase tracking-wider mb-1">
-                Código de Ativação (8 Dígitos)
+                E-mail de Acesso
               </label>
               <div className="relative">
                 <input
-                  type="text"
-                  maxLength={8}
-                  value={codeInput}
-                  onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                  placeholder="EX: AB12CD34"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 font-mono font-bold text-center tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-[#1F2937] uppercase text-[#1F2937]"
+                  type="email"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="seuemail@padaria.com.br"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#1F2937] text-[#1F2937]"
                   autoFocus
                   required
                 />
-                <Key className="w-5 h-5 text-gray-400 absolute right-3 top-3.5" />
+                <Mail className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-extrabold text-[#1F2937] uppercase tracking-wider mb-1">
+                Senha de Acesso
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-300 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#1F2937] text-[#1F2937]"
+                  required
+                />
+                <Lock className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+
               <div className="flex items-center justify-between mt-2">
                 <label className="flex items-center space-x-2 text-xs text-gray-600 cursor-pointer">
                   <input
@@ -461,10 +495,10 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
                 </label>
                 <button
                   type="button"
-                  onClick={() => alert('Entre em contato com o suporte da PADARIA.io para recuperar seu código de ativação.')}
+                  onClick={() => alert('Entre em contato com o administrador da PADARIA.io para redefinir sua senha de acesso.')}
                   className="text-xs font-bold text-[#E8571A] hover:underline"
                 >
-                  Esqueceu seu código?
+                  Esqueceu sua senha?
                 </button>
               </div>
             </div>
@@ -477,7 +511,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
 
             <button
               type="submit"
-              className="w-full bg-[#1F2937] hover:bg-black text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md text-sm flex items-center justify-center space-x-2"
+              className="w-full bg-[#1F2937] hover:bg-black text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md text-sm flex items-center justify-center space-x-2 cursor-pointer"
             >
               <span>Entrar no Sistema</span>
               <Sparkles className="w-4 h-4 text-[#D4A574]" />

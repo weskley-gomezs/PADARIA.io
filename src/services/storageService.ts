@@ -467,9 +467,43 @@ export class StorageService {
     return companies.find((c) => c.codigoAtivacao.toUpperCase() === cleanCode);
   }
 
+  static getCompanyByEmail(email: string): BakeryCompany | undefined {
+    const companies = StorageService.getCompanies();
+    const cleanEmail = email.trim().toLowerCase();
+    return companies.find((c) => c.email.trim().toLowerCase() === cleanEmail);
+  }
+
+  static getCompanyByCredentials(email: string, pass: string): BakeryCompany | undefined {
+    const companies = StorageService.getCompanies();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = pass.trim();
+    return companies.find((c) => {
+      const emailMatches = c.email.trim().toLowerCase() === cleanEmail;
+      const storedPwd = (c.senha && c.senha.trim()) ? c.senha.trim() : 'padaria123';
+      const passMatches = storedPwd === cleanPass || c.codigoAtivacao.toUpperCase() === cleanPass.toUpperCase();
+      return emailMatches && passMatches;
+    });
+  }
+
+  static async updateCompanyPassword(code: string, newPassword: string): Promise<BakeryCompany | undefined> {
+    const companies = StorageService.getCompanies();
+    const company = companies.find((c) => c.codigoAtivacao.toUpperCase() === code.trim().toUpperCase());
+    if (company) {
+      company.senha = newPassword.trim();
+      setItem(KEYS.COMPANIES, companies);
+
+      await setDoc(doc(db, 'companies', company.codigoAtivacao), removeUndefined(company)).catch((e) => {
+        handleFirestoreError(e, OperationType.WRITE, `companies/${company.codigoAtivacao}`);
+      });
+      return company;
+    }
+    return undefined;
+  }
+
   static async addCompany(
     empresa: string,
     email: string,
+    senha?: string,
     telefone?: string,
     cnpj?: string,
     valorImplementacao = 1500,
@@ -534,10 +568,13 @@ export class StorageService {
       ],
     };
 
+    const companyPassword = senha && senha.trim() ? senha.trim() : 'padaria123';
+
     const newCompany: BakeryCompany = {
       codigoAtivacao: code,
       empresa: empresa.trim(),
       email: email.trim(),
+      senha: companyPassword,
       telefone: telefone ? telefone.trim() : '',
       cnpj: cnpj ? cnpj.trim() : '',
       ativo: true,

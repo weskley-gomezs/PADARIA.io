@@ -78,6 +78,7 @@ export interface BakeryCompany {
   codigoAtivacao: string; // 8 chars alphanumeric unique ID
   empresa: string;
   email: string;
+  senha?: string; // Access password for email + password login
   telefone?: string;
   cnpj?: string;
   ativo: boolean;
