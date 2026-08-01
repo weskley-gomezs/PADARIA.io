@@ -176,10 +176,16 @@ export default function App() {
       {currentView !== 'admin' && (
         <footer className="bg-white border-t border-[#E0E0E0] py-6 text-center text-xs text-gray-500 mt-auto">
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
-            <div className="flex items-center space-x-2">
-              <span className="font-extrabold text-[#2C2C2C]">PADARIA.io</span>
-              <span>•</span>
-              <span>Sistema de Gestão & Monitoramento Sanitário de Validade</span>
+            <div className="flex items-center space-x-2.5">
+              <img 
+                src="https://i.imgur.com/r41aOzi.png" 
+                alt="Padaria.io Logo" 
+                className="w-7 h-7 object-contain"
+                referrerPolicy="no-referrer"
+              />
+              <span className="font-extrabold text-[#2C2C2C] text-sm">PADARIA.io</span>
+              <span className="text-gray-300">•</span>
+              <span className="text-gray-500 text-[11px] sm:text-xs">Sistema de Gestão & Monitoramento Sanitário de Validade</span>
             </div>
 
             <div className="flex items-center space-x-4 text-gray-400">

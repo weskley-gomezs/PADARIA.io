@@ -422,17 +422,19 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
       <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 bg-[#F9FAFB]">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-[#E0E0E0] p-8 space-y-6 animate-scale-up">
           {/* Logo & Header */}
-          <div className="text-center space-y-2">
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-[#1F2937] text-white flex items-center justify-center shadow-lg relative">
-              <ChefHat className="w-9 h-9 text-[#D4A574]" />
-              <div className="absolute -bottom-1 -right-1 bg-[#EF4444] p-1 rounded-full border-2 border-white">
-                <Clock className="w-3.5 h-3.5 text-white" />
-              </div>
+          <div className="text-center space-y-3">
+            <div className="flex justify-center">
+              <img 
+                src="https://i.imgur.com/r41aOzi.png" 
+                alt="Padaria.io Logo" 
+                className="w-20 h-20 object-contain"
+                referrerPolicy="no-referrer"
+              />
             </div>
 
             <div>
-              <h1 className="text-2xl font-black text-[#1F2937]">
-                PADARIA<span className="text-[#EF4444]">.io</span>
+              <h1 className="text-3xl font-black text-[#1F2937] tracking-tight">
+                PADARIA<span className="text-[#E8571A]">.io</span>
               </h1>
               <p className="text-xs font-semibold text-gray-500 mt-1">
                 "Seu controle de desperdícios começa aqui"

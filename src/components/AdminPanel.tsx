@@ -339,11 +339,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
       <div className="min-h-screen bg-[#111111] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-200 p-8 space-y-6">
           <div className="text-center space-y-3">
-            <div className="mx-auto w-24 h-24 bg-[#111111] text-white rounded-3xl p-3 flex items-center justify-center shadow-lg border border-[#FF6B00]">
+            <div className="flex justify-center">
               <img
                 src="https://i.imgur.com/r41aOzi.png"
                 alt="Logo Padaria"
-                className="w-full h-full object-contain"
+                className="w-24 h-24 object-contain"
+                referrerPolicy="no-referrer"
               />
             </div>
             <div>
@@ -446,9 +447,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery }) => {
         <div className="p-6 space-y-6">
           {/* Logo / Header */}
           <div className="flex items-center space-x-3 pb-6 border-b border-gray-800">
-            <div className="w-12 h-12 bg-white rounded-2xl p-1.5 flex items-center justify-center border border-[#FF6B00] shadow-md">
-              <img src="https://i.imgur.com/r41aOzi.png" alt="Logo Padaria" className="w-full h-full object-contain" />
-            </div>
+            <img 
+              src="https://i.imgur.com/r41aOzi.png" 
+              alt="Logo Padaria" 
+              className="w-12 h-12 object-contain"
+              referrerPolicy="no-referrer"
+            />
             <div>
               <h1 className="font-black text-base text-white tracking-wide">SISTEMA PADARIA</h1>
               <p className="text-[10px] text-[#FF6B00] font-extrabold uppercase tracking-wider">
