@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, X, QrCode, Search, CheckCircle, AlertCircle, Clock, Sparkles, Loader2, Check, RefreshCw, Upload } from 'lucide-react';
+import { Camera, X, QrCode, Search, CheckCircle, AlertCircle, Clock, Loader2, Check, RefreshCw, Upload, Plus, ShoppingCart, Trash2, ArrowLeft } from 'lucide-react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import confetti from 'canvas-confetti';
 import { VipOffer } from '../types';
@@ -20,6 +20,8 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
   onSaleConfirmed,
 }) => {
   const [activeOffers, setActiveOffers] = useState<VipOffer[]>([]);
+  const [cart, setCart] = useState<VipOffer[]>([]);
+  const [isCheckoutView, setIsCheckoutView] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOffer, setSelectedOffer] = useState<VipOffer | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -35,6 +37,8 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
     if (isOpen) {
       const offers = StorageService.getVipOffers(bakeryCode).filter(o => o.status === 'ativo');
       setActiveOffers(offers);
+      setCart([]);
+      setIsCheckoutView(false);
       setSearchTerm('');
       setSelectedOffer(null);
       setSuccessMsg(null);
@@ -61,10 +65,12 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
     const lowerText = rawText.toLowerCase();
     const digitsOnly = rawText.replace(/\D/g, '');
 
-    const offers = StorageService.getVipOffers(bakeryCode).filter(o => o.status === 'ativo');
+    const allActive = StorageService.getVipOffers(bakeryCode).filter(o => o.status === 'ativo');
+    // Filter out offers already queued in cart
+    const unselectedOffers = allActive.filter(o => !cart.some(c => c.id === o.id));
     const products = StorageService.getProducts(bakeryCode);
 
-    // Helper to check if two barcodes match (either string match or numeric digits match)
+    // Helper to check if two barcodes match
     const checkBarcodeMatch = (targetBarcode?: string) => {
       if (!targetBarcode) return false;
       const targetTrimmed = targetBarcode.trim().toLowerCase();
@@ -77,21 +83,21 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
       return false;
     };
 
-    // 1. Direct match on active VipOffers (by offer barcode, offer id, or product id)
-    let matchedOffer = offers.find(o => {
+    // 1. Direct match on available VipOffers
+    let matchedOffer = unselectedOffers.find(o => {
       if (checkBarcodeMatch(o.barcode)) return true;
       if (o.id.toLowerCase() === lowerText || (o.productId && o.productId.toLowerCase() === lowerText)) return true;
       return false;
     });
 
-    // 2. Direct match on inventory products (by product barcode or product id)
+    // 2. Direct match on inventory products
     if (!matchedOffer) {
       const matchedProduct = products.find(p => 
         checkBarcodeMatch(p.barcode) || p.id.toLowerCase() === lowerText
       );
 
       if (matchedProduct) {
-        matchedOffer = offers.find(o => 
+        matchedOffer = unselectedOffers.find(o => 
           o.productId === matchedProduct.id ||
           (o.barcode && checkBarcodeMatch(o.barcode)) ||
           o.nomeProduto.toLowerCase().trim() === matchedProduct.nome.toLowerCase().trim()
@@ -101,7 +107,7 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
 
     // 3. Fallback to fuzzy name match if no barcode match was found
     if (!matchedOffer) {
-      matchedOffer = offers.find(o => o.nomeProduto.toLowerCase().includes(lowerText));
+      matchedOffer = unselectedOffers.find(o => o.nomeProduto.toLowerCase().includes(lowerText));
     }
 
     if (matchedOffer) {
@@ -109,14 +115,19 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
       setScanNotice(null);
       stopScanner();
     } else {
-      setSearchTerm(rawText);
-      setScanNotice(`Código "${rawText}" lido! Selecione a oferta correspondente na lista abaixo.`);
+      // Check if item was already in cart
+      const alreadyInCart = allActive.find(o => checkBarcodeMatch(o.barcode) || o.nomeProduto.toLowerCase().includes(lowerText));
+      if (alreadyInCart && cart.some(c => c.id === alreadyInCart.id)) {
+        setScanNotice(`O produto "${alreadyInCart.nomeProduto}" já foi adicionado ao carrinho.`);
+      } else {
+        setSearchTerm(rawText);
+        setScanNotice(`Código "${rawText}" lido! Selecione a oferta correspondente na lista abaixo.`);
+      }
     }
   };
 
   const startScanner = async () => {
     setCameraError(null);
-    setScanNotice(null);
 
     const readerElem = document.getElementById('vip-barcode-reader');
     if (!readerElem) return;
@@ -211,6 +222,9 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
 
   const handleClose = () => {
     stopScanner();
+    setCart([]);
+    setIsCheckoutView(false);
+    setSelectedOffer(null);
     onClose();
   };
 
@@ -225,30 +239,26 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
     return '';
   };
 
-  // Filter offers by search term (name, category, barcode, or product ID)
-  const filteredOffers = activeOffers.filter(o => {
+  // Offers not yet added to cart
+  const availableOffers = activeOffers.filter(o => !cart.some(c => c.id === o.id));
+
+  // Filter available offers by search term
+  const filteredOffers = availableOffers.filter(o => {
     if (!searchTerm.trim()) return true;
 
     const term = searchTerm.trim().toLowerCase();
     const termDigits = term.replace(/\D/g, '');
 
-    // 1. Name
     if (o.nomeProduto.toLowerCase().includes(term)) return true;
-
-    // 2. Category
     if (o.categoria.toLowerCase().includes(term)) return true;
-
-    // 3. Offer ID / Product ID
     if (o.id.toLowerCase().includes(term) || (o.productId && o.productId.toLowerCase().includes(term))) return true;
 
-    // 4. Offer barcode
     if (o.barcode) {
       if (o.barcode.toLowerCase().includes(term)) return true;
       const bDigits = o.barcode.replace(/\D/g, '');
       if (termDigits && bDigits && (bDigits.includes(termDigits) || termDigits.includes(bDigits))) return true;
     }
 
-    // 5. Linked product barcode from inventory
     if (o.productId) {
       const prod = allProducts.find(p => p.id === o.productId);
       if (prod) {
@@ -269,49 +279,99 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
     stopScanner();
   };
 
-  const handleConfirmSale = async () => {
+  // Add item to cart and reactivate scanner for next item
+  const handleAddToCartAndScanNext = () => {
     if (!selectedOffer) return;
+    const addedItemName = selectedOffer.nomeProduto;
+    setCart(prev => [...prev, selectedOffer]);
+    setSelectedOffer(null);
+    setScanNotice(`✅ "${addedItemName}" adicionado ao total! Escaneie o próximo item.`);
+    setTimeout(() => {
+      startScanner();
+    }, 100);
+  };
+
+  // Add item to cart and open checkout total summary view
+  const handleAddToCartAndCheckout = () => {
+    if (!selectedOffer) return;
+    setCart(prev => [...prev, selectedOffer]);
+    setSelectedOffer(null);
+    setIsCheckoutView(true);
+    stopScanner();
+  };
+
+  // Remove single item from cart
+  const handleRemoveFromCart = (index: number) => {
+    setCart(prev => {
+      const newCart = [...prev];
+      newCart.splice(index, 1);
+      if (newCart.length === 0) {
+        setIsCheckoutView(false);
+        setTimeout(() => startScanner(), 100);
+      }
+      return newCart;
+    });
+  };
+
+  // Clear all items in cart
+  const handleCancelAll = () => {
+    setCart([]);
+    setSelectedOffer(null);
+    setIsCheckoutView(false);
+    setScanNotice('Venda cancelada. O carrinho foi limpo.');
+    setTimeout(() => startScanner(), 100);
+  };
+
+  // Finalize batch sale for all cart items
+  const handleConfirmFinalSale = async () => {
+    if (cart.length === 0) return;
     setIsConfirming(true);
 
     try {
-      // 1. Mark as sold in VIP Club
-      await StorageService.updateVipOfferStatus(selectedOffer.id, 'vendido', {
-        dataVenda: new Date().toISOString(),
-        valorVenda: selectedOffer.valorPromocional,
-      });
+      const products = StorageService.getProducts(bakeryCode);
 
-      // 2. Decrement or remove from product inventory in PADARIA.io
-      if (selectedOffer.productId) {
-        const products = StorageService.getProducts(bakeryCode);
-        const product = products.find(p => p.id === selectedOffer.productId);
-        if (product) {
-          if (product.quantidade > 1) {
-            await StorageService.updateProduct(
-              product.id,
-              product.nome,
-              product.quantidade - 1,
-              product.dataValidade,
-              product.categoria,
-              product.barcode,
-              product.valorKg,
-              product.dataFabricacao,
-              product.valorTotal
-            );
-          } else {
-            await StorageService.deleteProduct(product.id);
+      for (const offer of cart) {
+        // 1. Mark as sold in VIP Club
+        await StorageService.updateVipOfferStatus(offer.id, 'vendido', {
+          dataVenda: new Date().toISOString(),
+          valorVenda: offer.valorPromocional,
+        });
+
+        // 2. Decrement or remove from product inventory in PADARIA.io
+        if (offer.productId) {
+          const product = products.find(p => p.id === offer.productId);
+          if (product) {
+            if (product.quantidade > 1) {
+              product.quantidade -= 1; // decrement local quantity reference for loop
+              await StorageService.updateProduct(
+                product.id,
+                product.nome,
+                product.quantidade,
+                product.dataValidade,
+                product.categoria,
+                product.barcode,
+                product.valorKg,
+                product.dataFabricacao,
+                product.valorTotal
+              );
+            } else {
+              await StorageService.deleteProduct(product.id);
+            }
           }
         }
       }
 
       // Celebrate
       confetti({
-        particleCount: 120,
-        spread: 80,
+        particleCount: 150,
+        spread: 90,
         origin: { y: 0.6 }
       });
 
-      setSuccessMsg(`Venda do produto "${selectedOffer.nomeProduto}" confirmada com sucesso!`);
-      setSelectedOffer(null);
+      const totalValue = cart.reduce((acc, item) => acc + item.valorPromocional, 0);
+      setSuccessMsg(`Venda de ${cart.length} produto(s) confirmada! Total: R$ ${totalValue.toFixed(2)}`);
+      setCart([]);
+      setIsCheckoutView(false);
       
       if (onSaleConfirmed) {
         onSaleConfirmed();
@@ -320,13 +380,15 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
       setTimeout(() => {
         setSuccessMsg(null);
         handleClose();
-      }, 2000);
+      }, 2500);
     } catch (err: any) {
-      alert(err.message || 'Erro ao confirmar venda.');
+      alert(err.message || 'Erro ao finalizar venda.');
     } finally {
       setIsConfirming(false);
     }
   };
+
+  const totalCartValue = cart.reduce((acc, item) => acc + item.valorPromocional, 0);
 
   if (!isOpen) return null;
 
@@ -341,7 +403,7 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
             </div>
             <div>
               <h3 className="font-extrabold text-sm sm:text-base">Scanner Clube VIP</h3>
-              <p className="text-[11px] text-gray-400">Escaneie o código de barras ou selecione o produto</p>
+              <p className="text-[11px] text-gray-400">Escaneamento rápido com adição ao total</p>
             </div>
           </div>
           <button
@@ -355,20 +417,146 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
         {/* Content Body */}
         <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
           {successMsg ? (
+            /* SUCCESS MESSAGE SCREEN */
             <div className="py-12 text-center space-y-3">
               <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto animate-bounce">
                 <CheckCircle className="w-10 h-10" />
               </div>
-              <h4 className="text-lg font-black text-gray-800">Venda Registrada!</h4>
-              <p className="text-sm font-medium text-gray-600 max-w-xs mx-auto">{successMsg}</p>
+              <h4 className="text-xl font-black text-gray-800">Venda Finalizada!</h4>
+              <p className="text-sm font-semibold text-emerald-700 bg-emerald-50 py-2 px-4 rounded-xl border border-emerald-200 inline-block max-w-xs mx-auto">
+                {successMsg}
+              </p>
+            </div>
+          ) : isCheckoutView ? (
+            /* CHECKOUT SUMMARY & TOTAL VIEW */
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <button
+                  onClick={() => {
+                    setIsCheckoutView(false);
+                    setTimeout(() => startScanner(), 100);
+                  }}
+                  className="text-xs font-bold text-gray-600 hover:text-gray-900 flex items-center gap-1 cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Voltar ao Leitor</span>
+                </button>
+                <span className="text-xs font-extrabold bg-amber-100 text-amber-900 px-2.5 py-1 rounded-full">
+                  {cart.length} {cart.length === 1 ? 'item no carrinho' : 'itens no carrinho'}
+                </span>
+              </div>
+
+              {/* Items List in Cart */}
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {cart.map((item, idx) => (
+                  <div
+                    key={`${item.id}-${idx}`}
+                    className="p-3 bg-amber-50/50 border border-amber-200 rounded-xl flex items-center justify-between"
+                  >
+                    <div>
+                      <div className="font-extrabold text-xs text-gray-900">
+                        {item.nomeProduto}
+                      </div>
+                      <div className="text-[10px] text-gray-500 font-medium flex items-center gap-2 mt-0.5">
+                        <span>{item.categoria}</span>
+                        {getOfferBarcode(item) && (
+                          <span className="font-mono bg-amber-100/80 text-amber-900 px-1 rounded">
+                            EAN: {getOfferBarcode(item)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-right">
+                        <div className="text-xs font-black text-emerald-600">
+                          R$ {item.valorPromocional.toFixed(2)}
+                        </div>
+                        <div className="text-[9px] text-gray-400 line-through">
+                          R$ {item.valorOriginal.toFixed(2)}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveFromCart(idx)}
+                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        title="Remover item"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* TOTAL DISPLAY BOX */}
+              <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-2xl flex items-center justify-between shadow-xs">
+                <div>
+                  <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">
+                    VALOR TOTAL PARA O CAIXA
+                  </span>
+                  <span className="text-2xl font-black text-emerald-700">
+                    R$ {totalCartValue.toFixed(2)}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-gray-500 block">Total de itens:</span>
+                  <span className="text-lg font-black text-gray-800">{cart.length}</span>
+                </div>
+              </div>
+
+              <div className="text-[11px] text-gray-500 bg-gray-50 p-2.5 rounded-xl border border-gray-200 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  Confirme a venda para dar baixa automática dos itens no Clube VIP e estoque do sistema.
+                </span>
+              </div>
+
+              {/* ACTION BUTTONS FOR CHECKOUT */}
+              <div className="space-y-2 pt-1">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      setIsCheckoutView(false);
+                      setTimeout(() => startScanner(), 100);
+                    }}
+                    className="py-3 px-3 bg-amber-500 hover:bg-amber-600 text-gray-900 font-extrabold rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Adicionar Outro Item</span>
+                  </button>
+
+                  <button
+                    onClick={handleConfirmFinalSale}
+                    disabled={isConfirming}
+                    className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isConfirming ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Finalizar Venda</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleCancelAll}
+                  disabled={isConfirming}
+                  className="w-full py-2.5 bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 font-bold rounded-xl text-xs transition-colors flex items-center justify-center space-x-1 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Cancelar Tudo</span>
+                </button>
+              </div>
             </div>
           ) : selectedOffer ? (
-            /* PRODUCT FOUND CARD */
+            /* PRODUCT FOUND CARD - ASK TO ADD OR CHECKOUT */
             <div className="space-y-4">
               <div className="p-4 bg-amber-50/60 border-2 border-amber-300/80 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500 text-white uppercase tracking-wider">
-                    🔥 EM PROMOÇÃO CLUBE VIP
+                    🔥 ITEM IDENTIFICADO
                   </span>
                   <span className="text-xs font-bold text-amber-800 flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
@@ -410,44 +598,86 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
                   </div>
                 </div>
 
-                <div className="text-[11px] text-amber-800 bg-white/80 p-2.5 rounded-xl border border-amber-200 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>
-                    Ao confirmar, o produto será baixado do Clube VIP e do controle de estoque. O caixa da padaria continuará cobrando normalmente.
-                  </span>
-                </div>
+                {cart.length > 0 && (
+                  <div className="p-2.5 bg-amber-100/80 rounded-xl text-xs text-amber-900 font-extrabold flex items-center justify-between">
+                    <span>Carrinho Atual: {cart.length} item(ns)</span>
+                    <span>Subtotal: R$ {(totalCartValue + selectedOffer.valorPromocional).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
 
-              <div className="flex space-x-2">
+              {/* PROMPT ACTION BUTTONS */}
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={handleAddToCartAndScanNext}
+                    className="py-3 px-3 bg-amber-500 hover:bg-amber-600 text-gray-900 font-black rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Adicionar + Ler Próximo</span>
+                  </button>
+
+                  <button
+                    onClick={handleAddToCartAndCheckout}
+                    className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    <span>Finalizar e Ver Total</span>
+                  </button>
+                </div>
+
                 <button
                   onClick={() => {
                     setSelectedOffer(null);
-                    startScanner();
+                    if (cart.length > 0) {
+                      setIsCheckoutView(true);
+                    } else {
+                      startScanner();
+                    }
                   }}
-                  className="w-1/3 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
-                  disabled={isConfirming}
+                  className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl text-xs transition-colors flex items-center justify-center space-x-1 cursor-pointer"
                 >
-                  Voltar
-                </button>
-                <button
-                  onClick={handleConfirmSale}
-                  disabled={isConfirming}
-                  className="w-2/3 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
-                >
-                  {isConfirming ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>Confirmar Venda</span>
-                    </>
-                  )}
+                  <X className="w-3.5 h-3.5" />
+                  <span>Cancelar Item</span>
                 </button>
               </div>
             </div>
           ) : (
             /* SCANNER CAMERA & LIST LOOKUP */
             <div className="space-y-4">
+              {/* RUNNING CART BANNER IF CART NOT EMPTY */}
+              {cart.length > 0 && (
+                <div className="p-3 bg-emerald-50 border-2 border-emerald-300 rounded-2xl flex items-center justify-between shadow-xs">
+                  <div>
+                    <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider block">
+                      🛒 CARRINHO EM ANDAMENTO
+                    </span>
+                    <span className="text-sm font-extrabold text-emerald-900">
+                      {cart.length} {cart.length === 1 ? 'item' : 'itens'} • R$ {totalCartValue.toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-1.5">
+                    <button
+                      onClick={() => {
+                        stopScanner();
+                        setIsCheckoutView(true);
+                      }}
+                      className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+                    >
+                      Ver Total / Finalizar
+                    </button>
+                    <button
+                      onClick={handleCancelAll}
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                      title="Limpar carrinho"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Hidden File Input for Barcode Image Scanning */}
               <input
                 type="file"
@@ -464,9 +694,9 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
                   <div className="absolute top-3 left-3 right-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 flex items-center justify-between text-[11px] font-extrabold text-white z-10 pointer-events-none">
                     <div className="flex items-center space-x-2 text-amber-400">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>Câmera Ativa • Leitura Nítida do Código</span>
+                      <span>Câmera Ativa • Aponte para o Código</span>
                     </div>
-                    <span className="text-[10px] text-gray-300 font-mono">100% Iluminado</span>
+                    <span className="text-[10px] text-gray-300 font-mono">Pronto</span>
                   </div>
                 )}
 
@@ -507,9 +737,9 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
 
               {/* Notice Banner */}
               {scanNotice && (
-                <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 font-bold flex items-center justify-between">
+                <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 font-bold flex items-center justify-between animate-fade-in">
                   <span>{scanNotice}</span>
-                  <button onClick={() => setScanNotice(null)} className="text-amber-600 hover:text-amber-900">
+                  <button onClick={() => setScanNotice(null)} className="text-amber-600 hover:text-amber-900 cursor-pointer">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -530,12 +760,14 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
               {/* Active VIP Offers list */}
               <div className="space-y-2">
                 <span className="text-[11px] font-black text-gray-400 uppercase tracking-wider block">
-                  Produtos em Oferta no Clube VIP ({filteredOffers.length})
+                  Produtos Disponíveis no Clube VIP ({filteredOffers.length})
                 </span>
 
                 {filteredOffers.length === 0 ? (
                   <div className="p-6 text-center text-gray-400 bg-gray-50 rounded-2xl text-xs font-medium">
-                    Nenhum produto ativo em oferta encontrado.
+                    {cart.length > 0 && availableOffers.length === 0
+                      ? 'Todos os produtos disponíveis em oferta foram adicionados ao carrinho!'
+                      : 'Nenhum produto ativo em oferta encontrado.'}
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -583,3 +815,4 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
     </div>
   );
 };
+
