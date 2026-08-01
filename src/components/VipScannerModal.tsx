@@ -55,35 +55,62 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
   }, [isOpen, bakeryCode]);
 
   const handleBarcodeScanned = (decodedText: string) => {
-    const text = decodedText.trim().toLowerCase();
-    
-    // Check if any active offer matches this barcode directly
+    const rawText = decodedText.trim();
+    if (!rawText) return;
+
+    const lowerText = rawText.toLowerCase();
+    const digitsOnly = rawText.replace(/\D/g, '');
+
     const offers = StorageService.getVipOffers(bakeryCode).filter(o => o.status === 'ativo');
-    const matchedOffer = offers.find(o => 
-      o.id.toLowerCase() === text ||
-      (o.productId && o.productId.toLowerCase() === text) ||
-      o.nomeProduto.toLowerCase().includes(text)
-    );
+    const products = StorageService.getProducts(bakeryCode);
+
+    // Helper to check if two barcodes match (either string match or numeric digits match)
+    const checkBarcodeMatch = (targetBarcode?: string) => {
+      if (!targetBarcode) return false;
+      const targetTrimmed = targetBarcode.trim().toLowerCase();
+      if (targetTrimmed === lowerText) return true;
+
+      const targetDigits = targetBarcode.replace(/\D/g, '');
+      if (digitsOnly && targetDigits && (digitsOnly === targetDigits || targetDigits.endsWith(digitsOnly) || digitsOnly.endsWith(targetDigits))) {
+        return true;
+      }
+      return false;
+    };
+
+    // 1. Direct match on active VipOffers (by offer barcode, offer id, or product id)
+    let matchedOffer = offers.find(o => {
+      if (checkBarcodeMatch(o.barcode)) return true;
+      if (o.id.toLowerCase() === lowerText || (o.productId && o.productId.toLowerCase() === lowerText)) return true;
+      return false;
+    });
+
+    // 2. Direct match on inventory products (by product barcode or product id)
+    if (!matchedOffer) {
+      const matchedProduct = products.find(p => 
+        checkBarcodeMatch(p.barcode) || p.id.toLowerCase() === lowerText
+      );
+
+      if (matchedProduct) {
+        matchedOffer = offers.find(o => 
+          o.productId === matchedProduct.id ||
+          (o.barcode && checkBarcodeMatch(o.barcode)) ||
+          o.nomeProduto.toLowerCase().trim() === matchedProduct.nome.toLowerCase().trim()
+        );
+      }
+    }
+
+    // 3. Fallback to fuzzy name match if no barcode match was found
+    if (!matchedOffer) {
+      matchedOffer = offers.find(o => o.nomeProduto.toLowerCase().includes(lowerText));
+    }
 
     if (matchedOffer) {
       setSelectedOffer(matchedOffer);
+      setScanNotice(null);
       stopScanner();
     } else {
-      // Check in product inventory if barcode matches product ID or product barcode
-      const products = StorageService.getProducts(bakeryCode);
-      const matchedProduct = products.find(p => p.id.toLowerCase() === text || (p.barcode && p.barcode.toLowerCase() === text));
-      
-      if (matchedProduct) {
-        const vipForProduct = offers.find(o => o.productId === matchedProduct.id);
-        if (vipForProduct) {
-          setSelectedOffer(vipForProduct);
-          stopScanner();
-          return;
-        }
-      }
-
-      setSearchTerm(decodedText);
-      setScanNotice(`Código "${decodedText}" lido! Selecione a oferta correspondente na lista abaixo.`);
+      setSearchTerm(rawText);
+      setScanNotice(`Código "${rawText}" lido! Selecione a oferta correspondente na lista abaixo.`);
     }
   };
 
@@ -187,11 +214,55 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
     onClose();
   };
 
-  // Filter offers by search term (name or barcode)
-  const filteredOffers = activeOffers.filter(o =>
-    o.nomeProduto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (o.productId && o.productId.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const allProducts = StorageService.getProducts(bakeryCode);
+
+  const getOfferBarcode = (offer: VipOffer) => {
+    if (offer.barcode) return offer.barcode;
+    if (offer.productId) {
+      const p = allProducts.find(item => item.id === offer.productId);
+      if (p && p.barcode) return p.barcode;
+    }
+    return '';
+  };
+
+  // Filter offers by search term (name, category, barcode, or product ID)
+  const filteredOffers = activeOffers.filter(o => {
+    if (!searchTerm.trim()) return true;
+
+    const term = searchTerm.trim().toLowerCase();
+    const termDigits = term.replace(/\D/g, '');
+
+    // 1. Name
+    if (o.nomeProduto.toLowerCase().includes(term)) return true;
+
+    // 2. Category
+    if (o.categoria.toLowerCase().includes(term)) return true;
+
+    // 3. Offer ID / Product ID
+    if (o.id.toLowerCase().includes(term) || (o.productId && o.productId.toLowerCase().includes(term))) return true;
+
+    // 4. Offer barcode
+    if (o.barcode) {
+      if (o.barcode.toLowerCase().includes(term)) return true;
+      const bDigits = o.barcode.replace(/\D/g, '');
+      if (termDigits && bDigits && (bDigits.includes(termDigits) || termDigits.includes(bDigits))) return true;
+    }
+
+    // 5. Linked product barcode from inventory
+    if (o.productId) {
+      const prod = allProducts.find(p => p.id === o.productId);
+      if (prod) {
+        if (prod.nome.toLowerCase().includes(term)) return true;
+        if (prod.barcode) {
+          if (prod.barcode.toLowerCase().includes(term)) return true;
+          const pDigits = prod.barcode.replace(/\D/g, '');
+          if (termDigits && pDigits && (pDigits.includes(termDigits) || termDigits.includes(pDigits))) return true;
+        }
+      }
+    }
+
+    return false;
+  });
 
   const handleSelectOffer = (offer: VipOffer) => {
     setSelectedOffer(offer);
@@ -309,7 +380,14 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
                   <h4 className="text-lg font-black text-gray-900 leading-tight">
                     {selectedOffer.nomeProduto}
                   </h4>
-                  <p className="text-xs text-gray-500 font-medium">{selectedOffer.categoria}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-gray-500 font-medium">{selectedOffer.categoria}</span>
+                    {getOfferBarcode(selectedOffer) && (
+                      <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded">
+                        EAN: {getOfferBarcode(selectedOffer)}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-amber-200/60">
@@ -463,6 +541,7 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                     {filteredOffers.map((offer) => {
                       const daysLeft = calculateDaysRemaining(offer.dataValidade);
+                      const barcode = getOfferBarcode(offer);
                       return (
                         <div
                           key={offer.id}
@@ -470,15 +549,20 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
                           className="p-3 bg-white hover:bg-amber-50/80 border border-gray-200 hover:border-amber-300 rounded-xl transition-all cursor-pointer flex items-center justify-between group"
                         >
                           <div>
-                            <div className="font-extrabold text-xs text-gray-900 group-hover:text-amber-900">
-                              {offer.nomeProduto}
+                            <div className="font-extrabold text-xs text-gray-900 group-hover:text-amber-900 flex items-center gap-1.5 flex-wrap">
+                              <span>{offer.nomeProduto}</span>
+                              {barcode && (
+                                <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200 px-1.5 py-0.2 rounded">
+                                  EAN: {barcode}
+                                </span>
+                              )}
                             </div>
-                            <div className="text-[10px] text-gray-400 font-medium">
+                            <div className="text-[10px] text-gray-400 font-medium mt-0.5">
                               Vence em {daysLeft} {daysLeft === 1 ? 'dia' : 'dias'} ({formatDateToBR(offer.dataValidade)})
                             </div>
                           </div>
 
-                          <div className="text-right">
+                          <div className="text-right shrink-0 ml-2">
                             <div className="text-xs font-black text-emerald-600">
                               R$ {offer.valorPromocional.toFixed(2)}
                             </div>

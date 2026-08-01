@@ -141,6 +141,7 @@ export interface VipOffer {
   dataValidade: string; // YYYY-MM-DD
   diasParaVencer: number;
   status: VipOfferStatus;
+  barcode?: string;
   createdAt: string; // ISO string
   updatedAt: string; // ISO string
   dataVenda?: string; // ISO string when status is 'vendido'

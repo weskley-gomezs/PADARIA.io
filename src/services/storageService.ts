@@ -1342,7 +1342,8 @@ export class StorageService {
     valorOriginal: number,
     valorPromocional: number,
     desconto: number,
-    dataValidade: string
+    dataValidade: string,
+    barcode?: string
   ): Promise<VipOffer> {
     const offers = StorageService.getVipOffers();
     const daysRemaining = calculateDaysRemaining(dataValidade);
@@ -1359,6 +1360,7 @@ export class StorageService {
       dataValidade,
       diasParaVencer: daysRemaining,
       status: 'ativo',
+      barcode: barcode ? barcode.trim() : '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

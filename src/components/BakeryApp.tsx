@@ -91,6 +91,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
     categoria: string;
     valorOriginal: number;
     dataValidade: string;
+    barcode?: string;
   } | null>(null);
 
   // Accordion UI state
@@ -255,6 +256,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
             categoria: newProduct.categoria || 'Geral',
             valorOriginal: valorTotal && valorTotal > 0 ? valorTotal : (valorKg && valorKg > 0 ? valorKg : 15.0),
             dataValidade: newProduct.dataValidade,
+            barcode: newProduct.barcode,
           });
           setIsVipOfferModalOpen(true);
         }
@@ -283,7 +285,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
         data.valorOriginal,
         data.valorPromocional,
         data.desconto,
-        vipOfferProductInfo.dataValidade
+        vipOfferProductInfo.dataValidade,
+        vipOfferProductInfo.barcode
       );
       
       showToast(`Oferta de "${data.nomeProduto}" adicionada ao Clube VIP!`);
@@ -371,6 +374,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode }) => {
           categoria: 'Geral',
           valorOriginal: result.valorTotal && result.valorTotal > 0 ? result.valorTotal : (result.valorKg && result.valorKg > 0 ? result.valorKg : 15.0),
           dataValidade: result.dataValidade,
+          barcode: result.barcode || (bestMatch ? bestMatch.barcode : undefined),
         });
         setIsVipOfferModalOpen(true);
       }
