@@ -99,6 +99,36 @@
   animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Scanner Camera Brightness, Contrast & Video Fixes */
+#vip-barcode-reader, #reader {
+  background-color: #0d1117 !important;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#vip-barcode-reader video, #reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 12px;
+  filter: brightness(1.2) contrast(1.15) !important;
+  -webkit-filter: brightness(1.2) contrast(1.15) !important;
+}
+
+/* Remove dark default overlays from html5-qrcode */
+#vip-barcode-reader #qr-shaded-region, #reader #qr-shaded-region {
+  border-color: rgba(0, 0, 0, 0.45) !important;
+}
+
+#vip-barcode-reader__scan_region, #reader__scan_region {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .animate-slide-up-mobile {
   animation: slideUpMobile 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

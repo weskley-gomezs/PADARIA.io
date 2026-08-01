@@ -128,6 +128,10 @@ export const VipOfferModal: React.FC<VipOfferModalProps> = ({
           <p className="text-gray-600">
             Sugerimos automaticamente um desconto de <strong>{desconto}%</strong> para acelerar as vendas e evitar perdas.
           </p>
+          <div className="mt-2 pt-2 border-t border-amber-200/60 text-[11px] text-amber-900 font-semibold flex items-center gap-1.5">
+            <span>🏷️</span>
+            <span>A busca no caixa via Scanner Clube VIP é realizada pelo <strong>Código de Barras</strong> do produto.</span>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

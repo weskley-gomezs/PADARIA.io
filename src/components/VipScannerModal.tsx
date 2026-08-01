@@ -107,8 +107,12 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
       scannerRef.current = html5Qrcode;
 
       const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 150 },
+        fps: 15,
+        qrbox: { width: 280, height: 160 },
+        aspectRatio: 1.777778,
+        videoConstraints: {
+          facingMode: { ideal: 'environment' },
+        },
         formatsToSupport: [
           Html5QrcodeSupportedFormats.EAN_13,
           Html5QrcodeSupportedFormats.EAN_8,
@@ -376,31 +380,44 @@ export const VipScannerModal: React.FC<VipScannerModalProps> = ({
               />
 
               {/* Camera Preview / Html5Qrcode Reader */}
-              <div className="bg-black rounded-2xl overflow-hidden relative min-h-[200px] flex flex-col items-center justify-center">
-                <div id="vip-barcode-reader" className="w-full h-48 bg-black" />
+              <div className="bg-slate-950 rounded-2xl overflow-hidden relative min-h-[260px] border-2 border-slate-800 shadow-inner flex flex-col items-center justify-center">
+                {/* Live Camera Active Banner */}
+                {isCameraActive && (
+                  <div className="absolute top-3 left-3 right-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 flex items-center justify-between text-[11px] font-extrabold text-white z-10 pointer-events-none">
+                    <div className="flex items-center space-x-2 text-amber-400">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Câmera Ativa • Leitura Nítida do Código</span>
+                    </div>
+                    <span className="text-[10px] text-gray-300 font-mono">100% Iluminado</span>
+                  </div>
+                )}
+
+                <div id="vip-barcode-reader" className="w-full h-60 sm:h-64 bg-slate-950" />
 
                 {!isCameraActive && (
-                  <div className="absolute inset-0 bg-gray-900/95 flex flex-col items-center justify-center p-4 text-center space-y-3 z-10">
-                    <Camera className="w-9 h-9 text-amber-500 animate-pulse" />
+                  <div className="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center p-4 text-center space-y-3 z-10">
+                    <div className="p-3 bg-amber-500/10 text-amber-500 rounded-2xl border border-amber-500/20">
+                      <Camera className="w-8 h-8 animate-pulse" />
+                    </div>
                     <div>
                       <p className="text-xs font-bold text-white">Câmera Aguardando Permissão ou Desativada</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">
-                        {cameraError || 'Toque no botão abaixo para permitir o acesso à câmera.'}
+                      <p className="text-[11px] text-gray-400 mt-1 max-w-xs mx-auto">
+                        {cameraError || 'Toque em Ativar Câmera para abrir o leitor nítido do código de barras.'}
                       </p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs pt-1">
                       <button
                         onClick={startScanner}
-                        className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-gray-900 font-black rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
+                        className="flex-1 py-2.5 px-3 bg-amber-500 hover:bg-amber-600 text-gray-900 font-black rounded-xl text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Ativar Câmera</span>
+                        <span>Ativar Câmera Nítida</span>
                       </button>
 
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex-1 py-2 px-3 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                        className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-gray-200 font-bold rounded-xl text-xs transition-all border border-slate-700 flex items-center justify-center space-x-1.5 cursor-pointer"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         <span>Foto do Código</span>

@@ -112,6 +112,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     onClose();
   };
 
+  const handleGenerateBarcode = () => {
+    // Generate a valid-looking 13-digit EAN barcode starting with 789 (Brazil)
+    const randomDigits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10)).join('');
+    setBarcode(`789${randomDigits}`);
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-[#E0E0E0] space-y-5 max-h-[90vh] overflow-y-auto animate-slide-up-mobile sm:animate-scale-up">
@@ -150,9 +156,21 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Código de Barras */}
           <div>
-            <label className="block text-xs font-bold text-[#2C2C2C] mb-1">
-              Código de Barras (Opcional)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-[#2C2C2C]">
+                Código de Barras (Importante para Busca & Clube VIP)
+              </label>
+              {!barcode && (
+                <button
+                  type="button"
+                  onClick={handleGenerateBarcode}
+                  className="text-[11px] font-bold text-[#E8571A] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Gerar Código</span>
+                </button>
+              )}
+            </div>
             <div className="flex items-center space-x-2">
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -163,17 +181,21 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
                   placeholder="Ex: 7891234567890"
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm"
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm font-mono font-semibold"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setShowScanner(true)}
-                className="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors flex items-center justify-center shrink-0"
-                title="Escanear com a câmera"
+                className="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+                title="Escanear Código com a Câmera"
               >
                 <Camera className="w-5 h-5" />
               </button>
+            </div>
+            {/* Helper notice for VIP Scanner */}
+            <div className="mt-1.5 p-2 bg-amber-50/80 border border-amber-200 rounded-xl text-[11px] text-amber-900 leading-snug">
+              <span className="font-extrabold text-amber-900">👑 Dica para o Clube VIP:</span> Mantenha o código de barras nítido na etiqueta. A câmera do Clube VIP faz a leitura pelo código de barras para dar baixa do produto no balcão.
             </div>
           </div>
 
