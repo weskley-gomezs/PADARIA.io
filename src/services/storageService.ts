@@ -1,4 +1,4 @@
-import { BakeryCompany, Product, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing } from '../types/index.js';
+import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing } from '../types/index.js';
 import { calculateDaysRemaining, getProductStatus, formatDateToISO, generateActivationCode } from '../utils/dateUtils.js';
 import { db, testFirestoreConnection } from './firebase.js';
 import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
@@ -1116,7 +1116,8 @@ export class StorageService {
     valorTotal?: number,
     motivo?: string,
     notas?: string,
-    peso?: number
+    peso?: number,
+    statusOverride?: ProductStatus
   ): Promise<Product> {
     const products = StorageService.getProducts();
     const bakeryProducts = products.filter((p) => p.bakeryCode === bakeryCode);
@@ -1135,7 +1136,7 @@ export class StorageService {
       categoria: categoria ? categoria.trim() : 'Geral',
       dataCadastro: formatDateToISO(new Date()),
       diasParaVencer: daysRemaining,
-      status: getProductStatus(daysRemaining),
+      status: statusOverride !== undefined ? statusOverride : getProductStatus(daysRemaining),
       barcode: barcode ? barcode.trim() : '',
       peso: peso,
       valorKg: valorKg,
@@ -1167,7 +1168,8 @@ export class StorageService {
     valorTotal?: number,
     motivo?: string,
     notas?: string,
-    peso?: number
+    peso?: number,
+    statusOverride?: ProductStatus
   ): Promise<Product> {
     const products = StorageService.getProducts();
     const index = products.findIndex((p) => p.id === id);
@@ -1183,7 +1185,7 @@ export class StorageService {
       dataValidade,
       categoria: categoria ? categoria.trim() : products[index].categoria || 'Geral',
       diasParaVencer: daysRemaining,
-      status: getProductStatus(daysRemaining),
+      status: statusOverride !== undefined ? statusOverride : getProductStatus(daysRemaining),
       barcode: barcode !== undefined ? barcode.trim() : products[index].barcode,
       peso: peso !== undefined ? peso : products[index].peso,
       valorKg: valorKg !== undefined ? valorKg : products[index].valorKg,

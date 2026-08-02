@@ -362,26 +362,57 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
     }
 
     if (bestMatch) {
-      const newQty = Math.max(0, bestMatch.quantidade - 1);
-      if (newQty > 0) {
+      if (bestMatch.quantidade > 1) {
+        // Decrement existing active stock
         await StorageService.updateProduct(
           bestMatch.id,
           bestMatch.nome,
-          newQty,
+          bestMatch.quantidade - 1,
+          bestMatch.dataValidade,
+          bestMatch.categoria,
+          bestMatch.barcode,
+          bestMatch.valorKg,
+          bestMatch.dataFabricacao,
+          bestMatch.valorTotal,
+          bestMatch.motivo,
+          bestMatch.notas,
+          bestMatch.peso
+        );
+        // Add a dedicated expired record for the 1 discarded unit
+        await StorageService.addProduct(
+          company.codigoAtivacao,
+          bestMatch.nome,
+          1,
+          result.dataValidade || bestMatch.dataValidade,
+          bestMatch.categoria,
+          scannedBarcode || bestMatch.barcode,
+          result.valorKg !== undefined ? result.valorKg : bestMatch.valorKg,
+          result.dataFabricacao || bestMatch.dataFabricacao,
+          result.valorTotal !== undefined ? result.valorTotal : (bestMatch.valorTotal ? bestMatch.valorTotal / bestMatch.quantidade : undefined),
+          'Vencimento',
+          'Descartado via Leitor IA (Rótulos)',
+          result.peso !== undefined ? result.peso : bestMatch.peso,
+          'vencido'
+        );
+      } else {
+        // Update the single unit product to status 'vencido'
+        await StorageService.updateProduct(
+          bestMatch.id,
+          bestMatch.nome,
+          1,
           result.dataValidade || bestMatch.dataValidade,
           bestMatch.categoria,
           scannedBarcode || bestMatch.barcode,
           result.valorKg !== undefined ? result.valorKg : bestMatch.valorKg,
           result.dataFabricacao || bestMatch.dataFabricacao,
           result.valorTotal !== undefined ? result.valorTotal : bestMatch.valorTotal,
-          bestMatch.motivo,
-          bestMatch.notas,
-          result.peso !== undefined ? result.peso : bestMatch.peso
+          'Vencimento',
+          'Descartado via Leitor IA (Rótulos)',
+          result.peso !== undefined ? result.peso : bestMatch.peso,
+          'vencido'
         );
-      } else {
-        await StorageService.deleteProduct(bestMatch.id);
       }
-      showToast(`Descarte registrado! 1 unidade de "${bestMatch.nome}" removida do estoque.`);
+      showToast(`Descarte registrado! 1 unidade de "${bestMatch.nome}" contabilizada nas perdas do mês.`);
     } else {
       const newProd = await StorageService.addProduct(
         company.codigoAtivacao,
@@ -394,11 +425,12 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         result.dataFabricacao,
         result.valorTotal,
         'Vencimento',
-        'Cadastrado via Leitor IA (Rótulos)',
-        result.peso
+        'Cadastrado e descartado via Leitor IA (Rótulos)',
+        result.peso,
+        'vencido'
       );
       bestMatch = newProd;
-      showToast(`Descarte registrado: "${newProd.nome}" salvo no sistema e painel atualizado.`);
+      showToast(`Descarte registrado: "${newProd.nome}" salvo nas perdas e painel atualizado.`);
     }
 
     // Trigger VIP modal if scanned product is expiring in <= 3 days
