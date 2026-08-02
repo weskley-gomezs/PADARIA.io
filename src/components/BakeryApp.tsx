@@ -38,7 +38,7 @@ import {
 import confetti from 'canvas-confetti';
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, VipOffer } from '../types';
 import { StorageService } from '../services/storageService';
-import { formatDateToBR, getRelativeExpirationText, generateActivationCode, calculateDaysRemaining } from '../utils/dateUtils';
+import { formatDateToBR, getRelativeExpirationText, generateActivationCode, calculateDaysRemaining, formatDateToISO } from '../utils/dateUtils';
 import { ProductModal } from './ProductModal';
 import { NotificationsModal } from './NotificationsModal';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
@@ -383,8 +383,22 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
       }
       showToast(`Descarte registrado! 1 unidade de "${bestMatch.nome}" removida do estoque.`);
     } else {
-      // If backend already created product, onSnapshot will pick it up automatically; otherwise create here
-      showToast(`Descarte registrado: "${result.nome || 'Produto'}" adicionado ao registro de perdas.`);
+      const newProd = await StorageService.addProduct(
+        company.codigoAtivacao,
+        result.nome || 'Produto Escaneado',
+        1,
+        result.dataValidade || formatDateToISO(new Date()),
+        'Geral',
+        scannedBarcode,
+        result.valorKg,
+        result.dataFabricacao,
+        result.valorTotal,
+        'Vencimento',
+        'Cadastrado via Leitor IA (Rótulos)',
+        result.peso
+      );
+      bestMatch = newProd;
+      showToast(`Descarte registrado: "${newProd.nome}" salvo no sistema e painel atualizado.`);
     }
 
     // Trigger VIP modal if scanned product is expiring in <= 3 days

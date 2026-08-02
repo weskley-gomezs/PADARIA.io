@@ -997,22 +997,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Fechamento Item 1 */}
             <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-orange-200/80 hover:border-orange-400 transition-all space-y-3 text-center group">
               <div className="text-3xl group-hover:scale-110 transition-transform">📋</div>
               <h3 className="text-sm font-black text-gray-900">Auditoria de Sobras</h3>
               <p className="text-xs text-gray-500 font-medium">
                 Conferência rápida dos produtos do balcão e pães sobrantes ao final do dia.
-              </p>
-            </div>
-
-            {/* Fechamento Item 2 */}
-            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-orange-200/80 hover:border-orange-400 transition-all space-y-3 text-center group">
-              <div className="text-3xl group-hover:scale-110 transition-transform">♻️</div>
-              <h3 className="text-sm font-black text-gray-900">Reaproveitamento Guiado</h3>
-              <p className="text-xs text-gray-500 font-medium">
-                Sugestões automáticas da PadeIA™ para transformar sobras em torrada, pudim e farinha.
               </p>
             </div>
 
