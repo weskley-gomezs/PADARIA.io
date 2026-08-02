@@ -31,23 +31,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-[#E0E0E0] sticky top-0 z-40 shadow-xs">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 sm:h-16">
+        <div className="flex items-center justify-between h-20 sm:h-24">
           {/* Brand Logo */}
-          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer shrink-0" onClick={() => onNavigate('landing')}>
+          <div className="flex items-center cursor-pointer shrink-0" onClick={() => onNavigate('landing')}>
             <img 
-              src="https://i.imgur.com/r41aOzi.png" 
-              alt="Padaria.io Logo" 
-              className="w-9 h-9 sm:w-11 sm:h-11 object-contain transition-transform active:scale-95 sm:hover:scale-105"
+              src="https://i.imgur.com/ZGsjvWy.png" 
+              alt="PADARIA.io Logo" 
+              className="h-14 sm:h-18 object-contain transition-transform active:scale-95 sm:hover:scale-105"
               referrerPolicy="no-referrer"
             />
-            <div>
-              <div className="flex items-center space-x-1">
-                <span className="font-extrabold text-base sm:text-xl tracking-tight text-[#2C2C2C]">
-                  PADARIA<span className="text-[#FF6B00]">.io</span>
-                </span>
-              </div>
-              <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block">Controle de Validade por IA</p>
-            </div>
           </div>
 
           {/* Desktop Navigation Links & Actions */}

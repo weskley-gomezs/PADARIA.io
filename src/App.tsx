@@ -182,12 +182,11 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
             <div className="flex items-center space-x-2.5">
               <img 
-                src="https://i.imgur.com/r41aOzi.png" 
-                alt="Padaria.io Logo" 
-                className="w-7 h-7 object-contain"
+                src="https://i.imgur.com/ZGsjvWy.png" 
+                alt="PADARIA.io Logo" 
+                className="h-10 sm:h-12 object-contain"
                 referrerPolicy="no-referrer"
               />
-              <span className="font-extrabold text-[#2C2C2C] text-sm">PADARIA.io</span>
               <span className="text-gray-300">•</span>
               <span className="text-gray-500 text-[11px] sm:text-xs">Sistema de Gestão & Monitoramento Sanitário de Validade</span>
             </div>

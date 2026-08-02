@@ -461,17 +461,14 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           <div className="text-center space-y-3">
             <div className="flex justify-center">
               <img 
-                src="https://i.imgur.com/r41aOzi.png" 
-                alt="Padaria.io Logo" 
-                className="w-20 h-20 object-contain"
+                src="https://i.imgur.com/ZGsjvWy.png" 
+                alt="PADARIA.io Logo" 
+                className="h-28 sm:h-36 object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
 
             <div>
-              <h1 className="text-3xl font-black text-[#1F2937] tracking-tight">
-                PADARIA<span className="text-[#E8571A]">.io</span>
-              </h1>
               <p className="text-xs font-semibold text-gray-500 mt-1">
                 "Seu controle de desperdícios começa aqui"
               </p>

@@ -349,9 +349,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
           <div className="text-center space-y-3">
             <div className="flex justify-center">
               <img
-                src="https://i.imgur.com/r41aOzi.png"
+                src="https://i.imgur.com/ZGsjvWy.png"
                 alt="Logo Padaria"
-                className="w-24 h-24 object-contain"
+                className="h-28 sm:h-36 object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -435,7 +435,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
       {/* Mobile Top Header */}
       <div className="md:hidden bg-[#111111] text-white p-4 flex items-center justify-between border-b border-[#FF6B00]">
         <div className="flex items-center space-x-3">
-          <img src="https://i.imgur.com/r41aOzi.png" alt="Logo" className="w-8 h-8 object-contain" />
+          <img src="https://i.imgur.com/JCynwKe.png" alt="Logo" className="h-12 object-contain" />
           <span className="font-extrabold text-sm text-white">Painel Master ADM</span>
         </div>
         <button
@@ -456,9 +456,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
           {/* Logo / Header */}
           <div className="flex items-center space-x-3 pb-6 border-b border-gray-800">
             <img 
-              src="https://i.imgur.com/r41aOzi.png" 
+              src="https://i.imgur.com/JCynwKe.png" 
               alt="Logo Padaria" 
-              className="w-12 h-12 object-contain"
+              className="h-16 object-contain"
               referrerPolicy="no-referrer"
             />
             <div>

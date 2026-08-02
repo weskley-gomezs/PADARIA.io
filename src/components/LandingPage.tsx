@@ -110,25 +110,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           {/* Logo */}
           <div
-            className="flex items-center space-x-3 cursor-pointer group"
+            className="flex items-center cursor-pointer group"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <img
-              src="https://i.imgur.com/r41aOzi.png"
+              src="https://i.imgur.com/ZGsjvWy.png"
               alt="PADARIA.io Logo"
-              className="w-10 h-10 object-contain group-hover:scale-105 transition-transform"
+              className="h-16 sm:h-20 object-contain group-hover:scale-105 transition-transform"
               referrerPolicy="no-referrer"
             />
-            <div>
-              <div className="flex items-center space-x-1">
-                <span className="font-black text-xl tracking-tight text-[#1A1A1A]">
-                  PADARIA<span className="text-[#E8571A]">.io</span>
-                </span>
-              </div>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider hidden sm:block">
-                Gestão Inteligente & Clube VIP
-              </p>
-            </div>
           </div>
 
           {/* Desktop Navigation Links */}
@@ -1273,16 +1263,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <footer className="bg-[#111827] text-gray-400 py-12 border-t border-gray-800 text-xs font-medium">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center">
               <img
-                src="https://i.imgur.com/r41aOzi.png"
+                src="https://i.imgur.com/JCynwKe.png"
                 alt="PADARIA.io"
-                className="w-8 h-8 object-contain"
+                className="h-14 sm:h-16 object-contain"
                 referrerPolicy="no-referrer"
               />
-              <span className="font-black text-lg text-white">
-                PADARIA<span className="text-[#E8571A]">.io</span>
-              </span>
             </div>
 
             <div className="flex flex-wrap justify-center gap-6 text-gray-400">
