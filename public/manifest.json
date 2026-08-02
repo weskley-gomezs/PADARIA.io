@@ -1,0 +1,30 @@
+{
+  "short_name": "Padaria.io",
+  "name": "Padaria.io - Sistema Inteligente para Padarias",
+  "description": "Sistema de controle de validade e redução de desperdícios com inteligência artificial para padarias",
+  "icons": [
+    {
+      "src": "https://i.imgur.com/JZHMfRN.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.imgur.com/JZHMfRN.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.imgur.com/JZHMfRN.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FFFFFF",
+  "theme_color": "#E8571A",
+  "display": "standalone",
+  "orientation": "portrait"
+}
