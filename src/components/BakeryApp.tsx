@@ -47,6 +47,7 @@ import { ImageScanner } from './ImageScanner';
 import { WasteChartSection } from './WasteChartSection';
 import { VipClubSection } from './VipClubSection';
 import { VipOfferModal } from './VipOfferModal';
+import { PadeIA } from './PadeIA';
 
 interface BakeryAppProps {
   presetCode?: string | null;
@@ -71,7 +72,13 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'relatorio' | 'config' | 'vip'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'padeia' | 'relatorio' | 'config' | 'vip'>('dashboard');
+
+  useEffect(() => {
+    const handleOpenPadeia = () => setActiveTab('padeia');
+    window.addEventListener('open-padeia-tab', handleOpenPadeia);
+    return () => window.removeEventListener('open-padeia-tab', handleOpenPadeia);
+  }, []);
   const [keepLoggedIn, setKeepLoggedIn] = useState<boolean>(true);
   const [analysisStartDate, setAnalysisStartDate] = useState<string>('');
   const [analysisEndDate, setAnalysisEndDate] = useState<string>('');
@@ -628,6 +635,19 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           <BarChart3 className="w-3.5 h-3.5" />
           <span>📊 Dashboard</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('padeia')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'padeia'
+              ? 'bg-gradient-to-r from-[#FF6B00] to-[#E8571A] text-white shadow-md ring-2 ring-orange-400/40'
+              : 'bg-orange-50/80 text-[#E8571A] hover:bg-orange-100 border border-orange-200'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+          <span>✨ PadeIA™</span>
+        </button>
+
         <button
           onClick={() => setActiveTab('relatorio')}
           className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
@@ -657,8 +677,54 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         </button>
       </div>
 
+      {activeTab === 'padeia' && (
+        <PadeIA
+          company={company}
+          products={products}
+          salesHistory={salesHistory}
+          vipOffers={vipOffers}
+          onOpenVipOfferModal={(prod) => {
+            setVipOfferProductInfo({
+              productId: prod.id,
+              nomeProduto: prod.nome,
+              categoria: prod.categoria || 'Geral',
+              valorOriginal: prod.valorTotal && prod.valorTotal > 0 ? prod.valorTotal : (prod.valorKg && prod.valorKg > 0 ? prod.valorKg : 15.0),
+              dataValidade: prod.dataValidade,
+              barcode: prod.barcode,
+            });
+            setIsVipOfferModalOpen(true);
+          }}
+        />
+      )}
+
       {activeTab === 'dashboard' && (
         <>
+          {/* PadeIA Quick Banner */}
+          <div className="bg-gradient-to-r from-[#111111] via-[#1F2937] to-[#2C2C2C] text-white p-4 rounded-2xl border border-gray-800 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FF6B00] to-[#E8571A] flex items-center justify-center text-white shrink-0 shadow-sm">
+                <Sparkles className="w-5 h-5 text-amber-200 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-black text-sm text-white">PadeIA™ - Gerente Inteligente</span>
+                  <span className="text-[10px] bg-orange-500/20 text-[#FF6B00] border border-orange-500/30 px-2 py-0.2 rounded-full font-bold">Ativa</span>
+                </div>
+                <p className="text-xs text-gray-300 mt-0.5">
+                  Análise inteligente ativada para <strong>{company.empresa}</strong>. Tire dúvidas, veja relatórios e calcule preços.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('padeia')}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#E8571A] hover:from-[#e05e00] hover:to-[#d44e15] text-white font-extrabold text-xs transition-all shadow-sm flex items-center justify-center space-x-1.5 shrink-0 cursor-pointer"
+            >
+              <span>Abrir PadeIA™</span>
+              <Sparkles className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           {/* 1. RESUMO RÁPIDO CARDS (Responsive 2x2 grid on mobile) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
             {/* Card 1: Perdas do Mês */}

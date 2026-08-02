@@ -70,6 +70,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span>App Padaria</span>
               </button>
 
+              {currentView === 'app' && (
+                <button
+                  onClick={() => {
+                    onNavigate('app');
+                    window.dispatchEvent(new Event('open-padeia-tab'));
+                  }}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-black bg-gradient-to-r from-[#FF6B00] to-[#E8571A] text-white hover:opacity-90 transition-all cursor-pointer shadow-xs"
+                  title="Abrir PadeIA™ - Sua Gerente Inteligente"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
+                  <span>PadeIA™</span>
+                </button>
+              )}
+
               <button
                 onClick={() => window.dispatchEvent(new Event('trigger-pwa-install'))}
                 className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-50 text-[#E8571A] hover:bg-orange-100 border border-orange-200 transition-all cursor-pointer shadow-xs"

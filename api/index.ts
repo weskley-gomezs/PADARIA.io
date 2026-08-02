@@ -218,6 +218,118 @@ try {
     }
   });
 
+  app.post('/api/padeia/chat', async (req, res) => {
+    console.log("[ROUTE] POST /api/padeia/chat - Recebido");
+    try {
+      const { message, history = [], contextData = {} } = req.body;
+
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: 'Mensagem inválida ou não fornecida.' });
+      }
+
+      if (!ai) {
+        return res.status(500).json({ error: 'O serviço de IA PadeIA™ não está inicializado no servidor.' });
+      }
+
+      const company = contextData.company || {};
+      const products: any[] = contextData.products || [];
+      const salesHistory: any[] = contextData.salesHistory || [];
+      const vipOffers: any[] = contextData.vipOffers || [];
+
+      // Calculate context metrics
+      const expiredProds = products.filter((p: any) => p.status === 'vencido');
+      const expiringProds = products.filter((p: any) => p.status === 'vencendo');
+      const normalProds = products.filter((p: any) => p.status === 'normal');
+
+      const expiredVal = expiredProds.reduce((sum: number, p: any) => sum + (p.valorTotal || p.quantidade * (p.valorKg || 12)), 0);
+      const expiringVal = expiringProds.reduce((sum: number, p: any) => sum + (p.valorTotal || p.quantidade * (p.valorKg || 12)), 0);
+
+      const vipActive = vipOffers.filter((o: any) => o.status === 'ativo');
+      const vipPotential = vipActive.reduce((sum: number, o: any) => sum + (o.valorPromocional || 0), 0);
+      const vipRecovered = vipOffers.filter((o: any) => o.status === 'vendido').reduce((sum: number, o: any) => sum + (o.valorPromocional || o.valorOriginal || 0), 0);
+
+      // Summarize product highlights (top 15 items)
+      const topProductsText = products.slice(0, 15).map((p: any) => 
+        `- ${p.nome} (Qtd: ${p.quantidade}, Val: ${p.dataValidade}, Status: ${p.status}, Categoria: ${p.categoria || 'Geral'}, ValorTotal: R$ ${p.valorTotal || (p.quantidade * (p.valorKg || 12)).toFixed(2)})`
+      ).join('\n');
+
+      const vipOffersText = vipOffers.slice(0, 10).map((o: any) =>
+        `- ${o.nomeProduto} (Original: R$ ${o.valorOriginal}, Promo: R$ ${o.valorPromocional}, Desc: ${o.desconto}%, Val: ${o.dataValidade}, Status: ${o.status})`
+      ).join('\n');
+
+      const systemInstruction = `Você é a PadeIA™, a Inteligência Artificial oficial do Padaria.io e a Gerente Inteligente Especializada em Panificação, Confeitarias e Supermercados.
+
+REGRAS RÍGIDAS DE IDENTIDADE E COMPORTAMENTO:
+1. Seu nome é estritamente PadeIA™.
+2. Sua descrição oficial é: "Sua gerente inteligente especializada em panificação."
+3. NUNCA, sob nenhuma hipótese, mencione Gemini, Google AI, ChatGPT, OpenAI, Anthropic ou qualquer outro modelo/fornecedor de IA. Para o usuário, você é simplesmente a PadeIA™, a IA nativa do Padaria.io.
+4. Se perguntarem "quem criou você" ou "qual seu modelo", responda: "Eu sou a PadeIA™, a Inteligência Artificial oficial desenvolvida para o Padaria.io com foco em gestão de panificação, controle de estoques e redução de desperdícios."
+5. Idioma: Português do Brasil (PT-BR).
+6. Tom de voz: Profissional, objetivo, extremamente inteligente, educado, consultivo, amigável e especialista em panificação.
+7. Áreas de Especialidade: Validade e PVPS/FIFO, gestão de perdas e descartes, precificação inteligente, cálculo de margem e markup, promoção no Clube VIP, controle de estoque, vigilância sanitária e análise de indicadores financeiros.
+
+DADOS EM TEMPO REAL DA PADARIA CONECTADA:
+- Nome da Empresa: ${company.empresa || 'Minha Padaria'}
+- Código de Ativação: ${company.codigoAtivacao || 'N/A'}
+- E-mail do Responsável: ${company.email || 'N/A'}
+
+RESUMO EXECUTIVO DO ESTOQUE E PERDAS:
+- Total de Itens Registrados: ${products.length}
+- Produtos Vencidos: ${expiredProds.length} (Perda total estimada: R$ ${expiredVal.toFixed(2)})
+- Produtos Vencendo nos próximos 3 dias: ${expiringProds.length} (Valor em risco: R$ ${expiringVal.toFixed(2)})
+- Produtos com Validade em Dia: ${normalProds.length}
+- Vendas e Recuperações Registradas no Histórico: ${salesHistory.length} vendas
+- Ofertas Ativas no Clube VIP: ${vipActive.length} ofertas (Receita Potencial a Recuperar: R$ ${vipPotential.toFixed(2)})
+- Total Recuperado no Clube VIP: R$ ${vipRecovered.toFixed(2)}
+
+AMOSTRA DE PRODUTOS NO SISTEMA:
+${topProductsText || 'Nenhum produto cadastrado no momento.'}
+
+AMOSTRA DE OFERTAS NO CLUBE VIP:
+${vipOffersText || 'Nenhuma oferta ativa no momento.'}
+
+INSTRUÇÕES DE RESPOSTA AO USUÁRIO:
+- Forneça respostas diretas, estruturadas e fáceis de ler. Utilize tópicos, negritos, emojis adequados e listas.
+- Sempre que o usuário perguntar sobre prejuízos, produtos vencendo, o que fazer para economizar ou como precificar, utilize os dados acima para dar respostas personalizadas e exatas.
+- Se o usuário solicitar recomendações ou o que colocar no Clube VIP, indique os produtos com status 'vencendo' de maior valor acumulado.
+- Se não houver dados suficientes no contexto para responder com precisão (ex: dados de funcionários específicos não cadastrados ou um produto que não está na lista), responda educadamente: "Ainda não possuo informações suficientes para responder isso com precisão."
+- Ofereça ajuda proativa no final da resposta sugerindo um próximo passo estratégico.`;
+
+      const formattedHistory = history.map((h: any) => ({
+        role: h.role === 'model' || h.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: h.content || h.text || '' }],
+      }));
+
+      const contents = [
+        ...formattedHistory,
+        {
+          role: 'user',
+          parts: [{ text: message }],
+        }
+      ];
+
+      console.log("[PADEIA] Gerando resposta com Gemini 3.6 Flash...");
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: contents,
+        config: {
+          systemInstruction: systemInstruction,
+        },
+      });
+
+      const reply = response.text || 'Não consegui processar a resposta no momento. Por favor, tente novamente.';
+      console.log("[PADEIA] Resposta gerada com sucesso!");
+
+      return res.json({ reply });
+    } catch (error: any) {
+      console.error('[ROUTE] ERRO em /api/padeia/chat:', error);
+      res.status(500).json({ 
+        error: 'Erro ao processar consulta com a PadeIA™.', 
+        details: error.message 
+      });
+    }
+  });
+
   async function parseAsaasResponse(res: any): Promise<any> {
     const status = res.status;
     const is2xx = res.ok || (status >= 200 && status < 300);
