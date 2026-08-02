@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   ShieldCheck,
   Zap,
@@ -159,6 +160,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             >
               Resultados
             </a>
+            <a
+              href="#planos"
+              className="text-[#E8571A] font-black hover:underline transition-colors cursor-pointer"
+            >
+              Planos
+            </a>
           </nav>
 
           {/* Action Buttons */}
@@ -232,6 +239,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             >
               Resultados
             </a>
+            <a
+              href="#planos"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-extrabold text-[#E8571A]"
+            >
+              Planos & Investimento
+            </a>
             <div className="pt-2 space-y-2 border-t border-gray-100">
               <button
                 onClick={() => {
@@ -259,49 +273,93 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* HERO SECTION */}
       <section className="pt-32 sm:pt-40 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
-        {/* Subtle decorative background gradient blobs */}
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-gradient-to-tr from-amber-200/30 via-orange-300/20 to-transparent blur-3xl pointer-events-none -z-10 rounded-full"></div>
+        {/* Subtle decorative background gradient blobs with smooth floating motion */}
+        <motion.div
+          animate={{
+            y: [0, -20, 0],
+            scale: [1, 1.08, 1],
+            opacity: [0.3, 0.5, 0.3]
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-gradient-to-tr from-amber-300/40 via-orange-400/30 to-rose-300/20 blur-3xl pointer-events-none -z-10 rounded-full"
+        />
 
-        <div className="text-center space-y-6 max-w-4xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="text-center space-y-6 max-w-4xl mx-auto"
+        >
           {/* Badge */}
-          <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-200/80 text-[#E8571A] text-xs font-extrabold tracking-wide uppercase shadow-2xs">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-200/80 text-[#E8571A] text-xs font-extrabold tracking-wide uppercase shadow-2xs cursor-default"
+          >
             <Sparkles className="w-4 h-4 text-[#E8571A] animate-pulse" />
             <span>Sistema Inteligente Anti-Prejuízo + Clube VIP</span>
-          </div>
+          </motion.div>
 
           {/* Main Headline */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-[#1A1A1A] tracking-tight leading-[1.08] uppercase">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="text-4xl sm:text-6xl lg:text-7xl font-black text-[#1A1A1A] tracking-tight leading-[1.08] uppercase"
+          >
             PARE DE JOGAR <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-[#E8571A] via-[#D44E15] to-[#B33B0A] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#E8571A] via-[#D44E15] to-[#B33B0A] bg-clip-text text-transparent drop-shadow-xs">
               DINHEIRO NO LIXO.
             </span>
-          </h1>
+          </motion.h1>
 
           {/* Subtitle */}
-          <p className="text-base sm:text-xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="text-base sm:text-xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed"
+          >
             Com apenas uma foto da etiqueta, o <strong className="text-gray-900 font-black">PADARIA.io</strong> identifica produtos próximos ao vencimento, ajuda você a vendê-los antes da perda e controla automaticamente o desperdício.
-          </p>
+          </motion.p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <button
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+          >
+            <motion.button
+              whileHover={{ scale: 1.04, boxShadow: "0 20px 25px -5px rgba(232, 87, 26, 0.3)" }}
+              whileTap={{ scale: 0.97 }}
               onClick={onEnterApp}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-base font-extrabold shadow-xl shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.02] transition-all flex items-center justify-center space-x-3 cursor-pointer group"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-base font-extrabold shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center space-x-3 cursor-pointer group"
             >
               <span>Teste grátis por 1 dia</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setDemoModalOpen(true)}
               className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white hover:bg-gray-50 text-[#1A1A1A] border-2 border-gray-200 text-base font-extrabold shadow-xs hover:shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
             >
               <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
               <span>Ver demonstração</span>
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
 
           {/* Micro trust indicators */}
-          <div className="pt-3 flex items-center justify-center space-x-6 text-xs text-gray-500 font-bold">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="pt-3 flex items-center justify-center space-x-6 text-xs text-gray-500 font-bold"
+          >
             <span className="flex items-center space-x-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               <span>Sem necessidade de cartão</span>
@@ -314,11 +372,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               <span>100% Online</span>
             </span>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* HERO VISUAL FLOW ILLUSTRATION */}
-        <div className="mt-14 max-w-5xl mx-auto bg-white rounded-3xl border border-gray-200/90 shadow-2xl p-6 sm:p-8 relative overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="mt-14 max-w-5xl mx-auto bg-white rounded-3xl border border-gray-200/90 shadow-2xl p-6 sm:p-8 relative overflow-hidden"
+        >
           <div className="text-center mb-6">
             <span className="text-[11px] font-black uppercase tracking-widest text-[#E8571A] block">
               COMO O PADARIA.IO FUNCIONA PASSO A PASSO
@@ -331,7 +395,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* Stepper Flow Cards */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3 relative z-10">
             {/* Step 1 */}
-            <div
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveStep(1)}
               className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
                 activeStep === 1
@@ -351,10 +417,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <p className="text-[11px] text-gray-500 mt-1 font-medium">
                 Funcionário tira foto pelo celular
               </p>
-            </div>
+            </motion.div>
 
             {/* Step 2 */}
-            <div
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveStep(2)}
               className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
                 activeStep === 2
@@ -374,10 +442,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <p className="text-[11px] text-gray-500 mt-1 font-medium">
                 Extrai produto, lote e data de validade
               </p>
-            </div>
+            </motion.div>
 
             {/* Step 3 */}
-            <div
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveStep(3)}
               className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
                 activeStep === 3
@@ -397,10 +467,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <p className="text-[11px] text-gray-500 mt-1 font-medium">
                 Gera oferta e mensagem promocional
               </p>
-            </div>
+            </motion.div>
 
             {/* Step 4 */}
-            <div
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveStep(4)}
               className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
                 activeStep === 4
@@ -420,10 +492,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <p className="text-[11px] text-gray-500 mt-1 font-medium">
                 Cliente compra com desconto atrativo
               </p>
-            </div>
+            </motion.div>
 
             {/* Step 5 */}
-            <div
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveStep(5)}
               className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
                 activeStep === 5
@@ -443,151 +517,212 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <p className="text-[11px] text-gray-500 mt-1 font-medium">
                 Controle do dinheiro recuperado
               </p>
-            </div>
+            </motion.div>
           </div>
 
-          {/* Live Dynamic Preview Area corresponding to activeStep */}
-          <div className="mt-6 p-6 rounded-2xl bg-gradient-to-br from-gray-900 to-[#1F2937] text-white shadow-inner relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-3 opacity-10">
-              <Sparkles className="w-40 h-40" />
+          {/* Live Dynamic Preview Area corresponding to activeStep with AnimatePresence */}
+          <div className="mt-6 p-6 rounded-2xl bg-gradient-to-br from-gray-900 via-[#111827] to-gray-950 text-white shadow-inner relative overflow-hidden min-h-[170px] flex items-center">
+            <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none">
+              <Sparkles className="w-40 h-40 text-orange-400" />
             </div>
 
-            {activeStep === 1 && (
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in">
-                <div className="space-y-2 max-w-md">
-                  <span className="px-3 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-black rounded-full uppercase">
-                    Passo 1: Captura Rápida
-                  </span>
-                  <h4 className="text-xl font-black">Escaneamento via Câmera do Celular</h4>
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    Sem digitação manual exaustiva. O operador simplesmente aponta o celular para a etiqueta de fabricação ou caixa.
-                  </p>
-                </div>
-                <div className="bg-gray-800/80 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-gray-400">
-                    <span>📷 Câmera Ativa</span>
-                    <span className="text-emerald-400 animate-pulse">● Pronto</span>
+            <AnimatePresence mode="wait">
+              {activeStep === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.35 }}
+                  className="w-full flex flex-col md:flex-row items-center justify-between gap-6"
+                >
+                  <div className="space-y-2 max-w-md">
+                    <span className="px-3 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-black rounded-full uppercase inline-block">
+                      Passo 1: Captura Rápida
+                    </span>
+                    <h4 className="text-xl font-black">Escaneamento via Câmera do Celular</h4>
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                      Sem digitação manual exaustiva. O operador simplesmente aponta o celular para a etiqueta de fabricação ou caixa.
+                    </p>
                   </div>
-                  <div className="h-28 bg-gray-900 rounded-xl border-2 border-dashed border-orange-500/50 flex flex-col items-center justify-center text-center p-2">
-                    <Camera className="w-8 h-8 text-orange-400 mb-1 animate-bounce" />
-                    <span className="text-[11px] font-bold text-gray-300">Enquadre a etiqueta de validade</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeStep === 2 && (
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in">
-                <div className="space-y-2 max-w-md">
-                  <span className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black rounded-full uppercase">
-                    Passo 2: Inteligência Artificial
-                  </span>
-                  <h4 className="text-xl font-black">Processamento OCR & Visão Computacional</h4>
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    Nossa IA lê o nome do produto, o peso, o valor original e calcula instantaneamente os dias exatos para o vencimento.
-                  </p>
-                </div>
-                <div className="bg-gray-800/80 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-amber-400">
-                    <span>🤖 Leitura IA</span>
-                    <span className="text-xs font-black">100% Precisão</span>
-                  </div>
-                  <div className="space-y-1.5 text-xs bg-gray-900 p-3 rounded-xl border border-gray-700">
-                    <div className="flex justify-between text-gray-300">
-                      <span>Produto:</span>
-                      <strong className="text-white">Bolo de Fubá com Goiabada</strong>
+                  <div className="bg-gray-800/90 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2 relative overflow-hidden">
+                    <div className="flex items-center justify-between text-xs font-bold text-gray-400">
+                      <span>📷 Câmera Ativa</span>
+                      <span className="text-emerald-400 animate-pulse flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        Pronto
+                      </span>
                     </div>
-                    <div className="flex justify-between text-gray-300">
-                      <span>Validade:</span>
-                      <strong className="text-amber-400">2 dias restantes</strong>
-                    </div>
-                    <div className="flex justify-between text-gray-300">
-                      <span>Preço Original:</span>
-                      <strong className="text-white">R$ 18,00</strong>
+                    <div className="h-28 bg-gray-900 rounded-xl border-2 border-dashed border-orange-500/60 flex flex-col items-center justify-center text-center p-2 relative overflow-hidden">
+                      {/* Laser scanning line animation */}
+                      <motion.div
+                        animate={{ y: [-40, 40, -40] }}
+                        transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
+                        className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#E8571A] to-transparent shadow-[0_0_12px_#E8571A]"
+                      />
+                      <Camera className="w-8 h-8 text-orange-400 mb-1" />
+                      <span className="text-[11px] font-bold text-gray-300">Enquadre a etiqueta de validade</span>
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
 
-            {activeStep === 3 && (
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in">
-                <div className="space-y-2 max-w-md">
-                  <span className="px-3 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-black rounded-full uppercase">
-                    Passo 3: Automação Comercial
-                  </span>
-                  <h4 className="text-xl font-black">Inclusão Automática no Clube VIP</h4>
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    O sistema sugere o desconto ideal (ex: 20% OFF) e gera um card promocional com mensagem formatada para WhatsApp em 1 clique.
-                  </p>
-                </div>
-                <div className="bg-gradient-to-br from-purple-900/60 to-purple-800/40 p-4 rounded-2xl border border-purple-500/40 w-full md:w-80 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-black text-purple-300">
-                    <span>👑 Clube VIP Ativo</span>
-                    <span className="bg-purple-500 text-white text-[9px] px-2 py-0.5 rounded-full">20% OFF</span>
+              {activeStep === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.35 }}
+                  className="w-full flex flex-col md:flex-row items-center justify-between gap-6"
+                >
+                  <div className="space-y-2 max-w-md">
+                    <span className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black rounded-full uppercase inline-block">
+                      Passo 2: Inteligência Artificial
+                    </span>
+                    <h4 className="text-xl font-black">Processamento OCR & Visão Computacional</h4>
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                      Nossa IA lê o nome do produto, o peso, o valor original e calcula instantaneamente os dias exatos para o vencimento.
+                    </p>
                   </div>
-                  <div className="p-3 bg-purple-950/80 rounded-xl text-xs space-y-1 text-purple-100 border border-purple-500/30">
-                    <p className="font-bold">🥖 OFERTA DO CLUBE VIP</p>
-                    <p className="text-[11px] opacity-90">Bolo de Fubá de R$ 18,00 por apenas <strong>R$ 14,40</strong>!</p>
+                  <div className="bg-gray-800/90 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-amber-400">
+                      <span>🤖 Leitura IA</span>
+                      <span className="text-xs font-black bg-amber-500/20 px-2 py-0.5 rounded text-amber-300 border border-amber-500/30">
+                        100% Precisão
+                      </span>
+                    </div>
+                    <div className="space-y-1.5 text-xs bg-gray-900 p-3 rounded-xl border border-gray-700">
+                      <div className="flex justify-between text-gray-300">
+                        <span>Produto:</span>
+                        <strong className="text-white">Bolo de Fubá com Goiabada</strong>
+                      </div>
+                      <div className="flex justify-between text-gray-300">
+                        <span>Validade:</span>
+                        <strong className="text-amber-400 font-extrabold">2 dias restantes</strong>
+                      </div>
+                      <div className="flex justify-between text-gray-300">
+                        <span>Preço Original:</span>
+                        <strong className="text-white">R$ 18,00</strong>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
 
-            {activeStep === 4 && (
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in">
-                <div className="space-y-2 max-w-md">
-                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black rounded-full uppercase">
-                    Passo 4: Dinheiro no Caixa
-                  </span>
-                  <h4 className="text-xl font-black">Venda Concluída com Sucesso</h4>
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    O produto é vendido rapidamente ao invés de vencer na prateleira. O prejuízo vira faturamento limpo.
-                  </p>
-                </div>
-                <div className="bg-emerald-950/80 p-4 rounded-2xl border border-emerald-500/40 w-full md:w-80 text-center space-y-2">
-                  <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="w-6 h-6" />
+              {activeStep === 3 && (
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.35 }}
+                  className="w-full flex flex-col md:flex-row items-center justify-between gap-6"
+                >
+                  <div className="space-y-2 max-w-md">
+                    <span className="px-3 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-black rounded-full uppercase inline-block">
+                      Passo 3: Automação Comercial
+                    </span>
+                    <h4 className="text-xl font-black">Inclusão Automática no Clube VIP</h4>
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                      O sistema sugere o desconto ideal (ex: 20% OFF) e gera um card promocional com mensagem formatada para WhatsApp em 1 clique.
+                    </p>
                   </div>
-                  <p className="text-xs font-bold text-emerald-300">Venda Registrada!</p>
-                  <p className="text-2xl font-black text-white">+ R$ 14,40</p>
-                  <p className="text-[10px] text-emerald-400 font-medium">Recuperado antes do vencimento</p>
-                </div>
-              </div>
-            )}
+                  <div className="bg-gradient-to-br from-purple-900/80 to-purple-800/50 p-4 rounded-2xl border border-purple-500/40 w-full md:w-80 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-black text-purple-300">
+                      <span>👑 Clube VIP Ativo</span>
+                      <span className="bg-purple-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black animate-pulse">
+                        20% OFF
+                      </span>
+                    </div>
+                    <div className="p-3 bg-purple-950/90 rounded-xl text-xs space-y-1 text-purple-100 border border-purple-500/30">
+                      <p className="font-bold">🥖 OFERTA DO CLUBE VIP</p>
+                      <p className="text-[11px] opacity-90">Bolo de Fubá de R$ 18,00 por apenas <strong className="text-amber-300 text-xs">R$ 14,40</strong>!</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
 
-            {activeStep === 5 && (
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in">
-                <div className="space-y-2 max-w-md">
-                  <span className="px-3 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-black rounded-full uppercase">
-                    Passo 5: Controle Financeiro
-                  </span>
-                  <h4 className="text-xl font-black">Dashboard & Histórico de Economia</h4>
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    Acompanhe em tempo real quanto dinheiro sua padaria deixou de perder neste mês e quais setores são mais eficientes.
-                  </p>
-                </div>
-                <div className="bg-gray-800/80 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-blue-400">
-                    <span>📊 Economia do Mês</span>
-                    <span className="text-emerald-400">+ 84% recuperado</span>
+              {activeStep === 4 && (
+                <motion.div
+                  key="step4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.35 }}
+                  className="w-full flex flex-col md:flex-row items-center justify-between gap-6"
+                >
+                  <div className="space-y-2 max-w-md">
+                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black rounded-full uppercase inline-block">
+                      Passo 4: Dinheiro no Caixa
+                    </span>
+                    <h4 className="text-xl font-black">Venda Concluída com Sucesso</h4>
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                      O produto é vendido rapidamente ao invés de vencer na prateleira. O prejuízo vira faturamento limpo.
+                    </p>
                   </div>
-                  <div className="bg-gray-900 p-3 rounded-xl border border-gray-700 flex justify-between items-center">
-                    <span className="text-xs text-gray-400">Total Recuperado:</span>
-                    <strong className="text-xl font-black text-emerald-400">R$ 2.450,00</strong>
+                  <div className="bg-emerald-950/90 p-4 rounded-2xl border border-emerald-500/40 w-full md:w-80 text-center space-y-2">
+                    <motion.div
+                      initial={{ scale: 0.5 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                      className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto"
+                    >
+                      <CheckCircle2 className="w-6 h-6" />
+                    </motion.div>
+                    <p className="text-xs font-bold text-emerald-300">Venda Registrada!</p>
+                    <p className="text-2xl font-black text-white">+ R$ 14,40</p>
+                    <p className="text-[10px] text-emerald-400 font-medium">Recuperado antes do vencimento</p>
                   </div>
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
+
+              {activeStep === 5 && (
+                <motion.div
+                  key="step5"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.35 }}
+                  className="w-full flex flex-col md:flex-row items-center justify-between gap-6"
+                >
+                  <div className="space-y-2 max-w-md">
+                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-black rounded-full uppercase inline-block">
+                      Passo 5: Controle Financeiro
+                    </span>
+                    <h4 className="text-xl font-black">Dashboard & Histórico de Economia</h4>
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                      Acompanhe em tempo real quanto dinheiro sua padaria deixou de perder neste mês e quais setores são mais eficientes.
+                    </p>
+                  </div>
+                  <div className="bg-gray-800/90 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-blue-400">
+                      <span>📊 Economia do Mês</span>
+                      <span className="text-emerald-400">+ 84% recuperado</span>
+                    </div>
+                    <div className="bg-gray-900 p-3 rounded-xl border border-gray-700 flex justify-between items-center">
+                      <span className="text-xs text-gray-400">Total Recuperado:</span>
+                      <strong className="text-xl font-black text-emerald-400">R$ 2.450,00</strong>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* SEGUNDA SEÇÃO - COMPARAÇÃO (SEM PADARIA.IO vs COM PADARIA.IO) */}
       <section id="comparacao" className="py-20 bg-white border-y border-gray-200/80 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-3 max-w-3xl mx-auto mb-14">
-            <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 border border-red-200 text-xs font-black uppercase tracking-wider">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center space-y-3 max-w-3xl mx-auto mb-14"
+          >
+            <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 border border-red-200 text-xs font-black uppercase tracking-wider inline-block">
               A Escolha é Simples
             </span>
             <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
@@ -596,11 +731,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <p className="text-sm sm:text-base text-gray-500 font-medium">
               Compare a rotina tradicional com a eficiência automatizada do PADARIA.io.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {/* SEM PADARIA.IO */}
-            <div className="bg-gradient-to-b from-red-50/50 to-white rounded-3xl p-6 sm:p-8 border-2 border-red-200 shadow-sm space-y-6 relative">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="bg-gradient-to-b from-red-50/50 to-white rounded-3xl p-6 sm:p-8 border-2 border-red-200 shadow-sm space-y-6 relative"
+            >
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center font-black text-lg">
                   ❌
@@ -653,10 +794,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   Perda contínua de margem de lucro todos os meses.
                 </span>
               </div>
-            </div>
+            </motion.div>
 
             {/* COM PADARIA.IO */}
-            <div className="bg-gradient-to-b from-emerald-50/50 to-white rounded-3xl p-6 sm:p-8 border-2 border-emerald-400 shadow-xl space-y-6 relative">
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ scale: 1.01 }}
+              transition={{ duration: 0.6 }}
+              className="bg-gradient-to-b from-emerald-50/50 to-white rounded-3xl p-6 sm:p-8 border-2 border-emerald-400 shadow-xl space-y-6 relative"
+            >
               {/* Highlight Badge */}
               <div className="absolute -top-3.5 right-6 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-full shadow-md">
                 Solução Inteligente
@@ -714,7 +862,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   Menos perdas, clientes fidelizados e mais dinheiro no caixa!
                 </span>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -1172,6 +1320,167 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
+      {/* SEÇÃO PLANOS & INVESTIMENTO */}
+      <section id="planos" className="py-20 bg-[#FDFBF7] border-t border-gray-200/80 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center space-y-3 max-w-3xl mx-auto"
+          >
+            <span className="px-3.5 py-1.5 rounded-full bg-orange-100 text-[#E8571A] border border-orange-200 text-xs font-black uppercase tracking-wider inline-block">
+              Planos & Investimento
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
+              Escolha o plano ideal para a sua padaria
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600 font-medium">
+              Transparência total e retorno garantido sobre o investimento para o seu negócio.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-8 items-stretch">
+            {/* PLANO ESSENCIAL */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -6 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6 relative"
+            >
+              <div className="space-y-4">
+                <div className="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-xs font-black rounded-full uppercase">
+                  Ideal para pequenas padarias
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900">Plano Essencial</h3>
+                  <div className="flex items-baseline space-x-1 mt-2">
+                    <span className="text-4xl font-black text-[#1A1A1A]">R$ 497</span>
+                    <span className="text-sm font-bold text-gray-500">/mês</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 pt-4 space-y-3">
+                  <span className="text-xs font-black uppercase text-gray-400 tracking-wider">Inclui:</span>
+                  <ul className="space-y-2.5 text-xs font-bold text-gray-700">
+                    <li className="flex items-center space-x-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
+                      <span>IA para leitura de etiquetas</span>
+                    </li>
+                    <li className="flex items-center space-x-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
+                      <span>Controle de validade</span>
+                    </li>
+                    <li className="flex items-center space-x-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
+                      <span>Relatórios</span>
+                    </li>
+                    <li className="flex items-center space-x-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
+                      <span>Clube VIP</span>
+                    </li>
+                    <li className="flex items-center space-x-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
+                      <span>Controle de perdas</span>
+                    </li>
+                    <li className="flex items-center space-x-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
+                      <span>Suporte em horário comercial</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <motion.a
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  href={`https://wa.me/5561996507712?text=${encodeURIComponent('Olá! Gostaria de contratar ou saber mais sobre o Plano Essencial (R$ 497/mês) do PADARIA.io.')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-4 rounded-2xl bg-gray-900 hover:bg-gray-800 text-white text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                >
+                  <MessageSquare className="w-4 h-4 text-emerald-400" />
+                  <span>Entrar em contato</span>
+                </motion.a>
+              </div>
+            </motion.div>
+
+            {/* PLANO PROFISSIONAL (DESTAQUE) */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -8 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="bg-gradient-to-b from-[#1F2937] via-[#111827] to-[#0A0F1D] text-white rounded-3xl border-2 border-[#E8571A] p-8 shadow-2xl transition-all flex flex-col justify-between space-y-6 relative transform md:-translate-y-2"
+            >
+              <motion.span
+                animate={{ scale: [1, 1.06, 1] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#E8571A] text-white text-[10px] font-black uppercase px-4 py-1 rounded-full shadow-lg tracking-widest border border-orange-300/40"
+              >
+                ⭐ Mais Recomendado
+              </motion.span>
+
+              <div className="space-y-4">
+                <div className="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 text-xs font-black rounded-full uppercase border border-orange-500/30">
+                  Para padarias em crescimento
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-white">Plano Profissional</h3>
+                  <div className="flex items-baseline space-x-1 mt-2">
+                    <span className="text-4xl font-black text-white">R$ 697</span>
+                    <span className="text-sm font-bold text-gray-400">/mês</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-800 pt-4 space-y-3">
+                  <span className="text-xs font-black uppercase text-orange-400 tracking-wider block">
+                    Inclui tudo do Essencial +
+                  </span>
+                  <ul className="space-y-2.5 text-xs font-bold text-gray-200">
+                    <li className="flex items-center space-x-2.5">
+                      <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
+                      <span>Atendimento prioritário</span>
+                    </li>
+                    <li className="flex items-center space-x-2.5">
+                      <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
+                      <span>Mais funcionalidades conforme forem sendo lançadas</span>
+                    </li>
+                    <li className="flex items-center space-x-2.5">
+                      <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
+                      <span>Relatórios avançados</span>
+                    </li>
+                    <li className="flex items-center space-x-2.5">
+                      <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
+                      <span>Recursos exclusivos</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <motion.a
+                  whileHover={{ scale: 1.03, boxShadow: "0 15px 30px -5px rgba(232, 87, 26, 0.4)" }}
+                  whileTap={{ scale: 0.97 }}
+                  href={`https://wa.me/5561996507712?text=${encodeURIComponent('Olá! Gostaria de contratar ou saber mais sobre o Plano Profissional (R$ 697/mês) do PADARIA.io.')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-4 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-xs font-black shadow-xl transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                >
+                  <MessageSquare className="w-4 h-4 text-white" />
+                  <span>Entrar em contato</span>
+                </motion.a>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ SECTION */}
       <section className="py-20 bg-white border-t border-gray-200/80">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
@@ -1225,38 +1534,100 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* CTA FINAL */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="bg-gradient-to-r from-[#E8571A] via-[#D44E15] to-[#B33B0A] rounded-3xl p-8 sm:p-16 text-center text-white shadow-2xl relative overflow-hidden space-y-6">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+      {/* ULTRA HIGH-TECH HIGH-CONVERTING CTA FINAL SECTION */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96, y: 30 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="bg-gradient-to-br from-[#1A1C23] via-[#111827] to-[#0A0F1D] rounded-3xl p-8 sm:p-16 text-center text-white shadow-2xl relative overflow-hidden border border-gray-800 space-y-8"
+        >
+          {/* Animated Ambient Light Rings */}
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.15, 0.3, 0.15]
+            }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-0 right-0 w-96 h-96 bg-[#E8571A]/20 rounded-full blur-3xl pointer-events-none"
+          />
+          <motion.div
+            animate={{
+              scale: [1, 1.25, 1],
+              opacity: [0.1, 0.25, 0.1]
+            }}
+            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"
+          />
 
-          <span className="px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-black uppercase tracking-widest inline-block border border-white/30">
-            Decisão de Negócio
-          </span>
+          <motion.div
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-orange-500/20 border border-orange-500/40 text-orange-400 text-xs font-black uppercase tracking-widest shadow-inner"
+          >
+            <Zap className="w-4 h-4 text-amber-400 animate-bounce" />
+            <span>RECUPERAÇÃO IMEDIATA DE VALIDADE</span>
+          </motion.div>
 
-          <h2 className="text-3xl sm:text-6xl font-black tracking-tight leading-tight max-w-3xl mx-auto uppercase">
-            Sua padaria perde dinheiro todos os dias. <br />
-            <span className="text-amber-200">A pergunta é: Até quando?</span>
-          </h2>
+          <div className="space-y-4 max-w-4xl mx-auto">
+            <h2 className="text-3xl sm:text-6xl font-black tracking-tight leading-tight uppercase">
+              SUA PADARIA PRONTA PARA <br />
+              <span className="bg-gradient-to-r from-orange-400 via-[#E8571A] to-amber-300 bg-clip-text text-transparent">
+                FATURAR MAIS HOJE MESMO.
+              </span>
+            </h2>
 
-          <p className="text-sm sm:text-base text-orange-100 font-medium max-w-2xl mx-auto leading-relaxed">
-            Junte-se às padarias que já pararam de jogar alimentos fora e estão recuperando faturamento todos os meses.
-          </p>
-
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={onEnterApp}
-              className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-white text-[#1A1A1A] hover:bg-gray-100 text-base font-black shadow-2xl hover:scale-105 transition-all flex items-center justify-center space-x-3 cursor-pointer group"
-            >
-              <span>Quero testar gratuitamente</span>
-              <ArrowRight className="w-5 h-5 text-[#E8571A] group-hover:translate-x-1 transition-transform" />
-            </button>
+            <p className="text-sm sm:text-lg text-gray-300 font-medium max-w-2xl mx-auto leading-relaxed">
+              Instalação zero, ative pelo celular em menos de 1 minuto e recupere o valor dos seus produtos antes de vencerem.
+            </p>
           </div>
 
-          <p className="text-xs text-orange-200 font-bold pt-2">
-            ⚡ Acesso imediato • Sem cartão de crédito
+          {/* Value Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>Garantia Anti-Prejuízo</span>
+            </span>
+            <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-amber-300 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span>IA OCR de Leitura Instantânea</span>
+            </span>
+            <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-orange-300 flex items-center gap-1.5">
+              <Crown className="w-4 h-4 text-orange-300" />
+              <span>Módulo Clube VIP Incluso</span>
+            </span>
+          </div>
+
+          {/* High-converting CTAs */}
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto">
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: "0 20px 30px -5px rgba(232, 87, 26, 0.4)" }}
+              whileTap={{ scale: 0.97 }}
+              onClick={onEnterApp}
+              className="w-full sm:w-1/2 py-5 px-8 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-base font-black shadow-2xl transition-all flex items-center justify-center space-x-3 cursor-pointer group"
+            >
+              <span>Testar Sistema Grátis</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </motion.button>
+
+            <motion.a
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.97 }}
+              href={`https://wa.me/5561996507712?text=${encodeURIComponent('Olá! Quero conhecer o PADARIA.io e tirar dúvidas no WhatsApp.')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-1/2 py-5 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-base font-black shadow-xl transition-all flex items-center justify-center space-x-2 cursor-pointer border border-emerald-400/30"
+            >
+              <MessageSquare className="w-5 h-5" />
+              <span>Falar no WhatsApp</span>
+            </motion.a>
+          </div>
+
+          <p className="text-xs text-gray-400 font-bold pt-2">
+            ⚡ Acesso imediato no navegador • Teste 100% livre de cartão de crédito
           </p>
-        </div>
+        </motion.div>
       </section>
 
       {/* FOOTER */}
