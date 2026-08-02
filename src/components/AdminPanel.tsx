@@ -113,10 +113,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
     produtosVencidos: 0,
   });
   const [financialStats, setFinancialStats] = useState<FinancialStats>({
+    totalClientes: 0,
     totalClientesAtivos: 0,
+    mrrTotalProjetado: 0,
+    mrrAtivo: 0,
     mrr: 0,
+    receitaImplementacaoPaga: 0,
     receitaImplementacaoPendente: 0,
     proximosVencimentos: 0,
+    clientesAdimplentes: 0,
+    clientesInadimplentes: 0,
+    clientesCanceladosAsaas: 0,
   });
 
   const [searchTerm, setSearchTerm] = useState<string>('');

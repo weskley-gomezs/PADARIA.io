@@ -174,7 +174,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-xs font-bold text-[#2C2C2C]">
-                Código de Barras (Importante para Busca & Clube VIP)
+                Código de Barras (Busca & Leitura Automática)
               </label>
               {!barcode && (
                 <button
@@ -209,9 +209,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 <Camera className="w-5 h-5" />
               </button>
             </div>
-            {/* Helper notice for VIP Scanner */}
-            <div className="mt-1.5 p-2 bg-amber-50/80 border border-amber-200 rounded-xl text-[11px] text-amber-900 leading-snug">
-              <span className="font-extrabold text-amber-900">👑 Dica para o Clube VIP:</span> Mantenha o código de barras nítido na etiqueta. A câmera do Clube VIP faz a leitura pelo código de barras para dar baixa do produto no balcão.
+            {/* Helper notice for Scanner */}
+            <div className="mt-1.5 p-2 bg-gray-50 border border-gray-200 rounded-xl text-[11px] text-gray-600 leading-snug">
+              <span className="font-extrabold text-gray-800">💡 Dica de Leitura:</span> Mantenha o código de barras nítido na etiqueta para facilidade na busca e balanço de estoque.
             </div>
           </div>
 

@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Lightbulb,
   Crown,
+  Moon,
   BarChart3,
   RefreshCw,
   Zap,
@@ -82,9 +83,9 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
   const quickQuestions = [
     "📊 Qual foi meu prejuízo este mês?",
     "⏰ Quais produtos vencem nos próximos 3 dias?",
-    "👑 O que devo colocar em promoção no Clube VIP hoje?",
+    "🌙 Como fazer o Fechamento Inteligente do dia?",
     "🏷️ Qual categoria mais gera desperdício?",
-    "💰 Como calcular o preço ideal de descarte?",
+    "💰 Como reaproveitar sobras na produção de amanhã?",
     "📋 Gere um resumo executivo completo da padaria"
   ];
 
@@ -378,7 +379,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Pergunte sobre perdas, validade, Clube VIP ou precificação..."
+                placeholder="Pergunte sobre perdas, validade, fechamento ou precificação..."
                 disabled={isLoading}
                 className="flex-1 px-4 py-3 text-xs sm:text-sm rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-gray-800 bg-gray-50 focus:bg-white font-medium"
               />
@@ -461,13 +462,13 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
 
             <div className="p-4 bg-emerald-50/60 border border-emerald-200 rounded-2xl">
               <span className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider block">
-                Recuperado no VIP
+                Itens Ativos no Monitoramento
               </span>
               <div className="text-xl sm:text-2xl font-black text-emerald-800 mt-1">
-                R$ {vipTotalRecovered.toFixed(2)}
+                {products.length} un
               </div>
               <span className="text-[10px] text-emerald-700 font-bold block mt-1">
-                {vipSoldOffers.length} ofertas vendidas
+                Cadastrados no sistema
               </span>
             </div>
 
@@ -495,18 +496,18 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
               {/* Insight 1 */}
               <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50/30 border border-orange-200 rounded-2xl flex items-start space-x-3">
                 <div className="p-2 bg-[#FF6B00] text-white rounded-xl font-bold shrink-0">
-                  <Crown className="w-4 h-4" />
+                  <Moon className="w-4 h-4" />
                 </div>
                 <div>
-                  <h5 className="font-bold text-xs text-[#1F2937]">Oportunidade Clube VIP</h5>
+                  <h5 className="font-bold text-xs text-[#1F2937]">Fechamento Inteligente do Expediente</h5>
                   <p className="text-xs text-gray-600 mt-0.5">
-                    Você possui <strong>{expiringProducts.length} produtos</strong> que vencem em até 3 dias. Se colocados no Clube VIP com desconto de 30% a 50%, você poderá recuperar até <strong>R$ {expiringValue.toFixed(2)}</strong> antes que vençam!
+                    Você possui <strong>{expiringProducts.length} produtos</strong> que vencem em até 3 dias. Realize o Fechamento Inteligente ao final do expediente para converter sobras de balcão em torradas, pudins e farinha de rosca!
                   </p>
                   <button
                     onClick={() => setActiveTab('alertas')}
                     className="mt-2 text-xs font-bold text-[#FF6B00] hover:underline inline-flex items-center space-x-1 cursor-pointer"
                   >
-                    <span>Ver produtos recomendados</span>
+                    <span>Ver produtos em risco</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -545,7 +546,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
               <span>Calculadora de Precificação para Produtos Próximos ao Vencimento</span>
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Cálculo seguro que evita vender abaixo do custo e maximiza a recuperação de caixa no Clube VIP
+              Cálculo seguro que evita vender abaixo do custo e maximiza a recuperação de caixa no balcão
             </p>
           </div>
 
@@ -711,15 +712,6 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                           </div>
 
                           <div className="flex items-center space-x-2 shrink-0">
-                            {onOpenVipOfferModal && (
-                              <button
-                                onClick={() => onOpenVipOfferModal(p)}
-                                className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors flex items-center space-x-1 shadow-2xs cursor-pointer"
-                              >
-                                <Crown className="w-3.5 h-3.5" />
-                                <span>Criar Oferta VIP</span>
-                              </button>
-                            )}
                           </div>
                         </div>
                       ))}

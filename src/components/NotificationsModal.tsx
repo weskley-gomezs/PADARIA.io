@@ -8,6 +8,7 @@ interface NotificationsModalProps {
   onClose: () => void;
   expiredProducts: Product[];
   expiringProducts: Product[];
+  onMarkAsSold?: (id: string) => Promise<void>;
 }
 
 export const NotificationsModal: React.FC<NotificationsModalProps> = ({

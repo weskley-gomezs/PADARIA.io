@@ -194,18 +194,16 @@ export default function App() {
               <span className="text-gray-500 text-[11px] sm:text-xs">Sistema de Gestão & Monitoramento Sanitário de Validade</span>
             </div>
 
-            <div className="flex items-center space-x-4 text-gray-400">
+            <div className="flex items-center space-x-4 text-gray-500">
               <button onClick={() => handleNavigate('landing')} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
                 Início / Site
               </button>
               <button onClick={() => setIsPrivacyOpen(true)} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
                 Política de Privacidade
               </button>
-              {isAdminLoggedIn && (
-                <button onClick={() => handleNavigate('admin')} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
-                  Painel Admin
-                </button>
-              )}
+              <button onClick={() => handleNavigate('admin')} className="hover:text-[#E8571A] font-extrabold cursor-pointer flex items-center space-x-1">
+                <span>Painel Admin</span>
+              </button>
             </div>
           </div>
         </footer>

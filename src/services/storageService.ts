@@ -1,4 +1,4 @@
-import { BakeryCompany, Product, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer } from '../types/index.js';
+import { BakeryCompany, Product, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing } from '../types/index.js';
 import { calculateDaysRemaining, getProductStatus, formatDateToISO, generateActivationCode } from '../utils/dateUtils.js';
 import { db, testFirestoreConnection } from './firebase.js';
 import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
@@ -30,6 +30,7 @@ const KEYS = {
   ADMIN_PASSWORD: 'padarias_admin_password',
   ASAAS_SETTINGS: 'padarias_asaas_settings',
   VIP_OFFERS: 'padarias_vip_offers_v1',
+  DAILY_CLOSINGS: 'padarias_fechamentos_v1',
 };
 
 const EXCLUDED_CODES = ['AB12CD34', 'PAD8X92M', 'DEMO9999', '6SSHQQTZ', '8FM8XCN6', 'CAVU5FKP'];
@@ -1438,6 +1439,67 @@ export class StorageService {
     await deleteDoc(doc(db, 'vipOffers', id)).catch((e) => {
       handleFirestoreError(e, OperationType.DELETE, `vipOffers/${id}`);
     });
+  }
+
+  // Daily Closing Methods (Fechamento Inteligente)
+  static getDailyClosings(bakeryCode?: string): DailyClosing[] {
+    const all = getItem<DailyClosing[]>(KEYS.DAILY_CLOSINGS, []);
+    if (!bakeryCode) return all;
+    return all.filter((c) => c.bakeryCode.toUpperCase() === bakeryCode.trim().toUpperCase());
+  }
+
+  static async saveDailyClosing(closing: Omit<DailyClosing, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<DailyClosing> {
+    const closings = StorageService.getDailyClosings();
+    const now = new Date().toISOString();
+    const id = closing.id || 'closing_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+
+    const newClosing: DailyClosing = {
+      ...closing,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const existingIdx = closings.findIndex((c) => c.id === id);
+    if (existingIdx >= 0) {
+      closings[existingIdx] = newClosing;
+    } else {
+      closings.unshift(newClosing);
+    }
+
+    setItem(KEYS.DAILY_CLOSINGS, closings);
+
+    await setDoc(doc(db, 'dailyClosings', id), removeUndefined(newClosing)).catch((e) => {
+      handleFirestoreError(e, OperationType.WRITE, `dailyClosings/${id}`);
+    });
+
+    return newClosing;
+  }
+
+  static subscribeDailyClosings(callback: (closings: DailyClosing[]) => void, bakeryCode?: string): Unsubscribe {
+    const colRef = collection(db, 'dailyClosings');
+
+    const unsub = onSnapshot(
+      colRef,
+      (snapshot) => {
+        const closings: DailyClosing[] = [];
+        snapshot.forEach((d) => {
+          const c = d.data() as DailyClosing;
+          if (!bakeryCode || (c.bakeryCode && c.bakeryCode.toUpperCase() === bakeryCode.trim().toUpperCase())) {
+            closings.push(c);
+          }
+        });
+        closings.sort((a, b) => new Date(b.dataFechamento).getTime() - new Date(a.dataFechamento).getTime());
+        setItem(KEYS.DAILY_CLOSINGS, closings);
+        callback(closings);
+      },
+      (err) => {
+        console.warn('Daily closings subscription error, using local storage fallback:', err);
+        callback(StorageService.getDailyClosings(bakeryCode));
+      }
+    );
+
+    return unsub;
   }
 
   static getAdminStats(): AdminStats {

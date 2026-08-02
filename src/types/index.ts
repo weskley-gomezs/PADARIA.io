@@ -148,3 +148,35 @@ export interface VipOffer {
   valorVenda?: number; // actual revenue from sale when status is 'vendido'
 }
 
+export interface ClosingItem {
+  productId: string;
+  nomeProduto: string;
+  categoria?: string;
+  quantidade: number;
+  dataValidade: string;
+  valorEstimado: number;
+  acaoTomada: 'vendido' | 'descarte' | 'transferido' | 'doacao';
+  qtdVendida?: number;
+  qtdDescartada?: number;
+  qtdTransferida?: number;
+  qtdDoada?: number;
+  isVencido?: boolean;
+  observacoes?: string;
+}
+
+export interface DailyClosing {
+  id: string;
+  bakeryCode: string;
+  dataFechamento: string; // YYYY-MM-DD
+  status: 'aberto' | 'concluido';
+  totalItensAuditados: number;
+  totalPerdaReais: number;
+  totalReaproveitadoReais: number;
+  taxaAproveitamento: number; // percentage 0-100
+  observacoes?: string;
+  responsavel?: string;
+  itens: ClosingItem[];
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+}
+

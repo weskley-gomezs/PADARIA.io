@@ -42,7 +42,7 @@ export const AdminContracts: React.FC<AdminContractsProps> = ({ companies, onCom
 
   useEffect(() => {
     if (selectedCompany) {
-      const contract = selectedCompany.contrato || {};
+      const contract: Partial<ContractInfo> = selectedCompany.contrato || {};
       setClienteNome(contract.clienteNome || selectedCompany.empresa || '');
       setCnpjInput(contract.clienteCnpj || selectedCompany.cnpj || '');
       setRespTecnico(contract.responsavelTecnico || 'Weskley Gomes');

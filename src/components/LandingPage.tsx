@@ -19,6 +19,7 @@ import {
   Lock,
   Camera,
   Crown,
+  Moon,
   Tag,
   Share2,
   DollarSign,
@@ -137,10 +138,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Recuperação
             </a>
             <a
-              href="#clube-vip"
+              href="#fechamento"
               className="hover:text-[#E8571A] transition-colors cursor-pointer"
             >
-              Clube VIP
+              Fechamento Inteligente
             </a>
             <a
               href="#ia"
@@ -212,11 +213,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Recuperação de Dinheiro
             </a>
             <a
-              href="#clube-vip"
+              href="#fechamento"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
             >
-              Clube VIP
+              Fechamento Inteligente
             </a>
             <a
               href="#ia"
@@ -300,7 +301,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-200/80 text-[#E8571A] text-xs font-extrabold tracking-wide uppercase shadow-2xs cursor-default"
           >
             <Sparkles className="w-4 h-4 text-[#E8571A] animate-pulse" />
-            <span>Sistema Inteligente Anti-Prejuízo + Clube VIP</span>
+            <span>Sistema Inteligente Anti-Prejuízo + Fechamento Inteligente</span>
           </motion.div>
 
           {/* Main Headline */}
@@ -459,13 +460,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="w-7 h-7 rounded-xl bg-purple-600 text-white text-xs font-black flex items-center justify-center">
                   3
                 </span>
-                <Crown className="w-4 h-4 text-purple-600" />
+                <Moon className="w-4 h-4 text-purple-600" />
               </div>
               <p className="text-xs font-extrabold text-gray-900 leading-snug">
-                Entra no Clube VIP
+                Fechamento Inteligente
               </p>
               <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                Gera oferta e mensagem promocional
+                Audita sobras e calcula o prejuízo
               </p>
             </motion.div>
 
@@ -621,23 +622,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 >
                   <div className="space-y-2 max-w-md">
                     <span className="px-3 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-black rounded-full uppercase inline-block">
-                      Passo 3: Automação Comercial
+                      Passo 3: Gestão de Expediente
                     </span>
-                    <h4 className="text-xl font-black">Inclusão Automática no Clube VIP</h4>
+                    <h4 className="text-xl font-black">Fechamento Inteligente de Expediente</h4>
                     <p className="text-xs text-gray-300 leading-relaxed">
-                      O sistema sugere o desconto ideal (ex: 20% OFF) e gera um card promocional com mensagem formatada para WhatsApp em 1 clique.
+                      Ao fim do dia, audite as sobras do balcão e receba receitas da PadeIA™ para transformar sobras em torradas, pudins e farinha de rosca.
                     </p>
                   </div>
                   <div className="bg-gradient-to-br from-purple-900/80 to-purple-800/50 p-4 rounded-2xl border border-purple-500/40 w-full md:w-80 space-y-2">
                     <div className="flex items-center justify-between text-xs font-black text-purple-300">
-                      <span>👑 Clube VIP Ativo</span>
-                      <span className="bg-purple-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black animate-pulse">
-                        20% OFF
+                      <span>🌙 Fechamento Ativo</span>
+                      <span className="bg-purple-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black">
+                        BALANÇO
                       </span>
                     </div>
                     <div className="p-3 bg-purple-950/90 rounded-xl text-xs space-y-1 text-purple-100 border border-purple-500/30">
-                      <p className="font-bold">🥖 OFERTA DO CLUBE VIP</p>
-                      <p className="text-[11px] opacity-90">Bolo de Fubá de R$ 18,00 por apenas <strong className="text-amber-300 text-xs">R$ 14,40</strong>!</p>
+                      <p className="font-bold">🌙 AUDITORIA DO DIA</p>
+                      <p className="text-[11px] opacity-90">12 Pães Franceses convertidos em Torradas do Chef • Economia: <strong className="text-amber-300 text-xs">R$ 28,50</strong></p>
                     </div>
                   </div>
                 </motion.div>
@@ -832,8 +833,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
                   <span className="text-emerald-600 font-black">✅</span>
                   <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Promoção sugerida e criada</h4>
-                    <p className="text-xs text-gray-600">Entra direto no Clube VIP com desconto atrativo calibrado.</p>
+                    <h4 className="text-sm font-extrabold text-gray-900">Ação imediata no Fechamento</h4>
+                    <p className="text-xs text-gray-600 font-medium">Reaproveitamento ou ação de baixa guiada pela PadeIA™.</p>
                   </div>
                 </div>
 
@@ -884,7 +885,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </h2>
 
               <p className="text-sm sm:text-base text-gray-300 font-medium leading-relaxed">
-                Quando faltar poucos dias para um produto vencer, o sistema alerta a equipe e sugere automaticamente a inclusão no <strong className="text-white">Clube VIP</strong>.
+                Ao final do expediente, o sistema compila o saldo de sobras e ativa o <strong className="text-white">Fechamento Inteligente</strong> para eliminar o prejuízo em tempo recorde.
               </p>
 
               <p className="text-xs sm:text-sm text-gray-400 font-medium">
@@ -938,7 +939,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   onClick={onEnterApp}
                   className="px-6 py-3.5 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-xs font-black shadow-lg transition-all flex items-center space-x-2 cursor-pointer"
                 >
-                  <span>Ativar Clube VIP na minha padaria</span>
+                  <span>Ativar Fechamento Inteligente na minha padaria</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -949,7 +950,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="w-full max-w-sm bg-gradient-to-br from-[#E8571A] to-[#D4A574] rounded-3xl p-6 text-white shadow-2xl border-4 border-white/20 space-y-4 relative">
                 <div className="text-center space-y-1">
                   <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest inline-block">
-                    ⭐ OFERTA DO CLUBE VIP ⭐
+                    ⭐ OFERTA DE BALCÃO ⭐
                   </span>
                   <h3 className="text-xl font-black uppercase tracking-tight">PADARIA DO BAIRRO</h3>
                 </div>
@@ -980,75 +981,66 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* CLUBE VIP DA PADARIA */}
-      <section id="clube-vip" className="py-20 bg-white border-t border-gray-200/80">
+      {/* FECHAMENTO INTELIGENTE DIÁRIO */}
+      <section id="fechamento" className="py-20 bg-white border-t border-gray-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center space-y-3 max-w-3xl mx-auto">
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-black uppercase">
-              <Crown className="w-4 h-4 text-amber-500" />
-              <span>Ferramenta de Engajamento & Vendas</span>
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-orange-50 text-[#E8571A] border border-orange-200 text-xs font-black uppercase">
+              <Moon className="w-4 h-4 text-[#E8571A]" />
+              <span>Controle Total do Final de Expediente</span>
             </div>
             <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
-              Clube VIP da Padaria
+              Fechamento Inteligente Diário
             </h2>
             <p className="text-base text-gray-600 font-bold">
-              Fidelize clientes e venda mais todos os dias.
+              Auditoria de sobras, metas de descarte e envio do resumo diário para a gerência.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {/* Divulgue Item 1 */}
-            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-amber-200/80 hover:border-amber-400 transition-all space-y-3 text-center group">
-              <div className="text-3xl group-hover:scale-110 transition-transform">🥖</div>
-              <h3 className="text-sm font-black text-gray-900">Pão saindo quentinho</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Fechamento Item 1 */}
+            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-orange-200/80 hover:border-orange-400 transition-all space-y-3 text-center group">
+              <div className="text-3xl group-hover:scale-110 transition-transform">📋</div>
+              <h3 className="text-sm font-black text-gray-900">Auditoria de Sobras</h3>
               <p className="text-xs text-gray-500 font-medium">
-                Avisos instantâneos de fornada para atrair vizinhos ao balcão.
+                Conferência rápida dos produtos do balcão e pães sobrantes ao final do dia.
               </p>
             </div>
 
-            {/* Divulgue Item 2 */}
-            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-amber-200/80 hover:border-amber-400 transition-all space-y-3 text-center group">
-              <div className="text-3xl group-hover:scale-110 transition-transform">🥐</div>
-              <h3 className="text-sm font-black text-gray-900">Pão de Queijo & Salgados</h3>
+            {/* Fechamento Item 2 */}
+            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-orange-200/80 hover:border-orange-400 transition-all space-y-3 text-center group">
+              <div className="text-3xl group-hover:scale-110 transition-transform">♻️</div>
+              <h3 className="text-sm font-black text-gray-900">Reaproveitamento Guiado</h3>
               <p className="text-xs text-gray-500 font-medium">
-                Promoções de café da manhã e lanches da tarde.
+                Sugestões automáticas da PadeIA™ para transformar sobras em torrada, pudim e farinha.
               </p>
             </div>
 
-            {/* Divulgue Item 3 */}
-            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-amber-200/80 hover:border-amber-400 transition-all space-y-3 text-center group">
-              <div className="text-3xl group-hover:scale-110 transition-transform">🎂</div>
-              <h3 className="text-sm font-black text-gray-900">Bolos & Confeitaria</h3>
+            {/* Fechamento Item 3 */}
+            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-orange-200/80 hover:border-orange-400 transition-all space-y-3 text-center group">
+              <div className="text-3xl group-hover:scale-110 transition-transform">📊</div>
+              <h3 className="text-sm font-black text-gray-900">Balanço do Prejuízo</h3>
               <p className="text-xs text-gray-500 font-medium">
-                Giro rápido de sobremesas e itens especiais.
+                Cálculo exato de descartes x valor economizado comparados à meta do dia.
               </p>
             </div>
 
-            {/* Divulgue Item 4 */}
-            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-amber-200/80 hover:border-amber-400 transition-all space-y-3 text-center group">
-              <div className="text-3xl group-hover:scale-110 transition-transform">☕</div>
-              <h3 className="text-sm font-black text-gray-900">Combos & Promoções</h3>
+            {/* Fechamento Item 4 */}
+            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-orange-200/80 hover:border-orange-400 transition-all space-y-3 text-center group">
+              <div className="text-3xl group-hover:scale-110 transition-transform">📲</div>
+              <h3 className="text-sm font-black text-gray-900">Relatório via WhatsApp</h3>
               <p className="text-xs text-gray-500 font-medium">
-                Ofertas especiais para aumento de ticket médio.
-              </p>
-            </div>
-
-            {/* Divulgue Item 5 */}
-            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-orange-300 bg-orange-50/30 hover:border-orange-500 transition-all space-y-3 text-center group">
-              <div className="text-3xl group-hover:scale-110 transition-transform">💰</div>
-              <h3 className="text-sm font-black text-orange-950">Próximos ao Vencimento</h3>
-              <p className="text-xs text-orange-900 font-bold">
-                Descontos imperdíveis que queimam estoque antes da perda.
+                Envio em 1 clique do resumo formatado com os números do dia para a diretoria.
               </p>
             </div>
           </div>
 
-          <div className="p-6 bg-amber-50/60 rounded-3xl border border-amber-200 text-center max-w-3xl mx-auto space-y-2">
-            <span className="text-xs font-black text-amber-800 uppercase tracking-widest block">
-              ⚡ Velocidade Absoluta
+          <div className="p-6 bg-orange-50/60 rounded-3xl border border-orange-200 text-center max-w-3xl mx-auto space-y-2">
+            <span className="text-xs font-black text-[#E8571A] uppercase tracking-widest block">
+              ⚡ Gestão Sem Ponto Cego
             </span>
             <p className="text-sm font-extrabold text-gray-900">
-              Crie, format e envie ofertas do Clube VIP em poucos segundos para seu canal do WhatsApp!
+              Tenha clareza total sobre o que sobrou, o que foi reutilizado e o valor real do descarte diário!
             </p>
           </div>
         </div>
@@ -1129,11 +1121,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Node 6 */}
           <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto font-black">
-              👑
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center mx-auto font-black">
+              🌙
             </div>
-            <strong className="text-xs font-black text-gray-900 block">6. Oferta Sugerida</strong>
-            <span className="text-[10px] text-gray-500 font-medium">Clube VIP em 1 clique</span>
+            <strong className="text-xs font-black text-gray-900 block">6. Fechamento</strong>
+            <span className="text-[10px] text-gray-500 font-medium">Balanço do dia automático</span>
           </div>
 
           <div className="hidden md:block text-gray-300 font-black">➔</div>
@@ -1222,12 +1214,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             {/* Card 6 */}
             <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                <Crown className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <Moon className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-black text-gray-900">Clube VIP Integrado</h3>
+              <h3 className="text-base font-black text-gray-900">Fechamento Inteligente</h3>
               <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                Módulo completo para fidelizar clientes com ofertas relâmpago no WhatsApp.
+                Módulo completo para controle de sobras diárias e auditoria ao fim do expediente.
               </p>
             </div>
 
@@ -1287,7 +1279,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 Valor Recuperado
               </span>
               <p className="text-3xl sm:text-4xl font-black text-white">R$ 42.500+</p>
-              <span className="text-[11px] text-gray-400 block font-medium">Receita direta do Clube VIP</span>
+              <span className="text-[11px] text-gray-400 block font-medium">Receita salva no balanço</span>
             </div>
 
             {/* Indicator 3 */}
@@ -1380,7 +1372,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </li>
                     <li className="flex items-center space-x-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
-                      <span>Clube VIP</span>
+                      <span>Fechamento Inteligente</span>
                     </li>
                     <li className="flex items-center space-x-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
@@ -1492,8 +1484,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="space-y-4">
             {[
               {
-                q: "Como o sistema ajuda a recuperar o dinheiro dos produtos próximos ao vencimento?",
-                a: "Assim que um produto próximo ao vencimento é escaneado ou identificado, o PADARIA.io calcula um desconto ideal e cria uma oferta no Clube VIP. Você compartilha a oferta em 1 clique no WhatsApp da padaria e seus clientes compram rapidamente o produto no balcão."
+                q: "Como o sistema ajuda no Fechamento Inteligente e redução de perdas?",
+                a: "Ao final do expediente, o Fechamento Inteligente compila todas as sobras do dia, calcula o prejuízo e sugere ações de reaproveitamento (como transformar pães em torradas, pudim ou farinha de rosca). O sistema gera um relatório em tempo real para o proprietário da padaria."
               },
               {
                 q: "Preciso baixar algum aplicativo pesado no celular?",
@@ -1595,7 +1587,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </span>
             <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-orange-300 flex items-center gap-1.5">
               <Crown className="w-4 h-4 text-orange-300" />
-              <span>Módulo Clube VIP Incluso</span>
+              <span>Módulo Fechamento Inteligente Incluso</span>
             </span>
           </div>
 
@@ -1650,8 +1642,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <a href="#faturamento" className="hover:text-white transition-colors">
                 Recuperação
               </a>
-              <a href="#clube-vip" className="hover:text-white transition-colors">
-                Clube VIP
+              <a href="#fechamento" className="hover:text-white transition-colors">
+                Fechamento Inteligente
               </a>
               <a href="#ia" className="hover:text-white transition-colors">
                 Tecnologia IA
@@ -1674,10 +1666,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <span>•</span>
               <button
                 onClick={onOpenAdmin}
-                className="hover:text-white transition-colors cursor-pointer flex items-center space-x-1"
+                className="hover:text-white transition-colors cursor-pointer flex items-center space-x-1 font-semibold text-gray-300"
               >
-                <Lock className="w-3 h-3 text-[#E8571A]" />
-                <span>Portal Gestor</span>
+                <Lock className="w-3.5 h-3.5 text-[#E8571A]" />
+                <span>Painel Admin</span>
               </button>
             </div>
           </div>

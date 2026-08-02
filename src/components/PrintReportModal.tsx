@@ -78,7 +78,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
           <div className="flex items-center justify-between w-full sm:w-auto">
             <div className="flex items-center space-x-2">
               <Printer className="w-5 h-5 text-[#E8571A]" />
-              <h3 className="text-base sm:text-lg font-extrabold text-[#2C2C2C]">Relatório Executivo e Clube VIP</h3>
+              <h3 className="text-base sm:text-lg font-extrabold text-[#2C2C2C]">Relatório Executivo de Validades</h3>
             </div>
             <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 sm:hidden">
               <X className="w-5 h-5" />
@@ -154,13 +154,13 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
             </div>
 
             <div className="text-left sm:text-right text-xs bg-gray-50 sm:bg-transparent p-2.5 sm:p-0 rounded-xl border sm:border-0 border-gray-200">
-              <p className="font-extrabold text-[#2C2C2C]">RELATÓRIO DE PERDAS, VENCIDOS E CLUBE VIP</p>
+              <p className="font-extrabold text-[#2C2C2C]">RELATÓRIO DE PERDAS, VENCIDOS E SANITÁRIO</p>
               <p className="text-gray-500">Filtro: <span className="uppercase font-bold">{periodFilter}</span> | Emissão: {todayFormatted}</p>
             </div>
           </div>
 
           {/* Quick Summary Numbers */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center">
             <div className="p-2.5 sm:p-3 bg-red-50 border border-red-200 rounded-xl">
               <p className="text-[10px] font-bold text-red-600 uppercase">Qtd Vencidos ({periodFilter})</p>
               <p className="text-lg sm:text-xl font-black text-red-700">
@@ -171,15 +171,11 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
               <p className="text-[10px] font-bold text-red-700 uppercase">Prejuízo Vencidos</p>
               <p className="text-lg sm:text-xl font-black text-red-800">R$ {totalExpiredValue.toFixed(2)}</p>
             </div>
-            <div className="p-2.5 sm:p-3 bg-emerald-50 border border-emerald-300 rounded-xl">
-              <p className="text-[10px] font-bold text-emerald-800 uppercase">Recuperado Clube VIP</p>
-              <p className="text-lg sm:text-xl font-black text-emerald-700">R$ {totalVipRecovered.toFixed(2)}</p>
-            </div>
             <div className="p-2.5 sm:p-3 bg-amber-50 border border-amber-200 rounded-xl">
               <p className="text-[10px] font-bold text-amber-600 uppercase">Vencendo (3d)</p>
               <p className="text-lg sm:text-xl font-black text-amber-700">{expiringList.length} itens</p>
             </div>
-            <div className="p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-xl col-span-2 sm:col-span-1">
+            <div className="p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-xl">
               <p className="text-[10px] font-bold text-green-600 uppercase">Normais</p>
               <p className="text-lg sm:text-xl font-black text-green-700">{normalList.length} itens</p>
             </div>
@@ -299,85 +295,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
             )}
           </div>
 
-          {/* Clube VIP Section in Report */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-1">
-              <h4 className="text-xs sm:text-sm font-black text-[#2C2C2C] flex items-center gap-1.5">
-                <Crown className="w-4 h-4 text-amber-500" />
-                <span>Relatório do Clube VIP ({vipOffers.length} Ofertas / Vendas)</span>
-              </h4>
-              <span className="text-xs font-bold text-emerald-700">
-                Receita Recuperada: R$ {totalVipRecovered.toFixed(2)}
-              </span>
-            </div>
 
-            {vipOffers.length === 0 ? (
-              <p className="text-xs text-gray-500 py-4 text-center italic border border-dashed border-gray-200 rounded-xl">
-                Nenhuma oferta cadastrada no Clube VIP até o momento.
-              </p>
-            ) : (
-              <>
-                {/* Mobile View for VIP offers */}
-                <div className="block md:hidden space-y-2.5 print:hidden">
-                  {vipOffers.map((offer) => (
-                    <div key={offer.id} className="p-3 bg-amber-50/50 border border-amber-200/80 rounded-xl space-y-1 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-[#2C2C2C]">{offer.nomeProduto}</span>
-                        <span className={`px-2 py-0.5 font-bold text-[9px] rounded-md uppercase ${
-                          offer.status === 'vendido' ? 'bg-emerald-100 text-emerald-800' :
-                          offer.status === 'ativo' ? 'bg-amber-100 text-amber-800' : 'bg-gray-200 text-gray-700'
-                        }`}>
-                          {offer.status === 'vendido' ? 'VENDIDO' : offer.status === 'ativo' ? 'OFERTA ATIVA' : 'DESCARTADO'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-gray-600 pt-1">
-                        <span>Original: <span className="line-through">R$ {offer.valorOriginal.toFixed(2)}</span></span>
-                        <span className="font-bold text-emerald-700">VIP: R$ {offer.valorPromocional.toFixed(2)} (-{offer.desconto}%)</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Desktop & Print Table for VIP offers */}
-                <div className="hidden md:block print:block overflow-x-auto rounded-xl border border-gray-200">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-amber-100/60 text-[#2C2C2C] font-bold border-b border-gray-300">
-                        <th className="py-2.5 px-3">Produto / Categoria</th>
-                        <th className="py-2.5 px-3">Preço Original</th>
-                        <th className="py-2.5 px-3">Preço VIP (Promocional)</th>
-                        <th className="py-2.5 px-3">Desconto</th>
-                        <th className="py-2.5 px-3">Validade</th>
-                        <th className="py-2.5 px-3">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {vipOffers.map((offer) => (
-                        <tr key={offer.id} className="bg-white hover:bg-amber-50/30">
-                          <td className="py-2.5 px-3">
-                            <div className="font-bold text-[#2C2C2C]">{offer.nomeProduto}</div>
-                            <div className="text-[10px] text-gray-500">{offer.categoria}</div>
-                          </td>
-                          <td className="py-2.5 px-3 line-through text-gray-500">R$ {offer.valorOriginal.toFixed(2)}</td>
-                          <td className="py-2.5 px-3 font-bold text-emerald-700">R$ {offer.valorPromocional.toFixed(2)}</td>
-                          <td className="py-2.5 px-3 font-extrabold text-amber-600">-{offer.desconto}%</td>
-                          <td className="py-2.5 px-3 text-gray-600">{formatDateToBR(offer.dataValidade)}</td>
-                          <td className="py-2.5 px-3 uppercase text-[10px] font-black">
-                            <span className={`px-2 py-0.5 rounded-md ${
-                              offer.status === 'vendido' ? 'bg-emerald-100 text-emerald-800' :
-                              offer.status === 'ativo' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'
-                            }`}>
-                              {offer.status === 'vendido' ? 'VENDIDO' : offer.status === 'ativo' ? 'OFERTA ATIVA' : 'DESCARTADO'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </div>
 
           {/* Signature Footer */}
           <div className="pt-6 sm:pt-10 border-t border-gray-300 flex flex-col sm:flex-row justify-between gap-4 text-xs text-gray-500">

@@ -253,7 +253,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
                   </h4>
                   <p className="text-xs text-emerald-800 font-semibold mt-1">
                     {scanAnalysis.daysRemaining === 0
-                      ? 'Produtos que vencem no dia de fabricação ou hoje podem ser vendidos normalmente ou colocados em oferta no Clube VIP.'
+                      ? 'Produtos que vencem no dia podem ser vendidos com prioridade no balcão ou direcionados para o Fechamento Inteligente.'
                       : 'Produto dentro do prazo de validade e próprio para consumo/venda.'}
                   </p>
                 </div>

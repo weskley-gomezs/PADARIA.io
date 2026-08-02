@@ -28,6 +28,7 @@ import {
   Send,
   BarChart3,
   Crown,
+  Moon,
   Mail,
   Lock,
   Eye,
@@ -47,6 +48,7 @@ import { ImageScanner } from './ImageScanner';
 import { WasteChartSection } from './WasteChartSection';
 import { VipClubSection } from './VipClubSection';
 import { VipOfferModal } from './VipOfferModal';
+import { FechamentoInteligente } from './FechamentoInteligente';
 import { PadeIA } from './PadeIA';
 
 interface BakeryAppProps {
@@ -72,7 +74,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'padeia' | 'relatorio' | 'config' | 'vip'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'padeia' | 'relatorio' | 'config' | 'fechamento' | 'vip'>('dashboard');
 
   useEffect(() => {
     const handleOpenPadeia = () => setActiveTab('padeia');
@@ -310,11 +312,11 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         vipOfferProductInfo.barcode
       );
       
-      showToast(`Oferta de "${data.nomeProduto}" adicionada ao Clube VIP!`);
+      showToast(`Oferta de "${data.nomeProduto}" registrada com sucesso!`);
       setIsVipOfferModalOpen(false);
       setVipOfferProductInfo(null);
       
-      setActiveTab('vip');
+      setActiveTab('dashboard');
       confetti({
         particleCount: 100,
         spread: 70,
@@ -667,13 +669,13 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           <span>⚙️ Config</span>
         </button>
         <button
-          onClick={() => setActiveTab('vip')}
+          onClick={() => setActiveTab('fechamento')}
           className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'vip' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-amber-200'
+            activeTab === 'fechamento' ? 'bg-[#FF6B00] text-white shadow-sm font-black' : 'bg-white text-gray-600 hover:bg-gray-100 border border-orange-200'
           }`}
         >
-          <Crown className="w-3.5 h-3.5 text-amber-500" />
-          <span>👑 Clube VIP</span>
+          <Moon className="w-3.5 h-3.5 text-[#FF6B00]" />
+          <span>🌙 Fechamento Inteligente</span>
         </button>
       </div>
 
@@ -725,8 +727,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
             </button>
           </div>
 
-          {/* 1. RESUMO RÁPIDO CARDS (Responsive 2x2 grid on mobile) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
+          {/* 1. RESUMO RÁPIDO CARDS (Responsive 3 columns) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
             {/* Card 1: Perdas do Mês */}
             <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-xs">
               <div className="flex items-center justify-between">
@@ -769,20 +771,6 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
                 </div>
                 <div className="text-[10px] sm:text-xs text-gray-500 mt-1 truncate">
                   Vencimento
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4: Economia Potencial */}
-            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-xs border-orange-200 bg-orange-50/20">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-[11px] font-extrabold text-orange-700 uppercase tracking-wider">Economia IA</span>
-                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs">💡</span>
-              </div>
-              <div className="mt-3 sm:mt-4">
-                <div className="text-xl sm:text-2xl font-black text-orange-700">R$ 850,00</div>
-                <div className="text-[10px] sm:text-xs text-orange-600 font-medium mt-1">
-                  Ativa
                 </div>
               </div>
             </div>
@@ -1077,8 +1065,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-4 sm:space-y-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-4 border-b border-gray-100">
             <div>
-              <h2 className="text-lg sm:text-xl font-extrabold text-[#1F2937]">Relatório Executivo e Clube VIP</h2>
-              <p className="text-xs text-gray-500">Visualize e exporte o relatório completo com perdas, vencidos e desempenho de vendas do Clube VIP.</p>
+              <h2 className="text-lg sm:text-xl font-extrabold text-[#1F2937]">Relatório Executivo de Validades</h2>
+              <p className="text-xs text-gray-500">Visualize e exporte o relatório completo com perdas, descartes e indicadores de validade sanitária.</p>
             </div>
             <button
               onClick={() => setIsPrintReportOpen(true)}
@@ -1096,90 +1084,28 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
                 <p className="text-xs text-gray-500">CNPJ: {company.cnpj || '00.000.000/0001-00'} • E-mail: {company.email}</p>
               </div>
               <div>
-                <span className="inline-block text-xs font-bold bg-amber-100 text-amber-800 px-3 py-1 rounded-full">
-                  Relatório Integrado com Clube VIP
+                <span className="inline-block text-xs font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">
+                  Relatório de Conformidade Sanitária
                 </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-4 border-t border-gray-200 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-200 text-center">
               <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
-                <div className="text-[11px] text-gray-500 font-bold uppercase">Total Descartado</div>
+                <div className="text-[11px] text-gray-500 font-bold uppercase">Total Descartado (Mês)</div>
                 <div className="text-lg sm:text-xl font-black text-[#1F2937] mt-1">{expiredMonthCount} un</div>
               </div>
               <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
-                <div className="text-[11px] text-gray-500 font-bold uppercase">Prejuízo Vencidos</div>
+                <div className="text-[11px] text-gray-500 font-bold uppercase">Prejuízo por Vencidos</div>
                 <div className="text-lg sm:text-xl font-black text-red-600 mt-1">R$ {expiredMonthValue.toFixed(2)}</div>
               </div>
-              <div className="bg-white p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/30 shadow-2xs">
-                <div className="text-[11px] text-emerald-800 font-bold uppercase">Recuperado Clube VIP</div>
-                <div className="text-lg sm:text-xl font-black text-emerald-700 mt-1">
-                  R$ {vipOffers.filter(o => o.status === 'vendido').reduce((acc, o) => acc + (o.valorVenda || o.valorPromocional || 0), 0).toFixed(2)}
-                </div>
-              </div>
-              <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
-                <div className="text-[11px] text-gray-500 font-bold uppercase">Ofertas VIP Ativas</div>
-                <div className="text-lg sm:text-xl font-black text-amber-600 mt-1">
-                  {vipOffers.filter(o => o.status === 'ativo').length} itens
+              <div className="bg-white p-3.5 rounded-xl border border-amber-200 bg-amber-50/30 shadow-2xs">
+                <div className="text-[11px] text-amber-800 font-bold uppercase">Produtos em Monitoramento</div>
+                <div className="text-lg sm:text-xl font-black text-amber-700 mt-1">
+                  {products.length} itens
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* VIP Club Report Section */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-2">
-              <h3 className="text-xs sm:text-sm font-black text-[#2C2C2C] flex items-center gap-2">
-                <Crown className="w-4 h-4 text-amber-500" />
-                <span>Desempenho de Vendas - Clube VIP ({vipOffers.length} Ofertas)</span>
-              </h3>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                {vipOffers.filter(o => o.status === 'vendido').length} Vendas Realizadas
-              </span>
-            </div>
-
-            {vipOffers.length === 0 ? (
-              <p className="text-xs text-gray-500 py-6 text-center italic border border-dashed border-gray-200 rounded-xl">
-                Nenhuma oferta cadastrada no Clube VIP até o momento.
-              </p>
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-gray-200">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-amber-100/50 text-[#2C2C2C] font-bold border-b border-gray-200">
-                      <th className="py-2.5 px-3">Produto / Categoria</th>
-                      <th className="py-2.5 px-3">Preço De</th>
-                      <th className="py-2.5 px-3">Preço VIP (Por)</th>
-                      <th className="py-2.5 px-3">Desconto</th>
-                      <th className="py-2.5 px-3">Validade</th>
-                      <th className="py-2.5 px-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {vipOffers.map((offer) => (
-                      <tr key={offer.id} className="hover:bg-amber-50/20">
-                        <td className="py-2.5 px-3">
-                          <div className="font-bold text-[#2C2C2C]">{offer.nomeProduto}</div>
-                          <div className="text-[10px] text-gray-500">{offer.categoria}</div>
-                        </td>
-                        <td className="py-2.5 px-3 line-through text-gray-500">R$ {offer.valorOriginal.toFixed(2)}</td>
-                        <td className="py-2.5 px-3 font-bold text-emerald-700">R$ {offer.valorPromocional.toFixed(2)}</td>
-                        <td className="py-2.5 px-3 font-extrabold text-amber-600">-{offer.desconto}%</td>
-                        <td className="py-2.5 px-3 text-gray-600">{formatDateToBR(offer.dataValidade)}</td>
-                        <td className="py-2.5 px-3 uppercase text-[10px] font-black">
-                          <span className={`px-2 py-0.5 rounded-md ${
-                            offer.status === 'vendido' ? 'bg-emerald-100 text-emerald-800' :
-                            offer.status === 'ativo' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {offer.status === 'vendido' ? 'VENDIDO' : offer.status === 'ativo' ? 'OFERTA ATIVA' : 'DESCARTADO'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
 
           {/* Quick List Preview of Vencidos for Mobile */}
@@ -1224,8 +1150,12 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         </div>
       )}
 
-      {activeTab === 'vip' && (
-        <VipClubSection bakeryCode={company.codigoAtivacao} />
+      {(activeTab === 'fechamento' || activeTab === 'vip') && (
+        <FechamentoInteligente
+          company={company}
+          products={products}
+          onOpenReport={() => setIsPrintReportOpen(true)}
+        />
       )}
 
       {activeTab === 'config' && (
@@ -1391,13 +1321,13 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         </button>
 
         <button
-          onClick={() => setActiveTab('vip')}
+          onClick={() => setActiveTab('fechamento')}
           className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
-            activeTab === 'vip' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+            activeTab === 'fechamento' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          <Crown className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">VIP</span>
+          <Moon className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">Fechamento</span>
         </button>
       </nav>
     </div>
