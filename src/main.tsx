@@ -17,6 +17,15 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
+// Register Service Worker for PWA installability
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('PWA Service Worker registration warning:', err);
+    });
+  });
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

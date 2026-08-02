@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChefHat, Clock, Bell, LogOut, ShieldAlert, Sparkles, Building2, Menu, X, Home } from 'lucide-react';
+import { ChefHat, Clock, Bell, LogOut, ShieldAlert, Sparkles, Building2, Menu, X, Home, Download } from 'lucide-react';
 import { BakeryCompany } from '../types';
 
 interface NavbarProps {
@@ -68,6 +68,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <ChefHat className="w-3.5 h-3.5" />
                 <span>App Padaria</span>
+              </button>
+
+              <button
+                onClick={() => window.dispatchEvent(new Event('trigger-pwa-install'))}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-50 text-[#E8571A] hover:bg-orange-100 border border-orange-200 transition-all cursor-pointer shadow-xs"
+                title="Instalar aplicativo no celular ou computador"
+              >
+                <Download className="w-3.5 h-3.5 text-[#E8571A] animate-bounce" />
+                <span>Instalar App</span>
               </button>
 
               {(currentView === 'admin' || isAdminLoggedIn) && (
@@ -198,6 +207,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <ChefHat className="w-3.5 h-3.5" />
               <span>App</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                window.dispatchEvent(new Event('trigger-pwa-install'));
+              }}
+              className="flex items-center justify-center space-x-1 p-2.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Instalar</span>
             </button>
 
             {(currentView === 'admin' || isAdminLoggedIn) && (

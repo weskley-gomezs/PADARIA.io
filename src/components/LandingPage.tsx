@@ -1497,7 +1497,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               },
               {
                 q: "Preciso baixar algum aplicativo pesado no celular?",
-                a: "Não! O PADARIA.io é 100% web e roda direto no navegador do celular, tablet ou computador, sem ocupar espaço na memória do dispositivo."
+                a: "Não! O PADARIA.io é um Web App (PWA) de última geração. Você pode instalá-lo com 1 clique na tela inicial do seu celular, tablet ou computador sem ocupar memória, ou usá-lo direto pelo navegador."
               },
               {
                 q: "Qualquer funcionário consegue usar a câmera para cadastrar?",

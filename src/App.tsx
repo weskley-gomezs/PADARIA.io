@@ -7,6 +7,7 @@ import { StorageService } from './services/storageService';
 import { BakeryCompany, Product } from './types';
 import { NotificationsModal } from './components/NotificationsModal';
 import { PrivacyPolicyModal } from './components/PrivacyPolicyModal';
+import { InstallPwaPrompt } from './components/InstallPwaPrompt';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'landing' | 'app' | 'admin'>(() => {
@@ -129,12 +130,14 @@ export default function App() {
           isOpen={isPrivacyOpen}
           onClose={() => setIsPrivacyOpen(false)}
         />
+        <InstallPwaPrompt />
       </>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#2C2C2C] flex flex-col font-sans antialiased selection:bg-[#FF6B00] selection:text-white">
+      <InstallPwaPrompt />
       {/* Top Navbar */}
       <Navbar
         currentView={currentView}
