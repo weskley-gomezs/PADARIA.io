@@ -116,6 +116,45 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
     stopMediaStream();
   };
 
+  // Helper function to eliminate repeated words or duplicated phrase chunks
+  const deduplicateText = (text: string): string => {
+    if (!text) return '';
+    const trimmed = text.trim();
+    const words = trimmed.split(/\s+/);
+    if (words.length <= 1) return trimmed;
+
+    // 1. Remove immediate duplicate single words (e.g. "hoje hoje")
+    const singleClean: string[] = [];
+    for (let i = 0; i < words.length; i++) {
+      if (i > 0 && words[i].toLowerCase() === words[i - 1].toLowerCase()) {
+        continue;
+      }
+      singleClean.push(words[i]);
+    }
+
+    // 2. Remove repeated multi-word chunks (e.g. "Produzi 100 coxinhas Produzi 100 coxinhas")
+    let currentWords = [...singleClean];
+    let changed = true;
+
+    while (changed) {
+      changed = false;
+      for (let len = Math.min(15, Math.floor(currentWords.length / 2)); len >= 1; len--) {
+        for (let i = 0; i <= currentWords.length - 2 * len; i++) {
+          const phrase1 = currentWords.slice(i, i + len).map((w) => w.toLowerCase()).join(' ');
+          const phrase2 = currentWords.slice(i + len, i + 2 * len).map((w) => w.toLowerCase()).join(' ');
+          if (phrase1 && phrase1 === phrase2) {
+            currentWords.splice(i + len, len);
+            changed = true;
+            break;
+          }
+        }
+        if (changed) break;
+      }
+    }
+
+    return currentWords.join(' ').trim();
+  };
+
   // Start Voice Recording
   const handleStartVoice = async () => {
     setVoiceError('');
@@ -127,7 +166,6 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (SpeechRecognition) {
-      // Primary Method: Web Speech API (Clean stream without MediaRecorder interference)
       try {
         if (recognitionRef.current) {
           try { recognitionRef.current.abort(); } catch (_) {}
@@ -137,7 +175,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
         recognitionRef.current = recognition;
         recognition.lang = 'pt-BR';
         recognition.interimResults = true;
-        recognition.continuous = true;
+        recognition.continuous = false; // Single clean continuous sentence capture without repeating buffers
 
         recognition.onstart = () => {
           console.log('[PadeIA Voice] Web Speech API iniciado.');
@@ -146,22 +184,17 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
         };
 
         recognition.onresult = (event: any) => {
-          let interimTranscript = '';
-          let finalTranscript = '';
+          let rawText = '';
 
           for (let i = 0; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-              finalTranscript += event.results[i][0].transcript + ' ';
-            } else {
-              interimTranscript += event.results[i][0].transcript;
-            }
+            rawText += event.results[i][0].transcript + ' ';
           }
 
-          const currentText = (finalTranscript + interimTranscript).trim();
-          if (currentText) {
-            speechCapturedTextRef.current = currentText;
-            setVoiceTranscript(currentText);
-            setInputMessage(currentText); // Fill input message in real-time
+          const cleanedText = deduplicateText(rawText);
+          if (cleanedText) {
+            speechCapturedTextRef.current = cleanedText;
+            setVoiceTranscript(cleanedText);
+            setInputMessage(cleanedText); // Fill input message live as user speaks
           }
         };
 
@@ -171,13 +204,11 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
             isListeningRef.current = false;
             stopVoiceRecording();
             setVoiceStatus('error');
-            setVoiceError('Permissão de microfone negada. Clique no ícone de cadeado/configurações do navegador e permita o microfone.');
+            setVoiceError('Permissão de microfone negada. Clique no ícone de cadeado no navegador para permitir o microfone.');
           } else if (event.error === 'no-speech') {
-            // Don't abort immediately on brief pause
-            console.log('[PadeIA Voice] Pausa detectada na fala.');
+            console.log('[PadeIA Voice] Nenhuma fala detectada.');
           } else if (event.error !== 'aborted') {
-            // Switch to MediaRecorder + Gemini Flash STT fallback if SpeechRecognition fails
-            console.log('[PadeIA Voice] Erro no SpeechRecognition, alternando para gravador Gemini...');
+            console.log('[PadeIA Voice] Alternando para gravador Gemini...');
             try { recognition.abort(); } catch (_) {}
             recognitionRef.current = null;
             startMediaRecorderFallback();
@@ -186,19 +217,17 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
 
         recognition.onend = () => {
           console.log('[PadeIA Voice] SpeechRecognition onend');
-          // If we were still listening and text was captured, move to ready state!
           if (isListeningRef.current) {
-            const captured = speechCapturedTextRef.current.trim();
+            const rawCaptured = speechCapturedTextRef.current;
+            const captured = deduplicateText(rawCaptured);
+            isListeningRef.current = false;
+            stopMediaStream();
+
             if (captured) {
-              isListeningRef.current = false;
-              stopMediaStream();
               setVoiceStatus('ready');
               setVoiceTranscript(captured);
               setInputMessage(captured);
             } else {
-              // Silence or auto-stopped by browser without text
-              isListeningRef.current = false;
-              stopMediaStream();
               setVoiceStatus('idle');
             }
           }
@@ -210,7 +239,6 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
         startMediaRecorderFallback();
       }
     } else {
-      // Browser does not support Web Speech API natively -> Use MediaRecorder + Gemini Flash STT
       startMediaRecorderFallback();
     }
   };
