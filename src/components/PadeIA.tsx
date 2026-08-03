@@ -124,96 +124,124 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
     audioChunksRef.current = [];
     isListeningRef.current = true;
 
-    try {
-      // Request microphone permission explicitly
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-      setVoiceStatus('listening');
-
-      // Initialize MediaRecorder as continuous background audio capture backup
+    if (SpeechRecognition) {
+      // Primary Method: Web Speech API (Clean stream without MediaRecorder interference)
       try {
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorderRef.current = mediaRecorder;
+        if (recognitionRef.current) {
+          try { recognitionRef.current.abort(); } catch (_) {}
+        }
 
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) {
-            audioChunksRef.current.push(e.data);
+        const recognition = new SpeechRecognition();
+        recognitionRef.current = recognition;
+        recognition.lang = 'pt-BR';
+        recognition.interimResults = true;
+        recognition.continuous = true;
+
+        recognition.onstart = () => {
+          console.log('[PadeIA Voice] Web Speech API iniciado.');
+          setVoiceStatus('listening');
+          setVoiceTranscript('Ouvindo... Fale seu comando agora...');
+        };
+
+        recognition.onresult = (event: any) => {
+          let interimTranscript = '';
+          let finalTranscript = '';
+
+          for (let i = 0; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript + ' ';
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
+          }
+
+          const currentText = (finalTranscript + interimTranscript).trim();
+          if (currentText) {
+            speechCapturedTextRef.current = currentText;
+            setVoiceTranscript(currentText);
+            setInputMessage(currentText); // Fill input message in real-time
           }
         };
 
-        mediaRecorder.start(250); // Record in 250ms chunks
-      } catch (recorderErr) {
-        console.warn('[PadeIA Voice] Erro ao iniciar MediaRecorder:', recorderErr);
-      }
+        recognition.onerror = (event: any) => {
+          console.warn('[PadeIA Voice] SpeechRecognition onerror:', event.error);
+          if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+            isListeningRef.current = false;
+            stopVoiceRecording();
+            setVoiceStatus('error');
+            setVoiceError('Permissão de microfone negada. Clique no ícone de cadeado/configurações do navegador e permita o microfone.');
+          } else if (event.error === 'no-speech') {
+            // Don't abort immediately on brief pause
+            console.log('[PadeIA Voice] Pausa detectada na fala.');
+          } else if (event.error !== 'aborted') {
+            // Switch to MediaRecorder + Gemini Flash STT fallback if SpeechRecognition fails
+            console.log('[PadeIA Voice] Erro no SpeechRecognition, alternando para gravador Gemini...');
+            try { recognition.abort(); } catch (_) {}
+            recognitionRef.current = null;
+            startMediaRecorderFallback();
+          }
+        };
 
-      // Initialize Web Speech API if available in browser
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-      if (SpeechRecognition) {
-        try {
-          const recognition = new SpeechRecognition();
-          recognitionRef.current = recognition;
-          recognition.lang = 'pt-BR';
-          recognition.interimResults = true;
-          recognition.continuous = true; // Crucial for non-ending speech recognition in Chrome
-
-          recognition.onstart = () => {
-            console.log('[PadeIA Voice] SpeechRecognition iniciado com sucesso');
-          };
-
-          recognition.onresult = (event: any) => {
-            let interimTranscript = '';
-            let finalTranscript = '';
-
-            for (let i = 0; i < event.results.length; ++i) {
-              if (event.results[i].isFinal) {
-                finalTranscript += event.results[i][0].transcript;
-              } else {
-                interimTranscript += event.results[i][0].transcript;
-              }
-            }
-
-            const currentText = (finalTranscript || interimTranscript).trim();
-            if (currentText) {
-              speechCapturedTextRef.current = currentText;
-              setVoiceTranscript(currentText);
-              setInputMessage(currentText); // Updates input field live as user speaks!
-            }
-          };
-
-          recognition.onerror = (event: any) => {
-            console.warn('[PadeIA Voice] SpeechRecognition error:', event.error);
-            if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+        recognition.onend = () => {
+          console.log('[PadeIA Voice] SpeechRecognition onend');
+          // If we were still listening and text was captured, move to ready state!
+          if (isListeningRef.current) {
+            const captured = speechCapturedTextRef.current.trim();
+            if (captured) {
               isListeningRef.current = false;
-              stopVoiceRecording();
-              setVoiceStatus('error');
-              setVoiceError('Permissão do microfone negada no navegador. Clique no ícone de cadeado na barra de endereço para permitir o microfone.');
+              stopMediaStream();
+              setVoiceStatus('ready');
+              setVoiceTranscript(captured);
+              setInputMessage(captured);
+            } else {
+              // Silence or auto-stopped by browser without text
+              isListeningRef.current = false;
+              stopMediaStream();
+              setVoiceStatus('idle');
             }
-          };
+          }
+        };
 
-          recognition.onend = () => {
-            console.log('[PadeIA Voice] SpeechRecognition onend');
-            if (isListeningRef.current && recognitionRef.current) {
-              try {
-                recognition.start();
-              } catch (_) {}
-            }
-          };
-
-          recognition.start();
-        } catch (recInitErr) {
-          console.warn('[PadeIA Voice] Web Speech API não pôde ser iniciado:', recInitErr);
-        }
+        recognition.start();
+      } catch (err: any) {
+        console.warn('[PadeIA Voice] Falha ao iniciar SpeechRecognition, usando MediaRecorder:', err);
+        startMediaRecorderFallback();
       }
+    } else {
+      // Browser does not support Web Speech API natively -> Use MediaRecorder + Gemini Flash STT
+      startMediaRecorderFallback();
+    }
+  };
+
+  // Fallback Method: MediaRecorder + Gemini Flash STT (works in all browsers and devices)
+  const startMediaRecorderFallback = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
+      audioChunksRef.current = [];
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.start();
+      setVoiceStatus('listening');
+      setVoiceTranscript('Ouvindo... Fale o seu comando agora e depois clique em Concluir.');
     } catch (err: any) {
-      console.error('[PadeIA Voice] Erro de acesso ao microfone:', err);
+      console.error('[PadeIA Voice] Erro ao obter microfone para MediaRecorder:', err);
       stopVoiceRecording();
       setVoiceStatus('error');
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setVoiceError('Permissão do microfone negada. Por favor, permita o acesso ao microfone nas configurações do seu navegador.');
+        setVoiceError('Permissão do microfone negada no navegador. Por favor, libere o microfone.');
       } else {
-        setVoiceError('Não foi possível conectar ao microfone. Verifique se o dispositivo está conectado.');
+        setVoiceError('Não foi possível conectar ao microfone do dispositivo.');
       }
     }
   };
