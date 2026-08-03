@@ -308,7 +308,7 @@ INSTRUÇÕES DE RESPOSTA AO USUÁRIO:
         return res.status(500).json({ error: 'O serviço de IA PadeIA™ não está inicializado no servidor.' });
       }
 
-      const cleanBase64 = audioBase64.replace(/^data:audio\/\w+;base64,/, '');
+      const cleanBase64 = audioBase64.replace(/^data:[^;]+;base64,/, '');
 
       const response = await ai.models.generateContent({
         model: "gemini-3.1-flash-lite",

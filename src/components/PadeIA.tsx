@@ -27,7 +27,8 @@ import {
   MicOff,
   Loader2,
   Volume2,
-  Square
+  Square,
+  Edit3
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { BakeryCompany, Product, SaleHistoryItem, VipOffer } from '../types';
@@ -80,14 +81,13 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const isListeningRef = useRef<boolean>(false);
+  const speechCapturedTextRef = useRef<string>('');
 
   // Cleanup audio stream on unmount
   useEffect(() => {
     return () => {
-      stopMediaStream();
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch (_) {}
-      }
+      stopVoiceRecording();
     };
   }, []);
 
@@ -98,139 +98,184 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
     }
   };
 
-  // Start voice recording and STT
+  const stopVoiceRecording = () => {
+    isListeningRef.current = false;
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.abort();
+      } catch (_) {}
+      recognitionRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (_) {}
+    }
+    stopMediaStream();
+  };
+
+  // Start Voice Recording
   const handleStartVoice = async () => {
     setVoiceError('');
     setVoiceTranscript('');
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    speechCapturedTextRef.current = '';
+    audioChunksRef.current = [];
+    isListeningRef.current = true;
 
     try {
-      // Request microphone permission explicitly first
+      // Request microphone permission explicitly
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
 
+      setVoiceStatus('listening');
+
+      // Initialize MediaRecorder as continuous background audio capture backup
+      try {
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            audioChunksRef.current.push(e.data);
+          }
+        };
+
+        mediaRecorder.start(250); // Record in 250ms chunks
+      } catch (recorderErr) {
+        console.warn('[PadeIA Voice] Erro ao iniciar MediaRecorder:', recorderErr);
+      }
+
+      // Initialize Web Speech API if available in browser
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
       if (SpeechRecognition) {
-        // Native Web Speech API
-        const recognition = new SpeechRecognition();
-        recognitionRef.current = recognition;
-        recognition.lang = 'pt-BR';
-        recognition.interimResults = true;
-        recognition.continuous = false;
+        try {
+          const recognition = new SpeechRecognition();
+          recognitionRef.current = recognition;
+          recognition.lang = 'pt-BR';
+          recognition.interimResults = true;
+          recognition.continuous = true; // Crucial for non-ending speech recognition in Chrome
 
-        let finalTextCaptured = '';
+          recognition.onstart = () => {
+            console.log('[PadeIA Voice] SpeechRecognition iniciado com sucesso');
+          };
 
-        recognition.onstart = () => {
-          setVoiceStatus('listening');
-          setVoiceTranscript('Ouvindo... Fale seu comando agora...');
-        };
+          recognition.onresult = (event: any) => {
+            let interimTranscript = '';
+            let finalTranscript = '';
 
-        recognition.onresult = (event: any) => {
-          let interim = '';
-          let final = '';
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-              final += event.results[i][0].transcript;
-            } else {
-              interim += event.results[i][0].transcript;
+            for (let i = 0; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+              } else {
+                interimTranscript += event.results[i][0].transcript;
+              }
             }
-          }
-          const currentText = final || interim;
-          if (currentText) {
-            setVoiceTranscript(currentText);
-            finalTextCaptured = currentText;
-          }
-        };
 
-        recognition.onerror = (event: any) => {
-          console.warn('[PadeIA Voice] Erro no SpeechRecognition:', event.error);
-          stopMediaStream();
-          if (event.error === 'not-allowed' || event.error === 'permission-denied') {
-            setVoiceStatus('error');
-            setVoiceError('Permissão do microfone negada. Clique no ícone do cadeado ao lado do endereço web para permitir o microfone.');
-          } else if (event.error === 'no-speech') {
-            setVoiceStatus('error');
-            setVoiceError('Nenhum som ou fala foi detectado. Tente falar novamente mais perto do microfone.');
-          } else {
-            // Fallback to MediaRecorder + Gemini Backend STT if browser SpeechRecognition stumbles
-            handleStartMediaRecorder(stream);
-          }
-        };
+            const currentText = (finalTranscript || interimTranscript).trim();
+            if (currentText) {
+              speechCapturedTextRef.current = currentText;
+              setVoiceTranscript(currentText);
+              setInputMessage(currentText); // Updates input field live as user speaks!
+            }
+          };
 
-        recognition.onend = async () => {
-          stopMediaStream();
-          if (finalTextCaptured && finalTextCaptured.trim() !== 'Ouvindo... Fale seu comando agora...') {
-            const captured = finalTextCaptured.trim();
-            setVoiceStatus('processing');
-            setVoiceTranscript(captured);
+          recognition.onerror = (event: any) => {
+            console.warn('[PadeIA Voice] SpeechRecognition error:', event.error);
+            if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+              isListeningRef.current = false;
+              stopVoiceRecording();
+              setVoiceStatus('error');
+              setVoiceError('Permissão do microfone negada no navegador. Clique no ícone de cadeado na barra de endereço para permitir o microfone.');
+            }
+          };
 
-            setTimeout(async () => {
-              setVoiceStatus('ready');
-              setTimeout(() => {
-                setVoiceStatus('idle');
-                setVoiceTranscript('');
-              }, 1200);
+          recognition.onend = () => {
+            console.log('[PadeIA Voice] SpeechRecognition onend');
+            if (isListeningRef.current && recognitionRef.current) {
+              try {
+                recognition.start();
+              } catch (_) {}
+            }
+          };
 
-              // Send transcribed text to existing PadeIA chat
-              await handleSendMessage(captured);
-            }, 500);
-          } else if (voiceStatus !== 'error') {
-            setVoiceStatus('idle');
-          }
-        };
-
-        recognition.start();
-      } else {
-        // Fallback using MediaRecorder
-        await handleStartMediaRecorder(stream);
+          recognition.start();
+        } catch (recInitErr) {
+          console.warn('[PadeIA Voice] Web Speech API não pôde ser iniciado:', recInitErr);
+        }
       }
     } catch (err: any) {
-      console.error('[PadeIA Voice] Erro ao solicitar permissão de áudio:', err);
-      stopMediaStream();
+      console.error('[PadeIA Voice] Erro de acesso ao microfone:', err);
+      stopVoiceRecording();
       setVoiceStatus('error');
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setVoiceError('Permissão do microfone negada. Por favor, permita o acesso ao microfone no seu navegador.');
+        setVoiceError('Permissão do microfone negada. Por favor, permita o acesso ao microfone nas configurações do seu navegador.');
       } else {
-        setVoiceError('Microfone não disponível ou não encontrado no dispositivo.');
+        setVoiceError('Não foi possível conectar ao microfone. Verifique se o dispositivo está conectado.');
       }
     }
   };
 
-  // Fallback recorder using MediaRecorder and Gemini Flash STT endpoint
-  const handleStartMediaRecorder = async (stream: MediaStream) => {
-    try {
-      audioChunksRef.current = [];
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
+  // Stop Recording and Process Audio/Text
+  const handleStopVoice = async () => {
+    isListeningRef.current = false;
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
+    // Stop Web Speech API
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onend = null;
+        recognitionRef.current.stop();
+      } catch (_) {}
+      recognitionRef.current = null;
+    }
 
-      mediaRecorder.onstop = async () => {
-        stopMediaStream();
-        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || 'audio/webm' });
-        if (audioBlob.size === 0) {
-          setVoiceStatus('idle');
+    // Stop MediaRecorder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (_) {}
+    }
+
+    stopMediaStream();
+
+    const textFromSpeechAPI = speechCapturedTextRef.current.trim();
+
+    if (textFromSpeechAPI) {
+      // Web Speech API captured text successfully!
+      setVoiceTranscript(textFromSpeechAPI);
+      setInputMessage(textFromSpeechAPI);
+      setVoiceStatus('ready');
+      return;
+    }
+
+    // Fall back to backend Gemini Flash STT using recorded audio chunks
+    if (audioChunksRef.current.length > 0) {
+      setVoiceStatus('processing');
+      setVoiceTranscript('Convertendo áudio em texto com a PadeIA™...');
+
+      try {
+        const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+
+        if (audioBlob.size < 100) {
+          setVoiceStatus('error');
+          setVoiceError('Nenhum som foi detectado. Fale mais perto do microfone e tente novamente.');
           return;
         }
 
-        setVoiceStatus('processing');
-        setVoiceTranscript('Processando áudio com a PadeIA™...');
-
-        try {
-          const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = async () => {
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          try {
             const base64Audio = reader.result as string;
             const res = await fetch('/api/padeia/speech-to-text', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 audioBase64: base64Audio,
-                mimeType: mediaRecorder.mimeType || 'audio/webm'
+                mimeType
               })
             });
 
@@ -238,44 +283,42 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
             if (res.ok && data.text) {
               const textResult = data.text.trim();
               setVoiceTranscript(textResult);
+              setInputMessage(textResult);
               setVoiceStatus('ready');
-              setTimeout(() => {
-                setVoiceStatus('idle');
-                setVoiceTranscript('');
-              }, 1200);
-
-              // Send transcribed text to existing chat flow
-              await handleSendMessage(textResult);
             } else {
-              throw new Error(data.error || 'Erro na transcrição do áudio.');
+              throw new Error(data.error || 'Erro na conversão do áudio.');
             }
-          };
-        } catch (sttErr: any) {
-          console.error('STT Fallback Erro:', sttErr);
-          setVoiceStatus('error');
-          setVoiceError('Erro ao converter o áudio. Tente falar novamente.');
-        }
-      };
-
-      mediaRecorder.start();
-      setVoiceStatus('listening');
-      setVoiceTranscript('Ouvindo... Fale o que deseja informar à PadeIA™...');
-    } catch (err: any) {
-      stopMediaStream();
+          } catch (sttErr: any) {
+            console.error('[PadeIA Voice] Backend STT error:', sttErr);
+            setVoiceStatus('error');
+            setVoiceError('Não foi possível identificar o comando de voz. Tente falar novamente.');
+          }
+        };
+      } catch (err: any) {
+        setVoiceStatus('error');
+        setVoiceError('Erro ao processar áudio do microfone.');
+      }
+    } else {
       setVoiceStatus('error');
-      setVoiceError('Erro ao iniciar gravação do microfone: ' + err.message);
+      setVoiceError('Nenhum comando de voz foi capturado. Tente falar novamente.');
     }
   };
 
-  // Stop recording manually
-  const handleStopVoice = () => {
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (_) {}
-    }
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      try { mediaRecorderRef.current.stop(); } catch (_) {}
-    }
-    stopMediaStream();
+  // Confirm & Send voice transcript to PadeIA
+  const handleConfirmVoiceSend = async () => {
+    const textToSend = inputMessage.trim() || voiceTranscript.trim();
+    if (!textToSend) return;
+
+    setVoiceStatus('idle');
+    setVoiceTranscript('');
+    await handleSendMessage(textToSend);
+  };
+
+  const handleCancelVoice = () => {
+    stopVoiceRecording();
+    setVoiceStatus('idle');
+    setVoiceTranscript('');
+    setVoiceError('');
   };
 
   // Pricing Assistant state
@@ -600,17 +643,17 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
             {/* VOICE STATUS CARD OVERLAY */}
             {voiceStatus !== 'idle' && (
               <div
-                className={`mb-3 p-3.5 rounded-2xl border transition-all shadow-sm flex flex-col space-y-2 ${
+                className={`mb-3 p-3.5 rounded-2xl border transition-all shadow-md flex flex-col space-y-2.5 ${
                   voiceStatus === 'listening'
-                    ? 'border-red-300 bg-red-50/70'
+                    ? 'border-red-300 bg-red-50/80'
                     : voiceStatus === 'processing'
-                    ? 'border-amber-300 bg-amber-50/70'
+                    ? 'border-amber-300 bg-amber-50/80'
                     : voiceStatus === 'ready'
-                    ? 'border-emerald-300 bg-emerald-50/70'
+                    ? 'border-emerald-400 bg-emerald-50'
                     : 'border-red-400 bg-red-50'
                 }`}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center space-x-2">
                     {voiceStatus === 'listening' && (
                       <>
@@ -637,7 +680,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                       <>
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                         <span className="font-extrabold text-xs text-emerald-700 uppercase tracking-wider">
-                          Resposta pronta.
+                          Resposta Pronta / Prévia do Texto
                         </span>
                       </>
                     )}
@@ -646,7 +689,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                       <>
                         <AlertTriangle className="w-4 h-4 text-red-600" />
                         <span className="font-extrabold text-xs text-red-700 uppercase tracking-wider">
-                          Erro de Microfone
+                          Aviso de Microfone
                         </span>
                       </>
                     )}
@@ -656,29 +699,75 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                     <button
                       type="button"
                       onClick={handleStopVoice}
-                      className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[11px] font-bold flex items-center space-x-1 cursor-pointer"
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs cursor-pointer"
                     >
-                      <Square className="w-3 h-3 fill-current" />
+                      <Square className="w-3.5 h-3.5 fill-current" />
                       <span>Concluir fala</span>
                     </button>
                   )}
 
                   {voiceStatus === 'error' && (
-                    <button
-                      type="button"
-                      onClick={() => setVoiceStatus('idle')}
-                      className="text-xs text-gray-500 hover:text-gray-700 font-bold"
-                    >
-                      Fechar
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={handleStartVoice}
+                        className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold cursor-pointer"
+                      >
+                        Tentar novamente
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelVoice}
+                        className="text-xs text-gray-500 hover:text-gray-700 font-bold"
+                      >
+                        Fechar
+                      </button>
+                    </div>
                   )}
                 </div>
 
+                {/* Content Body */}
                 {voiceStatus === 'error' ? (
-                  <p className="text-xs text-red-700 font-medium">{voiceError}</p>
+                  <p className="text-xs text-red-800 font-medium bg-white/80 p-2.5 rounded-xl border border-red-200">
+                    {voiceError}
+                  </p>
                 ) : (
-                  <div className="p-2.5 bg-white/90 rounded-xl border border-gray-200 text-xs text-gray-800 font-medium italic">
-                    "{voiceTranscript || 'Fale seu comando (ex: Produzi 100 coxinhas hoje)...'}"
+                  <div className="p-3 bg-white rounded-xl border border-gray-200 text-xs text-gray-800 font-medium flex flex-col space-y-1 shadow-xs">
+                    <span className="text-[10px] uppercase font-extrabold text-gray-400">
+                      {voiceStatus === 'listening' ? 'Fale seu comando:' : 'Texto reconhecido:'}
+                    </span>
+                    <p className="text-xs text-gray-900 font-semibold italic">
+                      "{voiceTranscript || inputMessage || 'Aguardando sua fala...'}"
+                    </p>
+                  </div>
+                )}
+
+                {/* Ready / Confirmation Action Bar */}
+                {voiceStatus === 'ready' && (
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleCancelVoice}
+                      className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl text-xs font-bold cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleStartVoice}
+                      className="px-3 py-1.5 bg-teal-100 hover:bg-teal-200 text-teal-800 rounded-xl text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Mic className="w-3.5 h-3.5" />
+                      <span>Falar Novamente</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmVoiceSend}
+                      className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>🚀 Enviar para PadeIA</span>
+                    </button>
                   </div>
                 )}
               </div>
