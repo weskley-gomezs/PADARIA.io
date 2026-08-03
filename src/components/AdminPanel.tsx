@@ -33,6 +33,7 @@ import {
 import confetti from 'canvas-confetti';
 import { BakeryCompany, AdminStats, FinancialStats, Product, SaleHistoryItem, SupportTicket, VipOffer, DailyClosing } from '../types';
 import { StorageService } from '../services/storageService';
+import { generateSystemManualPDF } from '../utils/pdfGenerator';
 import { AdminBilling } from './admin/AdminBilling';
 import { AdminContracts } from './admin/AdminContracts';
 import { AdminSupportTickets } from './admin/AdminSupportTickets';
@@ -555,6 +556,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
           </div>
 
           <div className="space-y-2">
+            <button
+              onClick={() => generateSystemManualPDF()}
+              className="w-full bg-[#FF6B00] hover:bg-[#e05e00] text-white font-extrabold py-2.5 px-3 rounded-xl text-xs transition-all flex items-center justify-center space-x-2 shadow-md cursor-pointer border border-[#FF6B00]"
+              title="Baixar Manual Completo de Vendas & Funcionalidades (PDF)"
+            >
+              <FileText className="w-4 h-4 text-white" />
+              <span>📄 Manual de Vendas (PDF)</span>
+            </button>
+
             <button
               onClick={() => {
                 StorageService.setAdminAuthenticated(false);

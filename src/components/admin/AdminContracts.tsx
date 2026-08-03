@@ -16,7 +16,7 @@ import {
   Edit3,
 } from 'lucide-react';
 import { BakeryCompany, ContractInfo } from '../../types';
-import { generateContractPDF, generateTrainingGuidePDF } from '../../utils/pdfGenerator';
+import { generateContractPDF, generateTrainingGuidePDF, generateSystemManualPDF } from '../../utils/pdfGenerator';
 import { StorageService } from '../../services/storageService';
 
 interface AdminContractsProps {
@@ -193,6 +193,15 @@ export const AdminContracts: React.FC<AdminContractsProps> = ({ companies, onCom
                   >
                     <BookOpen className="w-4 h-4" />
                     <span>Guia Treinamento (PDF)</span>
+                  </button>
+
+                  <button
+                    onClick={() => generateSystemManualPDF(selectedCompany.empresa)}
+                    className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs shadow-sm transition-all flex items-center space-x-2 cursor-pointer border border-amber-600"
+                    title="Baixar Manual de Vendas & Funcionalidades Completo"
+                  >
+                    <Sparkles className="w-4 h-4 text-white" />
+                    <span>Manual de Vendas (PDF)</span>
                   </button>
                 </div>
               </div>

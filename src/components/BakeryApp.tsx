@@ -39,6 +39,7 @@ import confetti from 'canvas-confetti';
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, VipOffer } from '../types';
 import { StorageService } from '../services/storageService';
 import { formatDateToBR, getRelativeExpirationText, generateActivationCode, calculateDaysRemaining, formatDateToISO } from '../utils/dateUtils';
+import { generateContractPDF, generateSystemManualPDF } from '../utils/pdfGenerator';
 import { ProductModal } from './ProductModal';
 import { NotificationsModal } from './NotificationsModal';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
@@ -661,7 +662,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         </div>
 
         {/* Quick Action Buttons Grid on Mobile */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setIsSupportOpen(true)}
             className="px-3 py-2 rounded-xl bg-orange-50 hover:bg-[#E8571A] hover:text-white text-[#E8571A] text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer border border-orange-200"

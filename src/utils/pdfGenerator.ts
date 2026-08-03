@@ -272,3 +272,286 @@ export function generateTrainingGuidePDF(company: BakeryCompany) {
   doc.save(`Guia_Treinamento_${company.empresa.replace(/\s+/g, '_')}.pdf`);
 }
 
+export function generateSystemManualPDF(companyName?: string) {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const today = new Date().toLocaleDateString('pt-BR');
+
+  const addHeader = (pageNum: number) => {
+    // Header Bar Dark Slate
+    doc.setFillColor(17, 24, 39); // Gray 900
+    doc.rect(0, 0, 210, 26, 'F');
+
+    // Accent line
+    doc.setFillColor(232, 87, 26); // Brand Orange #E8571A
+    doc.rect(0, 26, 210, 1.5, 'F');
+
+    // Title / Brand
+    doc.setTextColor(255, 107, 0); // Orange
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text('PADARIA.io', 14, 15);
+
+    doc.setFontSize(8.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text('MANUAL DE VENDAS & GUIA COMPLETO DE FUNCIONALIDADES', 14, 21);
+
+    doc.setFontSize(8);
+    doc.setTextColor(209, 213, 219);
+    doc.text(`Página ${pageNum} de 2 | Material de Prospecção`, 145, 15);
+  };
+
+  const addFooter = (pageNum: number) => {
+    doc.setFillColor(243, 244, 246);
+    doc.rect(0, 282, 210, 15, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.text('PADARIA.io Tecnologia © Gestão Sanitária e Inteligência para Panificação.', 14, 290);
+    doc.text(`Emissão: ${today}`, 170, 290);
+  };
+
+  // --- PAGE 1 ---
+  addHeader(1);
+  let y = 34;
+
+  // Title Section
+  doc.setTextColor(17, 24, 39);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('SISTEMA PADARIA.IO: GUIA PRÁTICO PARA PROSPECÇÃO E VENDAS', 14, y);
+  y += 5;
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(217, 119, 6);
+  doc.text('Entenda o sistema em minutos e feche contratos com padarias e confeitarias.', 14, y);
+  y += 7;
+
+  // Box Proposta de Valor
+  doc.setFillColor(254, 243, 199); // Light Amber
+  doc.setDrawColor(245, 158, 11);
+  doc.rect(14, y, 182, 22, 'DF');
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(146, 64, 14);
+  doc.text('💡 O QUE É O PADARIA.IO E POR QUE TODO DONO DE PADARIA PRECISA DELE?', 18, y + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(31, 41, 55);
+  const valorText = 'O Padaria.io é um sistema feito exclusivamente para padarias, confeitarias e panificadoras. Ele resolve os 2 maiores problemas do setor: o risco de multas pesadas da Vigilância Sanitária (ANVISA) por falta de etiquetas de validade e o desperdício diário de alimentos e insumos caros no estoque.';
+  const splitValor = doc.splitTextToSize(valorText, 174);
+  doc.text(splitValor, 18, y + 11);
+  y += 27;
+
+  // Header 1: As 4 Principais Funcionalidades
+  doc.setFillColor(31, 41, 55);
+  doc.rect(14, y, 182, 7, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.text('1. AS 4 REVOLUCIONÁRIAS FUNCIONALIDADES DO SISTEMA', 18, y + 5);
+  y += 11;
+
+  // Funcionalidade 1
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(234, 88, 12); // Orange
+  doc.setFontSize(9);
+  doc.text('1.1. PadeIA™ - Assistente de Voz Inteligente (Sem Digitação)', 14, y);
+  y += 4.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(55, 65, 81);
+  doc.setFontSize(8);
+  const f1 = [
+    '• Como funciona: O funcionário clica no microfone e apenas fala no celular ou computador (Ex: "Cadastrar 100 coxinhas a 5 reais validade dia 10").',
+    '• O que a IA faz: Entende a fala, calcula automaticamente o valor total do lote (R$ 500,00) e cadastra o produto direto no banco de dados do sistema.',
+    '• Benefício comercial: O padeiro ou balconista não perde tempo digitando. É rápido, simples e elimina erros humanos de digitação.'
+  ];
+  f1.forEach(item => {
+    const lines = doc.splitTextToSize(item, 180);
+    doc.text(lines, 14, y);
+    y += lines.length * 3.8;
+  });
+  y += 3;
+
+  // Funcionalidade 2
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(234, 88, 12);
+  doc.setFontSize(9);
+  doc.text('1.2. Impressão de Etiquetas Sanitárias Oficiais (Norma ANVISA RDC 216)', 14, y);
+  y += 4.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(55, 65, 81);
+  doc.setFontSize(8);
+  const f2 = [
+    '• O que imprime: Nome do produto, data de fabricação, data exata de vencimento, quantidade/peso, número do lote e código de barras / QR Code.',
+    '• Compatibilidade: Funciona com qualquer impressora térmica do mercado (Elgin, Zebra, Bematech, Argox, Bluetooth ou USB).',
+    '• Benefício comercial: Proteção total contra fiscalização e multas que podem passar de R$ 5.000,00.'
+  ];
+  f2.forEach(item => {
+    const lines = doc.splitTextToSize(item, 180);
+    doc.text(lines, 14, y);
+    y += lines.length * 3.8;
+  });
+  y += 3;
+
+  // Funcionalidade 3
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(234, 88, 12);
+  doc.setFontSize(9);
+  doc.text('1.3. Controle Visual de Validade & Prevenção de Perdas (PVPS)', 14, y);
+  y += 4.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(55, 65, 81);
+  doc.setFontSize(8);
+  const f3 = [
+    '• Alerta por Cores: Verde = Produto ótimo | Amarelo = Vence em até 3 dias (Atenção!) | Vermelho = Vencido.',
+    '• Regra do PVPS (Primeiro que Vence, Primeiro que Sai): Indica ao atendente exatamente qual lote deve ser vendido primeiro no balcão.',
+    '• Indicador R$ de Perdas Evitadas: Mostra ao dono em reais quanto dinheiro ele economizou ao não jogar comida no lixo.'
+  ];
+  f3.forEach(item => {
+    const lines = doc.splitTextToSize(item, 180);
+    doc.text(lines, 14, y);
+    y += lines.length * 3.8;
+  });
+  y += 3;
+
+  // Funcionalidade 4
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(234, 88, 12);
+  doc.setFontSize(9);
+  doc.text('1.4. Lucratividade, Fechamento de Caixa e Relatórios em PDF', 14, y);
+  y += 4.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(55, 65, 81);
+  doc.setFontSize(8);
+  const f4 = [
+    '• Cálculo do Valor do Lote e Margem: Mostra o custo dos insumos e o valor total em estoque.',
+    '• Fechamento Diário: Painel simples para conferência de vendas e baixas.',
+    '• Relatórios Executivos: Emissão de relatórios e contratos prontos em PDF para impressão.'
+  ];
+  f4.forEach(item => {
+    const lines = doc.splitTextToSize(item, 180);
+    doc.text(lines, 14, y);
+    y += lines.length * 3.8;
+  });
+
+  addFooter(1);
+
+  // --- PAGE 2 ---
+  doc.addPage();
+  addHeader(2);
+  y = 34;
+
+  // Seção 2: Roteiro de Vendas
+  doc.setFillColor(31, 41, 55);
+  doc.rect(14, y, 182, 7, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.text('2. GUIA PRÁTICO DE ABORDAGEM E FECHAMENTO DE VENDAS', 18, y + 5);
+  y += 11;
+
+  // Dores do Cliente
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(234, 88, 12);
+  doc.setFontSize(9);
+  doc.text('2.1. As 3 Maiores "Dores" do Dono da Padaria (Ganchos de Venda)', 14, y);
+  y += 4.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(55, 65, 81);
+  doc.setFontSize(8);
+  const dores = [
+    '1. Medo da Vigilância Sanitária: Fiscalização aparecendo de surpresa e interditando o estabelecimento por causa de produtos sem etiqueta de data de manipulação.',
+    '2. Dinheiro jogado no lixo: Frios, queijos, massas e doces estragando na geladeira por falta de controle de validade.',
+    '3. Sistemas difíceis e burocráticos: Balconistas e padeiros reclamam que não têm tempo de ficar digitando em computador.'
+  ];
+  dores.forEach(item => {
+    const lines = doc.splitTextToSize(item, 180);
+    doc.text(lines, 14, y);
+    y += lines.length * 3.8;
+  });
+  y += 5;
+
+  // Pitch Script Box
+  doc.setFillColor(240, 253, 244); // Light Emerald
+  doc.setDrawColor(34, 197, 94);
+  doc.rect(14, y, 182, 32, 'DF');
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(22, 101, 52);
+  doc.text('🗣️ SCRIPT DE ABORDAGEM MATADOR (O QUE FALAR AO CHEGAR NA PADARIA):', 18, y + 6);
+
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  doc.setTextColor(31, 41, 55);
+  const pitchText = '"Olá, [Nome do Dono]! Nós ajudamos padarias e confeitarias a eliminarem de vez o desperdício de insumos no estoque e a ficarem 100% protegidas contra multas da Vigilância Sanitária. O nosso sistema funciona no celular por comando de voz: o seu padeiro só fala o que produziu e o sistema imprime a etiqueta da ANVISA na hora e avisa o que precisa ser vendido antes de vencer. Posso te mostrar em 3 minutos aqui no balcão?"';
+  const splitPitch = doc.splitTextToSize(pitchText, 174);
+  doc.text(splitPitch, 18, y + 11);
+  y += 37;
+
+  // Como Quebrar Objeções
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(234, 88, 12);
+  doc.setFontSize(9);
+  doc.text('2.2. Como Responder às Principais Objeções dos Clientes', 14, y);
+  y += 4.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(55, 65, 81);
+  doc.setFontSize(8);
+  const obj = [
+    '• "Meus funcionários não sabem mexer em sistema": Resposta: "Eles não precisam digitar nada! Nosso sistema aceita comando de voz por celular. É tão simples quanto mandar um áudio no WhatsApp."',
+    '• "Já tenho um sistema de caixa (PDV)": Resposta: "O Padaria.io não substitui seu caixa. Ele é um sistema complementar para a cozinha e estoque, focado na etiquetagem sanitária e prevenção de perdas que o caixa não faz."',
+    '• "Agora não estou podendo gastar": Resposta: "O sistema não é um gasto, é economia. Se ele evitar que apenas 2 tortas ou 1 peça de presunto estraguem no mês, ele se paga sozinho."'
+  ];
+  obj.forEach(item => {
+    const lines = doc.splitTextToSize(item, 180);
+    doc.text(lines, 14, y);
+    y += lines.length * 3.8;
+  });
+  y += 5;
+
+  // Tabela de Preços Recomendada
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(234, 88, 12);
+  doc.setFontSize(9);
+  doc.text('2.3. Tabela Sugerida de Valores para Venda', 14, y);
+  y += 4.5;
+
+  doc.setFillColor(254, 243, 199);
+  doc.rect(14, y, 182, 22, 'F');
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(146, 64, 14);
+  doc.text('• Taxa de Implantação e Treinamento:', 18, y + 5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(31, 41, 55);
+  doc.text('R$ 800,00 a R$ 1.500,00 (Pagamento único na adesão)', 75, y + 5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(146, 64, 14);
+  doc.text('• Licença Mensal de Uso (SaaS):', 18, y + 11);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(31, 41, 55);
+  doc.text('R$ 149,00 a R$ 299,00 / mês (Inclui IA de voz ilimitada)', 75, y + 11);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(146, 64, 14);
+  doc.text('• Comissão do Vendedor:', 18, y + 17);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(31, 41, 55);
+  doc.text('100% da Taxa de Implantação + Recorrência conforme acordo comercial', 75, y + 17);
+
+  addFooter(2);
+
+  doc.save('Manual_Completo_PadariaIO_Vendas.pdf');
+}
+
+
