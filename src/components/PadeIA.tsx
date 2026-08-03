@@ -453,7 +453,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
   const quickQuestions = [
     "📊 Qual foi meu prejuízo este mês?",
     "⏰ Quais produtos vencem nos próximos 3 dias?",
-    "🌙 Como fazer o Fechamento Inteligente do dia?",
+    "🛡️ Como reduzir o descarte de produtos vencidos?",
     "🏷️ Qual categoria mais gera desperdício?",
     "💰 Como reaproveitar sobras na produção de amanhã?",
     "📋 Gere um resumo executivo completo da padaria"
@@ -1129,9 +1129,9 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                   <Moon className="w-4 h-4" />
                 </div>
                 <div>
-                  <h5 className="font-bold text-xs text-[#1F2937]">Fechamento Inteligente do Expediente</h5>
+                  <h5 className="font-bold text-xs text-[#1F2937]">Controle Preventivo de Validades</h5>
                   <p className="text-xs text-gray-600 mt-0.5">
-                    Você possui <strong>{expiringProducts.length} produtos</strong> que vencem em até 3 dias. Realize o Fechamento Inteligente ao final do expediente para converter sobras de balcão em torradas, pudins e farinha de rosca!
+                    Você possui <strong>{expiringProducts.length} produtos</strong> que vencem em até 3 dias. Acompanhe o lote para planejar a readequação de estoque e zerar os descartes!
                   </p>
                   <button
                     onClick={() => setActiveTab('alertas')}

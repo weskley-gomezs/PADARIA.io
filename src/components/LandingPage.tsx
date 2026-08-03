@@ -290,9 +290,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             transition={{ duration: 0.7, delay: 0.1 }}
             className="text-4xl sm:text-6xl lg:text-7xl font-black text-[#1A1A1A] tracking-tight leading-[1.08] uppercase"
           >
-            CONTROLE DE VENCIDOS & <br className="hidden sm:block" />
+            CONTROLE O DESPERDÍCIO <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-[#E8571A] via-[#D44E15] to-[#B33B0A] bg-clip-text text-transparent drop-shadow-xs">
-              DESPERDÍCIOS.
+              DA SUA PADARIA
             </span>
           </motion.h1>
 
@@ -923,10 +923,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* Node 6 */}
           <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
             <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center mx-auto font-black">
-              🌙
+              📋
             </div>
-            <strong className="text-xs font-black text-gray-900 block">6. Fechamento</strong>
-            <span className="text-[10px] text-gray-500 font-medium">Balanço do dia automático</span>
+            <strong className="text-xs font-black text-gray-900 block">6. Auditoria</strong>
+            <span className="text-[10px] text-gray-500 font-medium">Balanço de perdas e descarte</span>
           </div>
 
           <div className="hidden md:block text-gray-300 font-black">➔</div>
@@ -1015,12 +1015,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             {/* Card 6 */}
             <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                <Moon className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <ShieldCheck className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-black text-gray-900">Fechamento Inteligente</h3>
+              <h3 className="text-base font-black text-gray-900">Controle de Vencidos</h3>
               <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                Módulo completo para controle de sobras diárias e auditoria ao fim do expediente.
+                Registro exclusivo de itens vencidos para readequar produções e eliminar prejuízos.
               </p>
             </div>
 
