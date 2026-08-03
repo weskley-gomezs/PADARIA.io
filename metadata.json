@@ -2,7 +2,8 @@
   "name": "PADARIA.io",
   "description": "PADARIA.io - Seu controle de desperdícios começa aqui. Sistema exclusivo para registrar e analisar produtos vencidos e descartados com IA.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "microphone"
   ],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

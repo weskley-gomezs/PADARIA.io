@@ -295,6 +295,50 @@ INSTRUÇÕES DE RESPOSTA AO USUÁRIO:
     }
   });
 
+  app.post('/api/padeia/speech-to-text', async (req, res) => {
+    console.log("[ROUTE] POST /api/padeia/speech-to-text - Recebido");
+    try {
+      const { audioBase64, mimeType = 'audio/webm' } = req.body;
+
+      if (!audioBase64) {
+        return res.status(400).json({ error: 'Nenhum áudio fornecido.' });
+      }
+
+      if (!ai) {
+        return res.status(500).json({ error: 'O serviço de IA PadeIA™ não está inicializado no servidor.' });
+      }
+
+      const cleanBase64 = audioBase64.replace(/^data:audio\/\w+;base64,/, '');
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-flash-lite",
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType: mimeType || "audio/webm",
+                data: cleanBase64,
+              },
+            },
+            {
+              text: "Transcreva com máxima precisão o áudio do usuário em Português do Brasil (PT-BR). Se for um comando de padaria/panificação, mantenha os termos originais. Retorne APENAS a transcrição do texto falado, sem introduções, aspas, pontuações extras ou explicações.",
+            },
+          ],
+        },
+      });
+
+      const text = (response.text || '').trim();
+      console.log(`[PADEIA STT] Transcrito com sucesso: "${text}"`);
+      return res.json({ text });
+    } catch (error: any) {
+      console.error('[ROUTE] ERRO em /api/padeia/speech-to-text:', error);
+      res.status(500).json({ 
+        error: 'Erro ao converter áudio em texto.', 
+        details: error.message 
+      });
+    }
+  });
+
   async function parseAsaasResponse(res: any): Promise<any> {
     const status = res.status;
     const is2xx = res.ok || (status >= 200 && status < 300);

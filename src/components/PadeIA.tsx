@@ -22,7 +22,12 @@ import {
   ShieldCheck,
   ChevronRight,
   MessageSquare,
-  Trash2
+  Trash2,
+  Mic,
+  MicOff,
+  Loader2,
+  Volume2,
+  Square
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { BakeryCompany, Product, SaleHistoryItem, VipOffer } from '../types';
@@ -65,6 +70,213 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Voice Command State
+  const [voiceStatus, setVoiceStatus] = useState<'idle' | 'listening' | 'processing' | 'ready' | 'error'>('idle');
+  const [voiceTranscript, setVoiceTranscript] = useState<string>('');
+  const [voiceError, setVoiceError] = useState<string>('');
+
+  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  // Cleanup audio stream on unmount
+  useEffect(() => {
+    return () => {
+      stopMediaStream();
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch (_) {}
+      }
+    };
+  }, []);
+
+  const stopMediaStream = () => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+  };
+
+  // Start voice recording and STT
+  const handleStartVoice = async () => {
+    setVoiceError('');
+    setVoiceTranscript('');
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    try {
+      // Request microphone permission explicitly first
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
+      if (SpeechRecognition) {
+        // Native Web Speech API
+        const recognition = new SpeechRecognition();
+        recognitionRef.current = recognition;
+        recognition.lang = 'pt-BR';
+        recognition.interimResults = true;
+        recognition.continuous = false;
+
+        let finalTextCaptured = '';
+
+        recognition.onstart = () => {
+          setVoiceStatus('listening');
+          setVoiceTranscript('Ouvindo... Fale seu comando agora...');
+        };
+
+        recognition.onresult = (event: any) => {
+          let interim = '';
+          let final = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              final += event.results[i][0].transcript;
+            } else {
+              interim += event.results[i][0].transcript;
+            }
+          }
+          const currentText = final || interim;
+          if (currentText) {
+            setVoiceTranscript(currentText);
+            finalTextCaptured = currentText;
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          console.warn('[PadeIA Voice] Erro no SpeechRecognition:', event.error);
+          stopMediaStream();
+          if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+            setVoiceStatus('error');
+            setVoiceError('Permissão do microfone negada. Clique no ícone do cadeado ao lado do endereço web para permitir o microfone.');
+          } else if (event.error === 'no-speech') {
+            setVoiceStatus('error');
+            setVoiceError('Nenhum som ou fala foi detectado. Tente falar novamente mais perto do microfone.');
+          } else {
+            // Fallback to MediaRecorder + Gemini Backend STT if browser SpeechRecognition stumbles
+            handleStartMediaRecorder(stream);
+          }
+        };
+
+        recognition.onend = async () => {
+          stopMediaStream();
+          if (finalTextCaptured && finalTextCaptured.trim() !== 'Ouvindo... Fale seu comando agora...') {
+            const captured = finalTextCaptured.trim();
+            setVoiceStatus('processing');
+            setVoiceTranscript(captured);
+
+            setTimeout(async () => {
+              setVoiceStatus('ready');
+              setTimeout(() => {
+                setVoiceStatus('idle');
+                setVoiceTranscript('');
+              }, 1200);
+
+              // Send transcribed text to existing PadeIA chat
+              await handleSendMessage(captured);
+            }, 500);
+          } else if (voiceStatus !== 'error') {
+            setVoiceStatus('idle');
+          }
+        };
+
+        recognition.start();
+      } else {
+        // Fallback using MediaRecorder
+        await handleStartMediaRecorder(stream);
+      }
+    } catch (err: any) {
+      console.error('[PadeIA Voice] Erro ao solicitar permissão de áudio:', err);
+      stopMediaStream();
+      setVoiceStatus('error');
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setVoiceError('Permissão do microfone negada. Por favor, permita o acesso ao microfone no seu navegador.');
+      } else {
+        setVoiceError('Microfone não disponível ou não encontrado no dispositivo.');
+      }
+    }
+  };
+
+  // Fallback recorder using MediaRecorder and Gemini Flash STT endpoint
+  const handleStartMediaRecorder = async (stream: MediaStream) => {
+    try {
+      audioChunksRef.current = [];
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        stopMediaStream();
+        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || 'audio/webm' });
+        if (audioBlob.size === 0) {
+          setVoiceStatus('idle');
+          return;
+        }
+
+        setVoiceStatus('processing');
+        setVoiceTranscript('Processando áudio com a PadeIA™...');
+
+        try {
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64Audio = reader.result as string;
+            const res = await fetch('/api/padeia/speech-to-text', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                audioBase64: base64Audio,
+                mimeType: mediaRecorder.mimeType || 'audio/webm'
+              })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.text) {
+              const textResult = data.text.trim();
+              setVoiceTranscript(textResult);
+              setVoiceStatus('ready');
+              setTimeout(() => {
+                setVoiceStatus('idle');
+                setVoiceTranscript('');
+              }, 1200);
+
+              // Send transcribed text to existing chat flow
+              await handleSendMessage(textResult);
+            } else {
+              throw new Error(data.error || 'Erro na transcrição do áudio.');
+            }
+          };
+        } catch (sttErr: any) {
+          console.error('STT Fallback Erro:', sttErr);
+          setVoiceStatus('error');
+          setVoiceError('Erro ao converter o áudio. Tente falar novamente.');
+        }
+      };
+
+      mediaRecorder.start();
+      setVoiceStatus('listening');
+      setVoiceTranscript('Ouvindo... Fale o que deseja informar à PadeIA™...');
+    } catch (err: any) {
+      stopMediaStream();
+      setVoiceStatus('error');
+      setVoiceError('Erro ao iniciar gravação do microfone: ' + err.message);
+    }
+  };
+
+  // Stop recording manually
+  const handleStopVoice = () => {
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (_) {}
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try { mediaRecorderRef.current.stop(); } catch (_) {}
+    }
+    stopMediaStream();
+  };
 
   // Pricing Assistant state
   const [costPrice, setCostPrice] = useState<string>('10.00');
@@ -282,8 +494,25 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
       {/* TAB 1: CHAT INTELIGENTE */}
       {activeTab === 'chat' && (
         <div className="flex-1 flex flex-col justify-between bg-gray-50/50">
-          {/* Quick Questions Chips */}
+          {/* Quick Questions & Voice Action Chips */}
           <div className="p-3 bg-white border-b border-gray-100 flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {/* PROMINENT VOICE BUTTON */}
+            <button
+              onClick={voiceStatus === 'listening' ? handleStopVoice : handleStartVoice}
+              disabled={isLoading || voiceStatus === 'processing'}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm flex items-center space-x-1.5 ${
+                voiceStatus === 'listening'
+                  ? 'bg-red-600 text-white animate-pulse ring-2 ring-red-400'
+                  : 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white'
+              }`}
+              title="Converse com a PadeIA por comando de voz"
+            >
+              <Mic className="w-3.5 h-3.5 text-emerald-200" />
+              <span>🎙️ Falar com a PadeIA</span>
+            </button>
+
+            <span className="text-gray-300">|</span>
+
             <span className="text-[11px] font-extrabold uppercase text-gray-400 shrink-0 flex items-center space-x-1">
               <Zap className="w-3 h-3 text-amber-500" />
               <span>Pergunte:</span>
@@ -366,8 +595,95 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
             <div ref={chatEndRef} />
           </div>
 
-          {/* Input Bar */}
+          {/* Input Bar & Voice Command Panel */}
           <div className="p-3 sm:p-4 bg-white border-t border-gray-200">
+            {/* VOICE STATUS CARD OVERLAY */}
+            {voiceStatus !== 'idle' && (
+              <div
+                className={`mb-3 p-3.5 rounded-2xl border transition-all shadow-sm flex flex-col space-y-2 ${
+                  voiceStatus === 'listening'
+                    ? 'border-red-300 bg-red-50/70'
+                    : voiceStatus === 'processing'
+                    ? 'border-amber-300 bg-amber-50/70'
+                    : voiceStatus === 'ready'
+                    ? 'border-emerald-300 bg-emerald-50/70'
+                    : 'border-red-400 bg-red-50'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    {voiceStatus === 'listening' && (
+                      <>
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                        </span>
+                        <span className="font-extrabold text-xs text-red-700 uppercase tracking-wider">
+                          Ouvindo...
+                        </span>
+                      </>
+                    )}
+
+                    {voiceStatus === 'processing' && (
+                      <>
+                        <Loader2 className="w-4 h-4 text-amber-600 animate-spin" />
+                        <span className="font-extrabold text-xs text-amber-700 uppercase tracking-wider">
+                          Processando...
+                        </span>
+                      </>
+                    )}
+
+                    {voiceStatus === 'ready' && (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span className="font-extrabold text-xs text-emerald-700 uppercase tracking-wider">
+                          Resposta pronta.
+                        </span>
+                      </>
+                    )}
+
+                    {voiceStatus === 'error' && (
+                      <>
+                        <AlertTriangle className="w-4 h-4 text-red-600" />
+                        <span className="font-extrabold text-xs text-red-700 uppercase tracking-wider">
+                          Erro de Microfone
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  {voiceStatus === 'listening' && (
+                    <button
+                      type="button"
+                      onClick={handleStopVoice}
+                      className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[11px] font-bold flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Square className="w-3 h-3 fill-current" />
+                      <span>Concluir fala</span>
+                    </button>
+                  )}
+
+                  {voiceStatus === 'error' && (
+                    <button
+                      type="button"
+                      onClick={() => setVoiceStatus('idle')}
+                      className="text-xs text-gray-500 hover:text-gray-700 font-bold"
+                    >
+                      Fechar
+                    </button>
+                  )}
+                </div>
+
+                {voiceStatus === 'error' ? (
+                  <p className="text-xs text-red-700 font-medium">{voiceError}</p>
+                ) : (
+                  <div className="p-2.5 bg-white/90 rounded-xl border border-gray-200 text-xs text-gray-800 font-medium italic">
+                    "{voiceTranscript || 'Fale seu comando (ex: Produzi 100 coxinhas hoje)...'}"
+                  </div>
+                )}
+              </div>
+            )}
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -380,14 +696,46 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Pergunte sobre perdas, validade, fechamento ou precificação..."
-                disabled={isLoading}
+                disabled={isLoading || voiceStatus === 'listening'}
                 className="flex-1 px-4 py-3 text-xs sm:text-sm rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-gray-800 bg-gray-50 focus:bg-white font-medium"
               />
 
+              {/* MICROPHONE VOICE BUTTON */}
+              <button
+                type="button"
+                onClick={voiceStatus === 'listening' ? handleStopVoice : handleStartVoice}
+                disabled={isLoading || voiceStatus === 'processing'}
+                className={`px-3.5 py-3 rounded-xl font-bold text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer shrink-0 ${
+                  voiceStatus === 'listening'
+                    ? 'bg-red-600 text-white animate-pulse ring-2 ring-red-300'
+                    : voiceStatus === 'processing'
+                    ? 'bg-amber-500 text-white cursor-wait'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
+                title="Comando por Voz (Microfone)"
+              >
+                {voiceStatus === 'listening' ? (
+                  <>
+                    <Square className="w-4 h-4 fill-current text-white" />
+                    <span className="hidden sm:inline">Parar</span>
+                  </>
+                ) : voiceStatus === 'processing' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span className="hidden sm:inline">Processando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4 text-white" />
+                    <span className="hidden sm:inline font-extrabold">🎙️ Falar com a PadeIA</span>
+                  </>
+                )}
+              </button>
+
               <button
                 type="submit"
-                disabled={isLoading || !inputMessage.trim()}
-                className="px-5 py-3 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#E8571A] hover:from-[#e05e00] hover:to-[#d44e15] text-white font-extrabold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center space-x-1.5 disabled:opacity-50 cursor-pointer"
+                disabled={isLoading || !inputMessage.trim() || voiceStatus === 'listening'}
+                className="px-5 py-3 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#E8571A] hover:from-[#e05e00] hover:to-[#d44e15] text-white font-extrabold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center space-x-1.5 disabled:opacity-50 cursor-pointer shrink-0"
               >
                 <span>Enviar</span>
                 <Send className="w-4 h-4" />
