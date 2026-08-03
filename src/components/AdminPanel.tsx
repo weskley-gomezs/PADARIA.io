@@ -28,14 +28,16 @@ import {
   Save,
   CheckCircle2,
   Users,
+  BarChart3,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { BakeryCompany, AdminStats, FinancialStats } from '../types';
+import { BakeryCompany, AdminStats, FinancialStats, Product, SaleHistoryItem, SupportTicket, VipOffer, DailyClosing } from '../types';
 import { StorageService } from '../services/storageService';
 import { AdminBilling } from './admin/AdminBilling';
 import { AdminContracts } from './admin/AdminContracts';
 import { AdminSupportTickets } from './admin/AdminSupportTickets';
 import { AdminTrainingPlan } from './admin/AdminTrainingPlan';
+import { AdminSaasAnalytics } from './admin/AdminSaasAnalytics';
 
 interface AdminPanelProps {
   onLoginAsBakery: (code: string) => void;
@@ -43,7 +45,7 @@ interface AdminPanelProps {
   onLogoutAdmin?: () => void;
 }
 
-type AdminTab = 'empresas' | 'cobranca' | 'contratos' | 'suporte' | 'treinamento';
+type AdminTab = 'empresas' | 'cobranca' | 'contratos' | 'suporte' | 'treinamento' | 'analise_saas';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdminLoggedIn, onLogoutAdmin }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -106,6 +108,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
 
   // Data states
   const [companies, setCompanies] = useState<BakeryCompany[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [sales, setSales] = useState<SaleHistoryItem[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [vipOffers, setVipOffers] = useState<VipOffer[]>([]);
+  const [dailyClosings, setDailyClosings] = useState<DailyClosing[]>([]);
   const [stats, setStats] = useState<AdminStats>({
     totalPadarias: 0,
     padariasAtivas: 0,
@@ -138,6 +145,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
   useEffect(() => {
     const authStatus = StorageService.isAdminAuthenticated();
     setIsAuthenticated(authStatus);
+    loadAdminData();
     
     const unsubCompanies = StorageService.subscribeCompanies((comps) => {
       setCompanies(comps);
@@ -145,11 +153,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
       setFinancialStats(StorageService.getFinancialStats());
     });
 
-    return () => unsubCompanies();
+    const unsubProducts = StorageService.subscribeProducts((prods) => {
+      setProducts(prods);
+    });
+
+    const unsubSales = StorageService.subscribeSalesHistory((sls) => {
+      setSales(sls);
+    });
+
+    const unsubTickets = StorageService.subscribeTickets((tiks) => {
+      setTickets(tiks);
+    });
+
+    const unsubVip = StorageService.subscribeVipOffers((vip) => {
+      setVipOffers(vip);
+    });
+
+    return () => {
+      unsubCompanies();
+      unsubProducts();
+      unsubSales();
+      unsubTickets();
+      unsubVip();
+    };
   }, []);
 
   const loadAdminData = () => {
     setCompanies(StorageService.getCompanies());
+    setProducts(StorageService.getProducts());
+    setSales(StorageService.getSalesHistory());
+    setTickets(StorageService.getTickets());
+    setVipOffers(StorageService.getVipOffers());
+    setDailyClosings(StorageService.getDailyClosings());
     setStats(StorageService.getAdminStats());
     setFinancialStats(StorageService.getFinancialStats());
   };
@@ -414,6 +449,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
       id: 'empresas' as AdminTab,
       label: 'Cadastro & Chaves',
       icon: Building2,
+    },
+    {
+      id: 'analise_saas' as AdminTab,
+      label: 'Inteligência Financeira',
+      icon: BarChart3,
     },
     {
       id: 'cobranca' as AdminTab,
@@ -1116,6 +1156,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* SECTION: INTELIGENCIA FINANCEIRA & SAAS ANALYTICS */}
+        {activeTab === 'analise_saas' && (
+          <div className="animate-fade-in">
+            <AdminSaasAnalytics
+              companies={companies}
+              products={products}
+              sales={sales}
+              tickets={tickets}
+              vipOffers={vipOffers}
+              dailyClosings={dailyClosings}
+              onRefresh={loadAdminData}
+            />
           </div>
         )}
 

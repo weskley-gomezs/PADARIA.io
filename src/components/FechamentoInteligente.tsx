@@ -19,11 +19,14 @@ import {
   ArrowRightLeft,
   Check,
   RefreshCw,
-  Info
+  Info,
+  Barcode,
+  Camera
 } from 'lucide-react';
 import { BakeryCompany, Product, DailyClosing, ClosingItem } from '../types';
 import { StorageService } from '../services/storageService';
 import { formatDateToBR, formatDateToISO } from '../utils/dateUtils';
+import { BarcodeScanner } from './BarcodeScanner';
 
 interface FechamentoInteligenteProps {
   company: BakeryCompany;
@@ -51,6 +54,57 @@ export const FechamentoInteligente: React.FC<FechamentoInteligenteProps> = ({
   const [activeTab, setActiveTab] = useState<'audit' | 'summary' | 'padeia' | 'history'>('audit');
   const [subFilter, setSubFilter] = useState<'pending' | 'processed'>('pending');
   const [editingClosingId, setEditingClosingId] = useState<string | null>(null);
+
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState<boolean>(false);
+  const [barcodeInput, setBarcodeInput] = useState<string>('');
+  const [isBatchMode, setIsBatchMode] = useState<boolean>(false);
+  const [scannedBatchIds, setScannedBatchIds] = useState<string[]>([]);
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
+
+  const handleScanResult = (code: string) => {
+    const cleanCode = code.trim().toLowerCase();
+    const foundItem = pendingItems.find((i) => {
+      const itemBarcode = (i.barcode || '').trim().toLowerCase();
+      const itemName = i.nomeProduto.trim().toLowerCase();
+      return (itemBarcode && itemBarcode === cleanCode) || itemName.includes(cleanCode);
+    });
+
+    if (foundItem) {
+      if (isBatchMode) {
+        if (!scannedBatchIds.includes(foundItem.productId)) {
+          setScannedBatchIds((prev) => [...prev, foundItem.productId]);
+          setScanMessage(`✅ Produto "${foundItem.nomeProduto}" adicionado à fila de lote!`);
+          setTimeout(() => setScanMessage(null), 3000);
+        } else {
+          setScanMessage(`ℹ️ Produto "${foundItem.nomeProduto}" já está na fila.`);
+          setTimeout(() => setScanMessage(null), 3000);
+        }
+      } else {
+        if (isItemExpired(foundItem.dataValidade)) {
+          handleConfirmItemAction(foundItem.productId, 'descarte');
+          setScanMessage(`🗑️ Produto vencido "${foundItem.nomeProduto}" descartado automaticamente.`);
+          setTimeout(() => setScanMessage(null), 4000);
+        } else {
+          handleConfirmItemAction(foundItem.productId, 'vendido');
+          setScanMessage(`🛒 Produto "${foundItem.nomeProduto}" marcado como Vendido!`);
+          setTimeout(() => setScanMessage(null), 3000);
+        }
+      }
+    } else {
+      setScanMessage(`❌ Nenhum produto pendente encontrado com o código "${code}".`);
+      setTimeout(() => setScanMessage(null), 4000);
+    }
+  };
+
+  const handleBatchAction = (action: 'vendido' | 'descarte' | 'transferido' | 'doacao') => {
+    if (scannedBatchIds.length === 0) return;
+    scannedBatchIds.forEach((id) => {
+      handleConfirmItemAction(id, action);
+    });
+    setScanMessage(`✨ Baixa em lote realizada para ${scannedBatchIds.length} produtos como ${action}!`);
+    setScannedBatchIds([]);
+    setTimeout(() => setScanMessage(null), 4000);
+  };
 
   // Load history from StorageService
   useEffect(() => {
@@ -100,6 +154,7 @@ export const FechamentoInteligente: React.FC<FechamentoInteligenteProps> = ({
           quantidade: p.quantidade,
           dataValidade: p.dataValidade,
           valorEstimado: totalVal,
+          barcode: p.barcode || '',
           // Business Rule 1 & 2: If expired, automatically set to descarte
           acaoTomada: expired ? 'descarte' : 'vendido',
           isVencido: expired,
@@ -409,6 +464,141 @@ _Gerado pelo PADARIA.io v2.5_`;
       {/* TAB 1: AUDITORIA DE SOBRAS */}
       {activeTab === 'audit' && (
         <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-6">
+          {/* Scan Toast Message */}
+          {scanMessage && (
+            <div className="p-3.5 bg-gray-900 text-white rounded-xl text-xs font-bold shadow-lg border border-orange-500/50 flex items-center space-x-2 animate-bounce">
+              <Sparkles className="w-4 h-4 text-orange-400 shrink-0" />
+              <span>{scanMessage}</span>
+            </div>
+          )}
+
+          {/* Barcode & Batch Scanner Widget */}
+          <div className="bg-gradient-to-r from-gray-900 via-[#1F2937] to-gray-900 text-white p-5 rounded-2xl shadow-md space-y-4 border border-gray-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center space-x-3">
+                <div className="p-2.5 bg-[#FF6B00]/20 rounded-xl text-[#FF6B00] border border-[#FF6B00]/30">
+                  <Barcode className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-white">Leitor de Código de Barras (Individual ou em Lote)</h4>
+                  <p className="text-xs text-gray-300">Biper, digitar ou escanear via câmera para dar baixa rápida nos produtos pendentes.</p>
+                </div>
+              </div>
+
+              {/* Batch Mode Toggle */}
+              <label className="flex items-center space-x-2 bg-gray-800/90 px-3.5 py-2 rounded-xl border border-gray-700 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isBatchMode}
+                  onChange={(e) => setIsBatchMode(e.target.checked)}
+                  className="w-4 h-4 accent-[#FF6B00] rounded"
+                />
+                <span className="text-xs font-bold text-gray-200">🔄 Modo Lote (Leitura Sequencial)</span>
+              </label>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <div className="relative flex-1 w-full">
+                <input
+                  type="text"
+                  placeholder="Digite ou bipe o código de barras e pressione Enter..."
+                  value={barcodeInput}
+                  onChange={(e) => setBarcodeInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && barcodeInput.trim()) {
+                      handleScanResult(barcodeInput.trim());
+                      setBarcodeInput('');
+                    }
+                  }}
+                  className="w-full bg-gray-800 text-white placeholder-gray-400 px-4 py-2.5 rounded-xl border border-gray-700 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (barcodeInput.trim()) {
+                    handleScanResult(barcodeInput.trim());
+                    setBarcodeInput('');
+                  } else {
+                    setShowBarcodeScanner(true);
+                  }
+                }}
+                className="px-4 py-2.5 bg-[#FF6B00] hover:bg-[#e05e00] text-white text-xs font-extrabold rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 shadow-sm"
+              >
+                <Camera className="w-4 h-4" />
+                <span>{barcodeInput.trim() ? '🔍 Buscar Código' : '📷 Escanear Câmera'}</span>
+              </button>
+            </div>
+
+            {/* Batch Queue Bar */}
+            {isBatchMode && scannedBatchIds.length > 0 && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-extrabold text-amber-300">
+                    📦 Fila de Lote: <strong>{scannedBatchIds.length} produtos lidos</strong>
+                  </span>
+                  <button
+                    onClick={() => setScannedBatchIds([])}
+                    className="text-[11px] text-gray-400 hover:text-white underline cursor-pointer"
+                  >
+                    Limpar Fila
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                  {scannedBatchIds.map((id) => {
+                    const item = allItems.find(i => i.productId === id);
+                    return item ? (
+                      <span key={id} className="px-2.5 py-1 bg-gray-800 text-amber-200 border border-amber-500/40 rounded-lg text-[11px] font-bold flex items-center space-x-1">
+                        <span>{item.nomeProduto}</span>
+                        <button onClick={() => setScannedBatchIds(prev => prev.filter(x => x !== id))} className="text-red-400 hover:text-red-300 ml-1">×</button>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+
+                <div className="pt-2 border-t border-amber-500/20 flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-extrabold text-gray-300">Dar baixa em lote como:</span>
+                  <button
+                    onClick={() => handleBatchAction('vendido')}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-lg transition-all shadow-xs cursor-pointer"
+                  >
+                    🛒 Vendidos ({scannedBatchIds.length})
+                  </button>
+                  <button
+                    onClick={() => handleBatchAction('descarte')}
+                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-lg transition-all shadow-xs cursor-pointer"
+                  >
+                    🗑️ Descarte ({scannedBatchIds.length})
+                  </button>
+                  <button
+                    onClick={() => handleBatchAction('transferido')}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-lg transition-all shadow-xs cursor-pointer"
+                  >
+                    🔁 Transferidos ({scannedBatchIds.length})
+                  </button>
+                  <button
+                    onClick={() => handleBatchAction('doacao')}
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-black rounded-lg transition-all shadow-xs cursor-pointer"
+                  >
+                    🎁 Doados ({scannedBatchIds.length})
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {showBarcodeScanner && (
+            <BarcodeScanner
+              onScan={(code) => {
+                setShowBarcodeScanner(false);
+                handleScanResult(code);
+              }}
+              onClose={() => setShowBarcodeScanner(false)}
+            />
+          )}
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
             <div>
               <h3 className="text-base font-extrabold text-[#1F2937]">Conferência das Sobras do Dia</h3>

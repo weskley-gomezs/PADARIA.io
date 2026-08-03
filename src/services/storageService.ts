@@ -1243,10 +1243,11 @@ export class StorageService {
     return historyItem;
   }
 
-  static getSalesHistory(bakeryCode: string): SaleHistoryItem[] {
+  static getSalesHistory(bakeryCode?: string): SaleHistoryItem[] {
     const history = getItem<SaleHistoryItem[]>(KEYS.SALES_HISTORY, []);
+    if (!bakeryCode) return history;
     const cleanCode = bakeryCode.trim().toUpperCase();
-    return history.filter((h) => h.bakeryCode.toUpperCase() === cleanCode);
+    return history.filter((h) => h.bakeryCode && h.bakeryCode.toUpperCase() === cleanCode);
   }
 
   static async restoreSoldProduct(historyId: string): Promise<Product | null> {

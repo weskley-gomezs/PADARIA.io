@@ -162,6 +162,7 @@ export interface ClosingItem {
   qtdDoada?: number;
   isVencido?: boolean;
   observacoes?: string;
+  barcode?: string;
 }
 
 export interface DailyClosing {
@@ -179,4 +180,58 @@ export interface DailyClosing {
   createdAt: string; // ISO string
   updatedAt: string; // ISO string
 }
+
+export interface ClientResourceUsage {
+  gemini: {
+    scansHoje: number;
+    scansMes: number;
+    chamadasIa: number;
+    tokensUtilizados: number;
+    custoEstimado: number;
+  };
+  firebase: {
+    leituras: number;
+    gravacoes: number;
+    atualizacoes: number;
+    armazenamentoMb: number;
+    numeroDocumentos: number;
+    custoEstimado: number;
+  };
+  vercel: {
+    requisicoes: number;
+    tempoExecucaoMs: number;
+    invocacoes: number;
+    bandwidthMb: number;
+    custoEstimado: number;
+  };
+  totalCost: number;
+}
+
+export interface SaasClientMetrics {
+  bakeryCode: string;
+  empresa: string;
+  cnpj?: string;
+  email: string;
+  cidade?: string;
+  estado?: string;
+  planoNome: string;
+  valorMensal: number;
+  valorImplementacao: number;
+  status: BillingStatus;
+  dataCadastro: string;
+  proximoVencimento: string;
+  diasComoCliente: number;
+  mesesAtivo: number;
+  valorTotalPago: number;
+  ultimoPagamento: string;
+  usage: ClientResourceUsage;
+  receitaMensal: number;
+  lucroBrutoMensal: number;
+  margemMensalPct: number;
+  receitaAcumuladaLtv: number;
+  custoAcumuladoLtv: number;
+  lucroLiquidoLtv: number;
+  saudeLtv: 'excelente' | 'atencao' | 'revisar_plano';
+}
+
 
