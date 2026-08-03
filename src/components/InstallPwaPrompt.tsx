@@ -127,7 +127,7 @@ export const InstallPwaPrompt: React.FC = () => {
               {/* App Icon */}
               <div className="relative shrink-0">
                 <img
-                  src="https://i.imgur.com/JZHMfRN.png"
+                  src="https://i.imgur.com/HSJoe7l.png"
                   alt="Padaria.io Icon"
                   className="w-14 h-14 rounded-2xl object-cover shadow-md border border-orange-500/30"
                 />
@@ -195,7 +195,7 @@ export const InstallPwaPrompt: React.FC = () => {
 
                 <div className="flex items-center space-x-4">
                   <img
-                    src="https://i.imgur.com/JZHMfRN.png"
+                    src="https://i.imgur.com/HSJoe7l.png"
                     alt="Padaria.io"
                     className="w-16 h-16 rounded-2xl object-cover shadow-lg border-2 border-[#E8571A]"
                   />
