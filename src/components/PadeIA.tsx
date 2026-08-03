@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { BakeryCompany, Product, SaleHistoryItem, VipOffer } from '../types';
+import { StorageService } from '../services/storageService';
+import { formatDateToBR, formatDateToISO } from '../utils/dateUtils';
 
 interface PadeIAProps {
   company: BakeryCompany;
@@ -46,7 +48,64 @@ interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: string;
+  registeredProducts?: Array<{
+    nome: string;
+    quantidade: number;
+    valorKg?: number;
+    valorTotal?: number;
+    dataValidade: string;
+  }>;
 }
+
+const cleanDisplayText = (text: string) => {
+  if (!text) return '';
+  return text
+    .replace(/```(?:json:action|json)[\s\S]*?```/gi, '')
+    .replace(/\{\s*"action"\s*:\s*"REGISTER_PRODUCT"[\s\S]*?\}/gi, '')
+    .trim();
+};
+
+const extractProductActions = (text: string): any[] => {
+  const productsToRegister: any[] = [];
+  if (!text) return productsToRegister;
+
+  // 1. Search for ```json:action ... ``` or ```json ... ``` blocks
+  const blockRegex = /```(?:json:action|json)\s*([\s\S]*?)\s*```/gi;
+  let match;
+  while ((match = blockRegex.exec(text)) !== null) {
+    try {
+      const parsed = JSON.parse(match[1]);
+      if (parsed) {
+        if (parsed.action === 'REGISTER_PRODUCT' && parsed.product) {
+          productsToRegister.push(parsed.product);
+        } else if (parsed.action === 'REGISTER_PRODUCTS' && Array.isArray(parsed.products)) {
+          productsToRegister.push(...parsed.products);
+        } else if (parsed.nome && (parsed.quantidade || parsed.valorKg || parsed.dataValidade)) {
+          productsToRegister.push(parsed);
+        }
+      }
+    } catch (e) {
+      console.warn('[PadeIA Action Parser] Erro ao parsear bloco JSON:', e);
+    }
+  }
+
+  // 2. Fallback: Search for any raw JSON object containing "action": "REGISTER_PRODUCT"
+  if (productsToRegister.length === 0) {
+    const rawMatches = text.match(/\{\s*"action"\s*:\s*"REGISTER_PRODUCT"[\s\S]*?\}/gi);
+    if (rawMatches) {
+      for (const m of rawMatches) {
+        try {
+          const parsed = JSON.parse(m);
+          if (parsed && parsed.product) {
+            productsToRegister.push(parsed.product);
+          }
+        } catch (_) {}
+      }
+    }
+  }
+
+  return productsToRegister;
+};
 
 export const PadeIA: React.FC<PadeIAProps> = ({
   company,
@@ -472,11 +531,66 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
         throw new Error(data.error || 'Erro ao consultar a PadeIA™');
       }
 
+      const rawReply = data.reply || 'Não consegui obter uma resposta no momento. Tente novamente.';
+
+      // Extract and execute product registration actions
+      const extractedProducts = extractProductActions(rawReply);
+      const registeredItems: Array<{
+        nome: string;
+        quantidade: number;
+        valorKg?: number;
+        valorTotal?: number;
+        dataValidade: string;
+      }> = [];
+
+      if (extractedProducts.length > 0 && company?.codigoAtivacao) {
+        for (const p of extractedProducts) {
+          if (!p.nome) continue;
+          const qty = Math.max(1, Number(p.quantidade) || 1);
+          const unitPrice = Number(p.valorKg) || Number(p.precoUnitario) || 0;
+          const lotValue = Number(p.valorTotal) || (qty * unitPrice);
+
+          let validDate = p.dataValidade || '';
+          if (!validDate || !/^\d{4}-\d{2}-\d{2}$/.test(validDate)) {
+            const target = new Date();
+            target.setDate(target.getDate() + 2);
+            validDate = formatDateToISO(target);
+          }
+
+          try {
+            await StorageService.addProduct(
+              company.codigoAtivacao,
+              p.nome,
+              qty,
+              validDate,
+              p.categoria || 'Geral',
+              p.barcode || '',
+              unitPrice,
+              p.dataFabricacao || formatDateToISO(new Date()),
+              lotValue,
+              'Cadastro via PadeIA'
+            );
+
+            registeredItems.push({
+              nome: p.nome,
+              quantidade: qty,
+              valorKg: unitPrice,
+              valorTotal: lotValue,
+              dataValidade: validDate
+            });
+            console.log(`✅ [PadeIA] Produto registrado com sucesso: ${p.nome} (Qtd: ${qty}, Lote: R$ ${lotValue})`);
+          } catch (err) {
+            console.error('Erro ao registrar produto no StorageService:', err);
+          }
+        }
+      }
+
       const modelReply: ChatMessage = {
         id: 'model_' + Date.now(),
         role: 'model',
-        text: data.reply || 'Não consegui obter uma resposta no momento. Tente novamente.',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        text: rawReply,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        registeredProducts: registeredItems.length > 0 ? registeredItems : undefined
       };
 
       setMessages((prev) => [...prev, modelReply]);
@@ -667,8 +781,31 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                   </div>
 
                   <div className="markdown-body leading-relaxed space-y-1">
-                    <Markdown>{msg.text}</Markdown>
+                    <Markdown>{cleanDisplayText(msg.text)}</Markdown>
                   </div>
+
+                  {msg.registeredProducts && msg.registeredProducts.length > 0 && (
+                    <div className="mt-3 p-3 bg-emerald-50 border border-emerald-300 rounded-xl space-y-2 text-xs text-emerald-950 shadow-xs">
+                      <div className="flex items-center space-x-1.5 font-extrabold text-emerald-800 border-b border-emerald-200 pb-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Produto Cadastrado com Sucesso no Sistema</span>
+                      </div>
+                      {msg.registeredProducts.map((p, idx) => (
+                        <div key={idx} className="bg-white p-2.5 rounded-lg border border-emerald-200 flex flex-col space-y-1 shadow-2xs">
+                          <div className="flex justify-between items-center font-bold text-gray-900">
+                            <span className="text-sm">{p.nome}</span>
+                            <span className="text-emerald-700 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-md text-[11px]">
+                              Lote Total: R$ {(p.valorTotal || 0).toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-[11px] text-gray-600 pt-0.5">
+                            <span>Qtd: <strong>{p.quantidade} un</strong> × R$ {(p.valorKg || 0).toFixed(2)}/un</span>
+                            <span>Validade: <strong>{formatDateToBR(p.dataValidade)}</strong></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
