@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Printer, ChefHat, Filter, Crown } from 'lucide-react';
+import { X, Printer, Download } from 'lucide-react';
 import { Product, BakeryCompany, VipOffer } from '../types';
 import { formatDateToBR, getRelativeExpirationText } from '../utils/dateUtils';
+import { generateExecutiveReportPDF } from '../utils/pdfGenerator';
 
 interface PrintReportModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
   vipOffers = [],
 }) => {
   const [periodFilter, setPeriodFilter] = useState<'todos' | 'dia' | 'semana' | 'mes'>('todos');
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   if (!isOpen) return null;
 
@@ -58,20 +60,25 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
     0
   );
 
-  const soldVipOffers = vipOffers.filter((o) => o.status === 'vendido');
-  const totalVipRecovered = soldVipOffers.reduce(
-    (acc, o) => acc + (o.valorVenda || o.valorPromocional || 0),
-    0
-  );
-
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPDF = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      await generateExecutiveReportPDF(company, products, periodFilter, vipOffers);
+    } catch (err) {
+      console.error('Erro ao gerar PDF executivo:', err);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   const todayFormatted = formatDateToBR(todayStr);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static">
       <div className="bg-white rounded-2xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl border border-[#E0E0E0] space-y-4 sm:space-y-6 max-h-[95vh] sm:max-h-[90vh] flex flex-col print:max-w-none print:w-full print:h-auto print:shadow-none print:border-none print:p-0">
         {/* Actions bar (hidden during print) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-3 gap-3 print:hidden">
@@ -124,11 +131,20 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
 
             <div className="flex items-center space-x-2">
               <button
-                onClick={handlePrint}
-                className="flex-1 sm:flex-none px-4 py-2 bg-[#D4A574] hover:bg-[#c29363] text-white font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 shadow-sm transition-all min-h-[38px] cursor-pointer"
+                onClick={handleDownloadPDF}
+                disabled={isGeneratingPDF}
+                className="flex-1 sm:flex-none px-4 py-2 bg-[#E8571A] hover:bg-[#d44e15] text-white font-black text-xs rounded-xl flex items-center justify-center space-x-1.5 shadow-md transition-all min-h-[38px] cursor-pointer disabled:opacity-50"
               >
-                <Printer className="w-4 h-4" />
-                <span>Imprimir / Salvar PDF</span>
+                <Download className="w-4 h-4" />
+                <span>{isGeneratingPDF ? 'Gerando...' : 'Salvar PDF'}</span>
+              </button>
+              <button
+                onClick={handlePrint}
+                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all min-h-[38px] cursor-pointer"
+                title="Imprimir via Navegador"
+              >
+                <Printer className="w-4 h-4 text-gray-600" />
+                <span className="hidden sm:inline">Imprimir</span>
               </button>
               <button onClick={onClose} className="hidden sm:block p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
                 <X className="w-5 h-5" />
@@ -142,9 +158,12 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
           {/* Header Document */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-[#2C2C2C] pb-4 gap-3">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#2C2C2C] text-[#D4A574] rounded-xl flex items-center justify-center shrink-0">
-                <ChefHat className="w-6 h-6 sm:w-7 sm:h-7" />
-              </div>
+              <img 
+                src="https://i.imgur.com/ZGsjvWy.png" 
+                alt="PADARIA.io Logo" 
+                className="h-10 sm:h-12 object-contain shrink-0" 
+                referrerPolicy="no-referrer"
+              />
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-[#2C2C2C] leading-tight">{company.empresa}</h2>
                 <p className="text-xs text-gray-500">

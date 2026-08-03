@@ -34,12 +34,13 @@ import {
   Eye,
   EyeOff,
   Check,
+  Download,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, VipOffer } from '../types';
 import { StorageService } from '../services/storageService';
 import { formatDateToBR, getRelativeExpirationText, generateActivationCode, calculateDaysRemaining, formatDateToISO } from '../utils/dateUtils';
-import { generateContractPDF, generateSystemManualPDF } from '../utils/pdfGenerator';
+import { generateContractPDF, generateSystemManualPDF, generateExecutiveReportPDF } from '../utils/pdfGenerator';
 import { ProductModal } from './ProductModal';
 import { NotificationsModal } from './NotificationsModal';
 import { PrivacyPolicyModal } from './PrivacyPolicyModal';
@@ -94,7 +95,20 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState<boolean>(false);
   const [isPrintReportOpen, setIsPrintReportOpen] = useState<boolean>(false);
+  const [isSavingExecPdf, setIsSavingExecPdf] = useState<boolean>(false);
   const [isSupportOpen, setIsSupportOpen] = useState<boolean>(false);
+
+  const handleDownloadExecPdfDirect = async () => {
+    if (!company) return;
+    setIsSavingExecPdf(true);
+    try {
+      await generateExecutiveReportPDF(company, products, 'todos', vipOffers);
+    } catch (err) {
+      console.error('Erro ao baixar PDF:', err);
+    } finally {
+      setIsSavingExecPdf(false);
+    }
+  };
   const [isVipOfferModalOpen, setIsVipOfferModalOpen] = useState<boolean>(false);
   const [vipOfferProductInfo, setVipOfferProductInfo] = useState<{
     productId: string;
@@ -1126,13 +1140,23 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
               <h2 className="text-lg sm:text-xl font-extrabold text-[#1F2937]">Relatório Executivo de Validades</h2>
               <p className="text-xs text-gray-500">Visualize e exporte o relatório completo com perdas, descartes e indicadores de validade sanitária.</p>
             </div>
-            <button
-              onClick={() => setIsPrintReportOpen(true)}
-              className="w-full md:w-auto px-4 py-2.5 bg-[#E8571A] hover:bg-[#d44e15] text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center space-x-2 shadow-sm cursor-pointer"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Imprimir / PDF Executivo</span>
-            </button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+              <button
+                onClick={handleDownloadExecPdfDirect}
+                disabled={isSavingExecPdf}
+                className="w-full sm:w-auto px-4 py-2.5 bg-[#E8571A] hover:bg-[#d44e15] text-white text-xs font-black rounded-xl transition-all flex items-center justify-center space-x-2 shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" />
+                <span>{isSavingExecPdf ? 'Gerando PDF...' : 'Salvar PDF Executivo'}</span>
+              </button>
+              <button
+                onClick={() => setIsPrintReportOpen(true)}
+                className="w-full sm:w-auto px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <Printer className="w-4 h-4 text-gray-600" />
+                <span>Visualizar / Imprimir</span>
+              </button>
+            </div>
           </div>
 
           <div className="p-4 sm:p-6 bg-gray-50 rounded-xl border border-gray-200 space-y-4">

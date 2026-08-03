@@ -132,3 +132,40 @@
 .animate-slide-up-mobile {
   animation: slideUpMobile 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Print Media Fixes (Prevents duplicate page printing and background artifacts) */
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide header, navigation, and background elements */
+  header, nav, footer, button, .print\:hidden {
+    display: none !important;
+  }
+
+  /* Clean print layout */
+  .fixed.inset-0 {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .print\:max-w-none {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  .print\:overflow-visible {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+}
+

@@ -1,5 +1,28 @@
 import jsPDF from 'jspdf';
-import { BakeryCompany, ContractInfo } from '../types/index.js';
+import { BakeryCompany, ContractInfo, Product, VipOffer } from '../types/index.js';
+import { formatDateToBR } from './dateUtils.js';
+
+async function getBase64ImageFromUrl(imageUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        const dataURL = canvas.toDataURL('image/png');
+        resolve(dataURL);
+      } else {
+        reject(new Error('Canvas context error'));
+      }
+    };
+    img.onerror = (err) => reject(err);
+    img.src = imageUrl;
+  });
+}
 
 export function generateContractPDF(company: BakeryCompany, customCnpj?: string) {
   const doc = new jsPDF({
@@ -552,6 +575,247 @@ export function generateSystemManualPDF(companyName?: string) {
   addFooter(2);
 
   doc.save('Manual_Completo_PadariaIO_Vendas.pdf');
+}
+
+export async function generateExecutiveReportPDF(
+  company: BakeryCompany,
+  products: Product[],
+  periodFilter: 'todos' | 'dia' | 'semana' | 'mes' = 'todos',
+  _vipOffers: VipOffer[] = []
+) {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const currentYearMonth = todayStr.substring(0, 7);
+
+  const expiredList = products.filter((p) => p.status === 'vencido');
+  const expiringList = products.filter((p) => p.status === 'vencendo');
+  const normalList = products.filter((p) => p.status === 'normal');
+
+  const filteredExpiredList = expiredList.filter((item) => {
+    if (periodFilter === 'todos') return true;
+    if (periodFilter === 'dia') {
+      return item.dataValidade === todayStr || item.dataCadastro === todayStr;
+    }
+    if (periodFilter === 'mes') {
+      return (
+        (item.dataValidade && item.dataValidade.startsWith(currentYearMonth)) ||
+        (item.dataCadastro && item.dataCadastro.startsWith(currentYearMonth)) ||
+        item.status === 'vencido'
+      );
+    }
+    if (periodFilter === 'semana') {
+      if (item.dataValidade === todayStr || item.dataCadastro === todayStr) return true;
+      const refDate = item.dataCadastro || item.dataValidade;
+      if (!refDate) return false;
+      const itemDate = new Date(refDate).getTime();
+      const now = new Date().getTime();
+      const diffDays = Math.abs((now - itemDate) / (1000 * 3600 * 24));
+      return diffDays <= 7 || item.status === 'vencido';
+    }
+    return true;
+  });
+
+  const totalExpiredValue = filteredExpiredList.reduce(
+    (acc, p) => acc + (p.valorTotal || p.quantidade * (p.valorKg || 12)),
+    0
+  );
+
+  const totalExpiredQty = filteredExpiredList.reduce((acc, p) => acc + p.quantidade, 0);
+  const todayFormatted = formatDateToBR(todayStr);
+
+  // Top Dark Header Box
+  doc.setFillColor(31, 41, 55);
+  doc.rect(0, 0, 210, 32, 'F');
+
+  // Accent Line
+  doc.setFillColor(232, 87, 26);
+  doc.rect(0, 32, 210, 2, 'F');
+
+  // Load Logo Image (https://i.imgur.com/ZGsjvWy.png)
+  try {
+    const logoBase64 = await getBase64ImageFromUrl('https://i.imgur.com/ZGsjvWy.png');
+    doc.addImage(logoBase64, 'PNG', 12, 6, 48, 18);
+  } catch {
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text('PADARIA.io', 14, 18);
+  }
+
+  // Header Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(255, 255, 255);
+  doc.text('RELATÓRIO EXECUTIVO DE VALIDADES E DESTRUIÇÃO SANITÁRIA', 66, 15);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(209, 213, 219);
+  doc.text(`Empresa: ${company.empresa} | CNPJ: ${company.cnpj || 'Não informado'}`, 66, 21);
+  doc.text(`Código: ${company.codigoAtivacao} | Filtro: ${periodFilter.toUpperCase()} | Emissão: ${todayFormatted}`, 66, 26);
+
+  let y = 42;
+
+  // Title on page
+  doc.setTextColor(31, 41, 55);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text(`RESUMO EXECUTIVO DE CONTROLE - ${company.empresa.toUpperCase()}`, 14, y);
+  y += 6;
+
+  // Summary Metrics Box
+  doc.setFillColor(249, 250, 251);
+  doc.setDrawColor(229, 231, 235);
+  doc.roundedRect(14, y, 182, 22, 3, 3, 'DF');
+
+  // Metric 1
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(220, 38, 38);
+  doc.text('QTD VENCIDOS', 18, y + 6);
+  doc.setFontSize(11);
+  doc.text(`${totalExpiredQty} un`, 18, y + 15);
+
+  // Metric 2
+  doc.setFontSize(7.5);
+  doc.setTextColor(185, 28, 28);
+  doc.text('PREJUÍZO DE VENCIDOS', 62, y + 6);
+  doc.setFontSize(11);
+  doc.text(`R$ ${totalExpiredValue.toFixed(2)}`, 62, y + 15);
+
+  // Metric 3
+  doc.setFontSize(7.5);
+  doc.setTextColor(217, 119, 6);
+  doc.text('VENCENDO (3 DIAS)', 115, y + 6);
+  doc.setFontSize(11);
+  doc.text(`${expiringList.length} itens`, 115, y + 15);
+
+  // Metric 4
+  doc.setFontSize(7.5);
+  doc.setTextColor(22, 163, 74);
+  doc.text('NORMAIS NO ESTOQUE', 158, y + 6);
+  doc.setFontSize(11);
+  doc.text(`${normalList.length} itens`, 158, y + 15);
+
+  y += 28;
+
+  // Table Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(31, 41, 55);
+  doc.text(`ESPECIFICAÇÕES DE PRODUTOS VENCIDOS (${filteredExpiredList.length} ITENS)`, 14, y);
+  y += 5;
+
+  // Table Header
+  doc.setFillColor(31, 41, 55);
+  doc.rect(14, y, 182, 7, 'F');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('PRODUTO / CATEGORIA', 16, y + 5);
+  doc.text('CÓD. BARRAS', 75, y + 5);
+  doc.text('FABRICAÇÃO', 108, y + 5);
+  doc.text('VALIDADE', 133, y + 5);
+  doc.text('QTD', 158, y + 5);
+  doc.text('TOTAL (R$)', 173, y + 5);
+
+  y += 7;
+
+  if (filteredExpiredList.length === 0) {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8.5);
+    doc.setTextColor(107, 114, 128);
+    doc.text(`Nenhum produto vencido encontrado para o filtro selecionado (${periodFilter}).`, 16, y + 8);
+    y += 16;
+  } else {
+    doc.setFontSize(7.5);
+
+    filteredExpiredList.forEach((item, index) => {
+      if (y > 265) {
+        doc.addPage();
+        y = 15;
+        // Table Header repeat
+        doc.setFillColor(31, 41, 55);
+        doc.rect(14, y, 182, 7, 'F');
+        doc.setFontSize(7.5);
+        doc.setTextColor(255, 255, 255);
+        doc.text('PRODUTO / CATEGORIA', 16, y + 5);
+        doc.text('CÓD. BARRAS', 75, y + 5);
+        doc.text('FABRICAÇÃO', 108, y + 5);
+        doc.text('VALIDADE', 133, y + 5);
+        doc.text('QTD', 158, y + 5);
+        doc.text('TOTAL (R$)', 173, y + 5);
+        y += 7;
+        doc.setFontSize(7.5);
+      }
+
+      const unitVal = item.valorKg || 12.0;
+      const totalVal = item.valorTotal || item.quantidade * unitVal;
+
+      if (index % 2 === 0) {
+        doc.setFillColor(254, 242, 242);
+        doc.rect(14, y, 182, 7.5, 'F');
+      } else {
+        doc.setFillColor(255, 255, 255);
+        doc.rect(14, y, 182, 7.5, 'F');
+      }
+
+      doc.setTextColor(153, 27, 27);
+      doc.setFont('helvetica', 'bold');
+      const truncatedName = item.nome.length > 27 ? item.nome.substring(0, 25) + '..' : item.nome;
+      doc.text(truncatedName, 16, y + 5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(75, 85, 99);
+      doc.text(item.barcode || 'N/D', 75, y + 5);
+      doc.text(formatDateToBR(item.dataFabricacao) || '-', 108, y + 5);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(185, 28, 28);
+      doc.text(formatDateToBR(item.dataValidade) || '-', 133, y + 5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(31, 41, 55);
+      doc.text(`${item.quantidade} un`, 158, y + 5);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(185, 28, 28);
+      doc.text(`R$ ${totalVal.toFixed(2)}`, 173, y + 5);
+
+      y += 7.5;
+    });
+  }
+
+  if (y > 250) {
+    doc.addPage();
+    y = 20;
+  } else {
+    y += 12;
+  }
+
+  // Footer / Signature lines
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(156, 163, 175);
+  doc.line(14, y, 90, y);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(107, 114, 128);
+  doc.text('Assinatura do Gerente / Responsável Técnico', 14, y + 5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(31, 41, 55);
+  doc.text('PADARIA.io Compliance & Waste Control', 120, y + 5);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Relatório gerado automaticamente pelo sistema PADARIA.io', 120, y + 9);
+
+  // Save PDF Directly
+  const fileName = `Relatorio_Executivo_Validades_${company.empresa.replace(/\s+/g, '_')}_${todayStr}.pdf`;
+  doc.save(fileName);
 }
 
 
