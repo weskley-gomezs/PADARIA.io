@@ -708,8 +708,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
               O que acontece com o seu dinheiro hoje?
             </h2>
-            <p className="text-sm sm:text-base text-gray-500 font-medium">
-              Compare a rotina tradicional com a eficiência automatizada do PADARIA.io.
+            <p className="text-sm sm:text-base text-gray-600 font-medium max-w-2xl mx-auto">
+              Sem o Padaria.io, o desperdício acontece. Com o Padaria.io, o desperdício passa a ser medido, entendido e reduzido.
             </p>
           </motion.div>
 
@@ -733,36 +733,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               <div className="space-y-4 pt-2">
-                <div className="flex items-start space-x-3 p-3.5 bg-red-100/40 rounded-2xl border border-red-200/60">
-                  <span className="text-red-500 font-black">❌</span>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Produto vence na prateleira</h4>
-                    <p className="text-xs text-gray-600">Ninguém percebe a validade chegando ao fim a tempo.</p>
-                  </div>
+                <div className="flex items-center space-x-3 p-4 bg-red-100/40 rounded-2xl border border-red-200/60">
+                  <span className="text-red-500 font-black text-lg shrink-0">❌</span>
+                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Produto vence sem ninguém perceber.</h4>
                 </div>
 
-                <div className="flex items-start space-x-3 p-3.5 bg-red-100/40 rounded-2xl border border-red-200/60">
-                  <span className="text-red-500 font-black">❌</span>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Vai direto para o lixo</h4>
-                    <p className="text-xs text-gray-600">Alimentos nobres e caros são descartados sem gerar 1 centavo.</p>
-                  </div>
+                <div className="flex items-center space-x-3 p-4 bg-red-100/40 rounded-2xl border border-red-200/60">
+                  <span className="text-red-500 font-black text-lg shrink-0">❌</span>
+                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Prejuízo invisível.</h4>
                 </div>
 
-                <div className="flex items-start space-x-3 p-3.5 bg-red-100/40 rounded-2xl border border-red-200/60">
-                  <span className="text-red-500 font-black">❌</span>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Prejuízo 100% absorvido</h4>
-                    <p className="text-xs text-gray-600">O custo de matéria-prima e mão de obra vai para o ralo.</p>
-                  </div>
+                <div className="flex items-center space-x-3 p-4 bg-red-100/40 rounded-2xl border border-red-200/60">
+                  <span className="text-red-500 font-black text-lg shrink-0">❌</span>
+                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Produção baseada em achismo.</h4>
                 </div>
 
-                <div className="flex items-start space-x-3 p-3.5 bg-red-100/40 rounded-2xl border border-red-200/60">
-                  <span className="text-red-500 font-black">❌</span>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Sem nenhum controle</h4>
-                    <p className="text-xs text-gray-600">A gerência não sabe quanto está perdendo nem onde está errando.</p>
-                  </div>
+                <div className="flex items-center space-x-3 p-4 bg-red-100/40 rounded-2xl border border-red-200/60">
+                  <span className="text-red-500 font-black text-lg shrink-0">❌</span>
+                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Ninguém sabe quanto perdeu.</h4>
                 </div>
               </div>
 
@@ -796,41 +784,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-emerald-950 uppercase">COM PADARIA.IO</h3>
-                  <p className="text-xs text-emerald-600 font-bold">Gestão inteligente e eliminação do desperdício</p>
+                  <p className="text-xs text-emerald-600 font-extrabold">O desperdício deixa de ser invisível.</p>
                 </div>
               </div>
 
               <div className="space-y-4 pt-2">
-                <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
-                  <span className="text-emerald-600 font-black">✅</span>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Foto do produto já vencido</h4>
-                    <p className="text-xs text-gray-600">Apenas itens vencidos são aceitos para registro no sistema.</p>
-                  </div>
+                <div className="flex items-center space-x-3 p-4 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
+                  <span className="text-emerald-600 font-black text-lg shrink-0">✅</span>
+                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Todo desperdício é registrado e analisado.</h4>
                 </div>
 
-                <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
-                  <span className="text-emerald-600 font-black">✅</span>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">PadeIA auxilia no uso</h4>
-                    <p className="text-xs text-gray-600 font-medium">Orientação inteligente de uso e cadastro automático dos dados.</p>
-                  </div>
+                <div className="flex items-center space-x-3 p-4 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
+                  <span className="text-emerald-600 font-black text-lg shrink-0">✅</span>
+                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Prejuízo identificado em tempo real.</h4>
                 </div>
 
-                <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
-                  <span className="text-emerald-600 font-black">✅</span>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Auditoria & Relatório de Desperdício</h4>
-                    <p className="text-xs text-gray-600">Controle rigoroso dos itens descartados com relatórios em tempo real.</p>
-                  </div>
+                <div className="flex items-center space-x-3 p-4 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
+                  <span className="text-emerald-600 font-black text-lg shrink-0">✅</span>
+                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Decisões baseadas em dados.</h4>
                 </div>
 
-                <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
-                  <span className="text-emerald-600 font-black">✅</span>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Ajuste na Produção</h4>
-                    <p className="text-xs text-gray-600">Dados precisos para readequar fornadas e zerar o lixo futuro.</p>
-                  </div>
+                <div className="flex items-center space-x-3 p-4 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
+                  <span className="text-emerald-600 font-black text-lg shrink-0">✅</span>
+                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Relatórios financeiros do desperdício.</h4>
                 </div>
               </div>
 
@@ -839,7 +815,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   Resultado Final:
                 </span>
                 <span className="text-sm font-extrabold text-emerald-900">
-                  Zero desperdício não auditado e gestão 100% sob controle!
+                  O desperdício passa a ser medido, entendido e reduzido!
                 </span>
               </div>
             </motion.div>
