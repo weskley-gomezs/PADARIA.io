@@ -96,8 +96,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     }, 2000);
   };
 
-  const whatsappUrl =
-    "https://wa.me/5561996507712?text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20o%20sistema%20PADARIA.io.";
+  const whatsappTestUrl = `https://wa.me/5561996507712?text=${encodeURIComponent(
+    'Olá! Gostaria de testar grátis por 1 dia o sistema PADARIA.io.'
+  )}`;
+
+  const handleTestFree = () => {
+    window.open(whatsappTestUrl, '_blank');
+  };
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#1A1A1A] font-sans selection:bg-[#E8571A] selection:text-white overflow-x-hidden">
@@ -132,22 +137,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Comparação
             </a>
             <a
-              href="#faturamento"
-              className="hover:text-[#E8571A] transition-colors cursor-pointer"
-            >
-              Recuperação
-            </a>
-            <a
-              href="#fechamento"
-              className="hover:text-[#E8571A] transition-colors cursor-pointer"
-            >
-              Fechamento Inteligente
-            </a>
-            <a
               href="#ia"
               className="hover:text-[#E8571A] transition-colors cursor-pointer"
             >
-              Tecnologia IA
+              Tecnologia PadeIA
             </a>
             <a
               href="#beneficios"
@@ -162,10 +155,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Resultados
             </a>
             <a
-              href="#planos"
+              href="#contato"
               className="text-[#E8571A] font-black hover:underline transition-colors cursor-pointer"
             >
-              Planos
+              Entrar em Contato
             </a>
           </nav>
 
@@ -206,25 +199,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Comparação
             </a>
             <a
-              href="#faturamento"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
-            >
-              Recuperação de Dinheiro
-            </a>
-            <a
-              href="#fechamento"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
-            >
-              Fechamento Inteligente
-            </a>
-            <a
               href="#ia"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
             >
-              Tecnologia IA
+              Tecnologia PadeIA
             </a>
             <a
               href="#beneficios"
@@ -241,11 +220,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Resultados
             </a>
             <a
-              href="#planos"
+              href="#contato"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2 text-sm font-extrabold text-[#E8571A]"
             >
-              Planos & Investimento
+              Entrar em Contato
             </a>
             <div className="pt-2 space-y-2 border-t border-gray-100">
               <button
@@ -298,10 +277,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* Badge */}
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-200/80 text-[#E8571A] text-xs font-extrabold tracking-wide uppercase shadow-2xs cursor-default"
+            className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-200/80 text-[#E8571A] text-xs font-extrabold tracking-wide shadow-2xs cursor-default"
           >
             <Sparkles className="w-4 h-4 text-[#E8571A] animate-pulse" />
-            <span>Sistema Inteligente Anti-Prejuízo + Fechamento Inteligente</span>
+            <span>PadeIA: IA que irá te auxiliar no uso do sistema e te ajudar a evitar os desperdícios</span>
           </motion.div>
 
           {/* Main Headline */}
@@ -311,9 +290,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             transition={{ duration: 0.7, delay: 0.1 }}
             className="text-4xl sm:text-6xl lg:text-7xl font-black text-[#1A1A1A] tracking-tight leading-[1.08] uppercase"
           >
-            PARE DE JOGAR <br className="hidden sm:block" />
+            CONTROLE DE VENCIDOS & <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-[#E8571A] via-[#D44E15] to-[#B33B0A] bg-clip-text text-transparent drop-shadow-xs">
-              DINHEIRO NO LIXO.
+              DESPERDÍCIOS.
             </span>
           </motion.h1>
 
@@ -324,7 +303,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             transition={{ duration: 0.7, delay: 0.2 }}
             className="text-base sm:text-xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed"
           >
-            Com apenas uma foto da etiqueta, o <strong className="text-gray-900 font-black">PADARIA.io</strong> identifica produtos próximos ao vencimento, ajuda você a vendê-los antes da perda e controla automaticamente o desperdício.
+            Bata foto dos produtos vencidos para registrar. A <strong className="text-gray-900 font-black">PadeIA</strong> é a IA que irá te auxiliar no uso do sistema e te ajudar a evitar os desperdícios.
           </motion.p>
 
           {/* CTAs */}
@@ -337,10 +316,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <motion.button
               whileHover={{ scale: 1.04, boxShadow: "0 20px 25px -5px rgba(232, 87, 26, 0.3)" }}
               whileTap={{ scale: 0.97 }}
-              onClick={onEnterApp}
+              onClick={handleTestFree}
               className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-base font-extrabold shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center space-x-3 cursor-pointer group"
             >
-              <span>Teste grátis por 1 dia</span>
+              <span>Testar grátis por 1 dia</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </motion.button>
             <motion.button
@@ -460,13 +439,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="w-7 h-7 rounded-xl bg-purple-600 text-white text-xs font-black flex items-center justify-center">
                   3
                 </span>
-                <Moon className="w-4 h-4 text-purple-600" />
+                <CheckCircle2 className="w-4 h-4 text-purple-600" />
               </div>
               <p className="text-xs font-extrabold text-gray-900 leading-snug">
-                Fechamento Inteligente
+                Filtro de Validade
               </p>
               <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                Audita sobras e calcula o prejuízo
+                Aceita apenas produtos já vencidos
               </p>
             </motion.div>
 
@@ -485,13 +464,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="w-7 h-7 rounded-xl bg-emerald-600 text-white text-xs font-black flex items-center justify-center">
                   4
                 </span>
-                <DollarSign className="w-4 h-4 text-emerald-600" />
+                <BarChart3 className="w-4 h-4 text-emerald-600" />
               </div>
               <p className="text-xs font-extrabold text-gray-900 leading-snug">
-                Produto Vendido
+                Registro de Baixa
               </p>
               <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                Cliente compra com desconto atrativo
+                Controle exato de desperdício
               </p>
             </motion.div>
 
@@ -510,13 +489,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="w-7 h-7 rounded-xl bg-blue-600 text-white text-xs font-black flex items-center justify-center">
                   5
                 </span>
-                <BarChart3 className="w-4 h-4 text-blue-600" />
+                <DollarSign className="w-4 h-4 text-blue-600" />
               </div>
               <p className="text-xs font-extrabold text-gray-900 leading-snug">
-                Relatório de Economia
+                Relatório de Perdas
               </p>
               <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                Controle do dinheiro recuperado
+                Gestão para reduzir o descarte
               </p>
             </motion.div>
           </div>
@@ -622,23 +601,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 >
                   <div className="space-y-2 max-w-md">
                     <span className="px-3 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-black rounded-full uppercase inline-block">
-                      Passo 3: Gestão de Expediente
+                      Passo 3: Regra de Validade
                     </span>
-                    <h4 className="text-xl font-black">Fechamento Inteligente de Expediente</h4>
+                    <h4 className="text-xl font-black">Validação Estreita de Vencidos</h4>
                     <p className="text-xs text-gray-300 leading-relaxed">
-                      Ao fim do dia, audite as sobras do balcão e receba receitas da PadeIA™ para transformar sobras em torradas, pudins e farinha de rosca.
+                      O sistema aceita apenas produtos que já venceram (a partir de 1 dia após a data de validade). A PadeIA impede o cadastro de produtos ainda válidos.
                     </p>
                   </div>
                   <div className="bg-gradient-to-br from-purple-900/80 to-purple-800/50 p-4 rounded-2xl border border-purple-500/40 w-full md:w-80 space-y-2">
                     <div className="flex items-center justify-between text-xs font-black text-purple-300">
-                      <span>🌙 Fechamento Ativo</span>
-                      <span className="bg-purple-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black">
-                        BALANÇO
+                      <span>⚠️ Validação PadeIA</span>
+                      <span className="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black">
+                        VENCIDO
                       </span>
                     </div>
                     <div className="p-3 bg-purple-950/90 rounded-xl text-xs space-y-1 text-purple-100 border border-purple-500/30">
-                      <p className="font-bold">🌙 AUDITORIA DO DIA</p>
-                      <p className="text-[11px] opacity-90">12 Pães Franceses convertidos em Torradas do Chef • Economia: <strong className="text-amber-300 text-xs">R$ 28,50</strong></p>
+                      <p className="font-bold">STATUS DE VALIDADE</p>
+                      <p className="text-[11px] opacity-90">Produto Vencido há 1 dia • Permitido para Registro de Desperdício</p>
                     </div>
                   </div>
                 </motion.div>
@@ -655,11 +634,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 >
                   <div className="space-y-2 max-w-md">
                     <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black rounded-full uppercase inline-block">
-                      Passo 4: Dinheiro no Caixa
+                      Passo 4: Registro de Baixa
                     </span>
-                    <h4 className="text-xl font-black">Venda Concluída com Sucesso</h4>
+                    <h4 className="text-xl font-black">Controle de Desperdício Confirmado</h4>
                     <p className="text-xs text-gray-300 leading-relaxed">
-                      O produto é vendido rapidamente ao invés de vencer na prateleira. O prejuízo vira faturamento limpo.
+                      A PadeIA cadastra o produto vencido no sistema para fins de auditoria de perdas e acompanhamento da produção.
                     </p>
                   </div>
                   <div className="bg-emerald-950/90 p-4 rounded-2xl border border-emerald-500/40 w-full md:w-80 text-center space-y-2">
@@ -671,9 +650,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     >
                       <CheckCircle2 className="w-6 h-6" />
                     </motion.div>
-                    <p className="text-xs font-bold text-emerald-300">Venda Registrada!</p>
-                    <p className="text-2xl font-black text-white">+ R$ 14,40</p>
-                    <p className="text-[10px] text-emerald-400 font-medium">Recuperado antes do vencimento</p>
+                    <p className="text-xs font-bold text-emerald-300">Item Cadastrado!</p>
+                    <p className="text-2xl font-black text-white">Perda Registrada</p>
+                    <p className="text-[10px] text-emerald-400 font-medium">Histórico atualizado automaticamente</p>
                   </div>
                 </motion.div>
               )}
@@ -689,21 +668,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 >
                   <div className="space-y-2 max-w-md">
                     <span className="px-3 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-black rounded-full uppercase inline-block">
-                      Passo 5: Controle Financeiro
+                      Passo 5: Análise de Perdas
                     </span>
-                    <h4 className="text-xl font-black">Dashboard & Histórico de Economia</h4>
+                    <h4 className="text-xl font-black">Relatórios de Controle & Indicadores</h4>
                     <p className="text-xs text-gray-300 leading-relaxed">
-                      Acompanhe em tempo real quanto dinheiro sua padaria deixou de perder neste mês e quais setores são mais eficientes.
+                      Acompanhe em tempo real o volume de vencidos e ajuste a produção da padaria para evitar futuros desperdícios.
                     </p>
                   </div>
                   <div className="bg-gray-800/90 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold text-blue-400">
-                      <span>📊 Economia do Mês</span>
-                      <span className="text-emerald-400">+ 84% recuperado</span>
+                      <span>📊 Indicador de Desperdício</span>
+                      <span className="text-orange-400">PadeIA Auxiliando</span>
                     </div>
                     <div className="bg-gray-900 p-3 rounded-xl border border-gray-700 flex justify-between items-center">
-                      <span className="text-xs text-gray-400">Total Recuperado:</span>
-                      <strong className="text-xl font-black text-emerald-400">R$ 2.450,00</strong>
+                      <span className="text-xs text-gray-400">Total Vencidos:</span>
+                      <strong className="text-xl font-black text-orange-400">Controlado</strong>
                     </div>
                   </div>
                 </motion.div>
@@ -817,7 +796,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-emerald-950 uppercase">COM PADARIA.IO</h3>
-                  <p className="text-xs text-emerald-600 font-bold">Gestão inteligente e faturamento recuperado</p>
+                  <p className="text-xs text-emerald-600 font-bold">Gestão inteligente e eliminação do desperdício</p>
                 </div>
               </div>
 
@@ -825,32 +804,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
                   <span className="text-emerald-600 font-black">✅</span>
                   <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Produto identificado dias antes</h4>
-                    <p className="text-xs text-gray-600">Escaneamento por foto antecipa o vencimento com precisão.</p>
+                    <h4 className="text-sm font-extrabold text-gray-900">Foto do produto já vencido</h4>
+                    <p className="text-xs text-gray-600">Apenas itens vencidos são aceitos para registro no sistema.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
                   <span className="text-emerald-600 font-black">✅</span>
                   <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Ação imediata no Fechamento</h4>
-                    <p className="text-xs text-gray-600 font-medium">Reaproveitamento ou ação de baixa guiada pela PadeIA™.</p>
+                    <h4 className="text-sm font-extrabold text-gray-900">PadeIA auxilia no uso</h4>
+                    <p className="text-xs text-gray-600 font-medium">Orientação inteligente de uso e cadastro automático dos dados.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
                   <span className="text-emerald-600 font-black">✅</span>
                   <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Mensagem pronta para WhatsApp</h4>
-                    <p className="text-xs text-gray-600">Envio em 1 clique para a base de clientes do bairro.</p>
+                    <h4 className="text-sm font-extrabold text-gray-900">Auditoria & Relatório de Desperdício</h4>
+                    <p className="text-xs text-gray-600">Controle rigoroso dos itens descartados com relatórios em tempo real.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-3 p-3.5 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
                   <span className="text-emerald-600 font-black">✅</span>
                   <div>
-                    <h4 className="text-sm font-extrabold text-gray-900">Cliente compra & dinheiro recuperado</h4>
-                    <p className="text-xs text-gray-600">O produto é vendido com rapidez e o capital retorna para a padaria.</p>
+                    <h4 className="text-sm font-extrabold text-gray-900">Ajuste na Produção</h4>
+                    <p className="text-xs text-gray-600">Dados precisos para readequar fornadas e zerar o lixo futuro.</p>
                   </div>
                 </div>
               </div>
@@ -860,179 +839,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   Resultado Final:
                 </span>
                 <span className="text-sm font-extrabold text-emerald-900">
-                  Menos perdas, clientes fidelizados e mais dinheiro no caixa!
+                  Zero desperdício não auditado e gestão 100% sob controle!
                 </span>
               </div>
             </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* NOVA SEÇÃO - TRANSFORME DESPERDÍCIO EM FATURAMENTO */}
-      <section id="faturamento" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="bg-gradient-to-br from-[#1F2937] via-[#111827] to-[#030712] rounded-3xl p-8 sm:p-12 text-white shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#E8571A]/10 blur-3xl pointer-events-none rounded-full"></div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
-            <div className="lg:col-span-6 space-y-6">
-              <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-black uppercase">
-                <TrendingUp className="w-4 h-4" />
-                <span>Nova Filosofia de Lucro</span>
-              </div>
-
-              <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-                Transforme desperdício em <span className="text-[#E8571A]">faturamento.</span>
-              </h2>
-
-              <p className="text-sm sm:text-base text-gray-300 font-medium leading-relaxed">
-                Ao final do expediente, o sistema compila o saldo de sobras e ativa o <strong className="text-white">Fechamento Inteligente</strong> para eliminar o prejuízo em tempo recorde.
-              </p>
-
-              <p className="text-xs sm:text-sm text-gray-400 font-medium">
-                Em questão de segundos, você gera e disponibiliza:
-              </p>
-
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center font-black">
-                    🏷️
-                  </div>
-                  <div>
-                    <strong className="text-xs text-white block">Oferta Estratégica</strong>
-                    <span className="text-[10px] text-gray-400">Preço promocional calibrado</span>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-black">
-                    🖼️
-                  </div>
-                  <div>
-                    <strong className="text-xs text-white block">Card / Panfleto</strong>
-                    <span className="text-[10px] text-gray-400">Arte digital instantânea</span>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black">
-                    💬
-                  </div>
-                  <div>
-                    <strong className="text-xs text-white block">Mensagem Formatada</strong>
-                    <span className="text-[10px] text-gray-400">Pronta para WhatsApp</span>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-black">
-                    🔥
-                  </div>
-                  <div>
-                    <strong className="text-xs text-white block">Promoção Ativa</strong>
-                    <span className="text-[10px] text-gray-400">Tudo pronto para divulgar</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4">
-                <button
-                  onClick={onEnterApp}
-                  className="px-6 py-3.5 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-xs font-black shadow-lg transition-all flex items-center space-x-2 cursor-pointer"
-                >
-                  <span>Ativar Fechamento Inteligente na minha padaria</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Illustrative Card/Flyer Mockup */}
-            <div className="lg:col-span-6 flex justify-center">
-              <div className="w-full max-w-sm bg-gradient-to-br from-[#E8571A] to-[#D4A574] rounded-3xl p-6 text-white shadow-2xl border-4 border-white/20 space-y-4 relative">
-                <div className="text-center space-y-1">
-                  <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest inline-block">
-                    ⭐ OFERTA DE BALCÃO ⭐
-                  </span>
-                  <h3 className="text-xl font-black uppercase tracking-tight">PADARIA DO BAIRRO</h3>
-                </div>
-
-                <div className="bg-white text-gray-800 rounded-2xl p-4 shadow-xl text-center space-y-2 relative">
-                  <span className="absolute -top-3 -right-3 bg-red-500 text-white font-black text-xs px-2.5 py-1 rounded-full shadow-md">
-                    25% OFF
-                  </span>
-                  <span className="text-[10px] text-[#E8571A] font-extrabold uppercase tracking-wider block">
-                    Vencimento em 2 dias
-                  </span>
-                  <h4 className="text-base font-black text-gray-900">Mini Sonhos com Doce de Leite (500g)</h4>
-                  <div className="flex items-center justify-center space-x-3 pt-1">
-                    <span className="text-xs text-gray-400 line-through">De R$ 20,00</span>
-                    <span className="text-sm font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                      Por R$ 15,00
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-center space-y-1 text-[11px] font-bold text-orange-100">
-                  <p>📲 Garanta o seu pelo WhatsApp da Padaria!</p>
-                  <p className="text-[9px] opacity-80">Retirada no balcão • Promoção por tempo limitado</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FECHAMENTO INTELIGENTE DIÁRIO */}
-      <section id="fechamento" className="py-20 bg-white border-t border-gray-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-3 max-w-3xl mx-auto">
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-orange-50 text-[#E8571A] border border-orange-200 text-xs font-black uppercase">
-              <Moon className="w-4 h-4 text-[#E8571A]" />
-              <span>Controle Total do Final de Expediente</span>
-            </div>
-            <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
-              Fechamento Inteligente Diário
-            </h2>
-            <p className="text-base text-gray-600 font-bold">
-              Auditoria de sobras, metas de descarte e envio do resumo diário para a gerência.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Fechamento Item 1 */}
-            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-orange-200/80 hover:border-orange-400 transition-all space-y-3 text-center group">
-              <div className="text-3xl group-hover:scale-110 transition-transform">📋</div>
-              <h3 className="text-sm font-black text-gray-900">Auditoria de Sobras</h3>
-              <p className="text-xs text-gray-500 font-medium">
-                Conferência rápida dos produtos do balcão e pães sobrantes ao final do dia.
-              </p>
-            </div>
-
-            {/* Fechamento Item 3 */}
-            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-orange-200/80 hover:border-orange-400 transition-all space-y-3 text-center group">
-              <div className="text-3xl group-hover:scale-110 transition-transform">📊</div>
-              <h3 className="text-sm font-black text-gray-900">Balanço do Prejuízo</h3>
-              <p className="text-xs text-gray-500 font-medium">
-                Cálculo exato de descartes x valor economizado comparados à meta do dia.
-              </p>
-            </div>
-
-            {/* Fechamento Item 4 */}
-            <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-orange-200/80 hover:border-orange-400 transition-all space-y-3 text-center group">
-              <div className="text-3xl group-hover:scale-110 transition-transform">📲</div>
-              <h3 className="text-sm font-black text-gray-900">Relatório via WhatsApp</h3>
-              <p className="text-xs text-gray-500 font-medium">
-                Envio em 1 clique do resumo formatado com os números do dia para a diretoria.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 bg-orange-50/60 rounded-3xl border border-orange-200 text-center max-w-3xl mx-auto space-y-2">
-            <span className="text-xs font-black text-[#E8571A] uppercase tracking-widest block">
-              ⚡ Gestão Sem Ponto Cego
-            </span>
-            <p className="text-sm font-extrabold text-gray-900">
-              Tenha clareza total sobre o que sobrou, o que foi reutilizado e o valor real do descarte diário!
-            </p>
           </div>
         </div>
       </section>
@@ -1303,8 +1113,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* SEÇÃO PLANOS & INVESTIMENTO */}
-      <section id="planos" className="py-20 bg-[#FDFBF7] border-t border-gray-200/80 relative overflow-hidden">
+      {/* SEÇÃO ENTRAR EM CONTATO */}
+      <section id="contato" className="py-20 bg-[#FDFBF7] border-t border-gray-200/80 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -1314,149 +1124,46 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             className="text-center space-y-3 max-w-3xl mx-auto"
           >
             <span className="px-3.5 py-1.5 rounded-full bg-orange-100 text-[#E8571A] border border-orange-200 text-xs font-black uppercase tracking-wider inline-block">
-              Planos & Investimento
+              Fale Conosco
             </span>
             <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
-              Escolha o plano ideal para a sua padaria
+              Pronto para controlar vencidos e zerar o desperdício?
             </h2>
             <p className="text-sm sm:text-base text-gray-600 font-medium">
-              Transparência total e retorno garantido sobre o investimento para o seu negócio.
+              Entre em contato direto com nossa equipe e saiba como implantar o PadeIA na sua padaria hoje mesmo.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-8 items-stretch">
-            {/* PLANO ESSENCIAL */}
+          <div className="max-w-xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              whileHover={{ y: -6 }}
               transition={{ duration: 0.5 }}
-              className="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6 relative"
+              className="bg-gradient-to-b from-[#1F2937] via-[#111827] to-[#0A0F1D] text-white rounded-3xl border-2 border-[#E8571A] p-8 sm:p-10 shadow-2xl text-center space-y-6 relative"
             >
-              <div className="space-y-4">
-                <div className="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-xs font-black rounded-full uppercase">
-                  Ideal para pequenas padarias
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-gray-900">Plano Essencial</h3>
-                  <div className="flex items-baseline space-x-1 mt-2">
-                    <span className="text-4xl font-black text-[#1A1A1A]">R$ 497</span>
-                    <span className="text-sm font-bold text-gray-500">/mês</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-100 pt-4 space-y-3">
-                  <span className="text-xs font-black uppercase text-gray-400 tracking-wider">Inclui:</span>
-                  <ul className="space-y-2.5 text-xs font-bold text-gray-700">
-                    <li className="flex items-center space-x-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
-                      <span>IA para leitura de etiquetas</span>
-                    </li>
-                    <li className="flex items-center space-x-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
-                      <span>Controle de validade</span>
-                    </li>
-                    <li className="flex items-center space-x-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
-                      <span>Relatórios</span>
-                    </li>
-                    <li className="flex items-center space-x-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
-                      <span>Fechamento Inteligente</span>
-                    </li>
-                    <li className="flex items-center space-x-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
-                      <span>Controle de perdas</span>
-                    </li>
-                    <li className="flex items-center space-x-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
-                      <span>Suporte em horário comercial</span>
-                    </li>
-                  </ul>
-                </div>
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
+                <MessageSquare className="w-8 h-8" />
               </div>
 
-              <div className="pt-4">
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black text-white">Atendimento via WhatsApp</h3>
+                <p className="text-xs text-gray-300">
+                  Tire dúvidas, solicite demonstração ou ative seu teste grátis por 1 dia diretamente pelo WhatsApp.
+                </p>
+              </div>
+
+              <div className="pt-2">
                 <motion.a
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  href={`https://wa.me/5561996507712?text=${encodeURIComponent('Olá! Gostaria de contratar ou saber mais sobre o Plano Essencial (R$ 497/mês) do PADARIA.io.')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-4 rounded-2xl bg-gray-900 hover:bg-gray-800 text-white text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                >
-                  <MessageSquare className="w-4 h-4 text-emerald-400" />
-                  <span>Entrar em contato</span>
-                </motion.a>
-              </div>
-            </motion.div>
-
-            {/* PLANO PROFISSIONAL (DESTAQUE) */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -8 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-gradient-to-b from-[#1F2937] via-[#111827] to-[#0A0F1D] text-white rounded-3xl border-2 border-[#E8571A] p-8 shadow-2xl transition-all flex flex-col justify-between space-y-6 relative transform md:-translate-y-2"
-            >
-              <motion.span
-                animate={{ scale: [1, 1.06, 1] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#E8571A] text-white text-[10px] font-black uppercase px-4 py-1 rounded-full shadow-lg tracking-widest border border-orange-300/40"
-              >
-                ⭐ Mais Recomendado
-              </motion.span>
-
-              <div className="space-y-4">
-                <div className="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 text-xs font-black rounded-full uppercase border border-orange-500/30">
-                  Para padarias em crescimento
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-white">Plano Profissional</h3>
-                  <div className="flex items-baseline space-x-1 mt-2">
-                    <span className="text-4xl font-black text-white">R$ 697</span>
-                    <span className="text-sm font-bold text-gray-400">/mês</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-800 pt-4 space-y-3">
-                  <span className="text-xs font-black uppercase text-orange-400 tracking-wider block">
-                    Inclui tudo do Essencial +
-                  </span>
-                  <ul className="space-y-2.5 text-xs font-bold text-gray-200">
-                    <li className="flex items-center space-x-2.5">
-                      <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
-                      <span>Atendimento prioritário</span>
-                    </li>
-                    <li className="flex items-center space-x-2.5">
-                      <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
-                      <span>Mais funcionalidades conforme forem sendo lançadas</span>
-                    </li>
-                    <li className="flex items-center space-x-2.5">
-                      <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
-                      <span>Relatórios avançados</span>
-                    </li>
-                    <li className="flex items-center space-x-2.5">
-                      <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 text-xs font-black">✓</span>
-                      <span>Recursos exclusivos</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="pt-4">
-                <motion.a
-                  whileHover={{ scale: 1.03, boxShadow: "0 15px 30px -5px rgba(232, 87, 26, 0.4)" }}
+                  whileHover={{ scale: 1.03, boxShadow: "0 15px 30px -5px rgba(16, 185, 129, 0.4)" }}
                   whileTap={{ scale: 0.97 }}
-                  href={`https://wa.me/5561996507712?text=${encodeURIComponent('Olá! Gostaria de contratar ou saber mais sobre o Plano Profissional (R$ 697/mês) do PADARIA.io.')}`}
+                  href={`https://wa.me/5561996507712?text=${encodeURIComponent('Olá! Gostaria de testar grátis por 1 dia e tirar dúvidas sobre o sistema PadeIA de controle de vencidos.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-4 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-xs font-black shadow-xl transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                  className="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black shadow-xl transition-all flex items-center justify-center space-x-2 cursor-pointer"
                 >
-                  <MessageSquare className="w-4 h-4 text-white" />
-                  <span>Entrar em contato</span>
+                  <MessageSquare className="w-5 h-5" />
+                  <span>Entrar em contato no WhatsApp</span>
                 </motion.a>
               </div>
             </motion.div>
@@ -1475,8 +1182,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="space-y-4">
             {[
               {
-                q: "Como o sistema ajuda no Fechamento Inteligente e redução de perdas?",
-                a: "Ao final do expediente, o Fechamento Inteligente compila todas as sobras do dia, calcula o prejuízo e sugere ações de reaproveitamento (como transformar pães em torradas, pudim ou farinha de rosca). O sistema gera um relatório em tempo real para o proprietário da padaria."
+                q: "Como a PadeIA ajuda no controle de vencidos e desperdícios?",
+                a: "A PadeIA permite registrar exclusivamente produtos que já venceram (a partir de 1 dia após a data de validade). Através do escaneamento por foto, ela registra e organiza o histórico de perdas, auxiliando a padaria a readequar produções futuras e eliminar o desperdício."
               },
               {
                 q: "Preciso baixar algum aplicativo pesado no celular?",
@@ -1578,7 +1285,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </span>
             <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-orange-300 flex items-center gap-1.5">
               <Crown className="w-4 h-4 text-orange-300" />
-              <span>Módulo Fechamento Inteligente Incluso</span>
+              <span>Controle de Vencidos & Desperdício</span>
             </span>
           </div>
 
@@ -1587,10 +1294,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: "0 20px 30px -5px rgba(232, 87, 26, 0.4)" }}
               whileTap={{ scale: 0.97 }}
-              onClick={onEnterApp}
+              onClick={handleTestFree}
               className="w-full sm:w-1/2 py-5 px-8 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-base font-black shadow-2xl transition-all flex items-center justify-center space-x-3 cursor-pointer group"
             >
-              <span>Testar Sistema Grátis</span>
+              <span>Testar grátis por 1 dia</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </motion.button>
 
@@ -1627,23 +1334,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             <div className="flex flex-wrap justify-center gap-6 text-gray-400">
-              <a href="#comparacao" className="hover:text-white transition-colors">
-                Comparação
-              </a>
-              <a href="#faturamento" className="hover:text-white transition-colors">
-                Recuperação
-              </a>
-              <a href="#fechamento" className="hover:text-white transition-colors">
-                Fechamento Inteligente
+              <a href="#como-funciona" className="hover:text-white transition-colors">
+                Como Funciona
               </a>
               <a href="#ia" className="hover:text-white transition-colors">
-                Tecnologia IA
+                PadeIA
               </a>
               <a href="#beneficios" className="hover:text-white transition-colors">
                 Benefícios
               </a>
               <a href="#resultados" className="hover:text-white transition-colors">
                 Resultados
+              </a>
+              <a href="#contato" className="hover:text-white transition-colors">
+                Entrar em Contato
               </a>
             </div>
 

@@ -153,6 +153,11 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
   const handleConfirmResult = () => {
     if (!scanAnalysis) return;
 
+    if (!scanAnalysis.isExpired) {
+      alert('⛔ PRODUTO AINDA DENTRO DA VALIDADE!\n\nEste sistema é EXCLUSIVO para controle de VENCIDOS e DESPERDÍCIOS. Apenas produtos que já venceram podem ser registrados.');
+      return;
+    }
+
     let finalQtd = 1;
     let finalValorTotal = scanAnalysis.valorTotal;
     let finalValorKg = scanAnalysis.valorKg;
@@ -297,23 +302,21 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-emerald-50 border-2 border-emerald-300 rounded-2xl text-center space-y-2">
-                <div className="w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
-                  <CheckCircle2 className="w-7 h-7" />
+              <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl text-center space-y-2">
+                <div className="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
+                  <AlertTriangle className="w-7 h-7" />
                 </div>
                 <div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white uppercase tracking-wider inline-block mb-1">
-                    🟢 DENTRO DA VALIDADE
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-600 text-white uppercase tracking-wider inline-block mb-1">
+                    ⛔ PRODUTO DENTRO DA VALIDADE
                   </span>
-                  <h4 className="text-base font-black text-emerald-900 leading-snug">
+                  <h4 className="text-base font-black text-red-900 leading-snug">
                     {scanAnalysis.daysRemaining === 0
-                      ? 'VENCE HOJE! (Pode ser vendido normalmente)'
+                      ? 'Vence hoje!'
                       : `Vence em ${scanAnalysis.daysRemaining} dia(s)`}
                   </h4>
-                  <p className="text-xs text-emerald-800 font-semibold mt-1">
-                    {scanAnalysis.daysRemaining === 0
-                      ? 'Produtos que vencem no dia podem ser vendidos com prioridade no balcão ou direcionados para o Fechamento Inteligente.'
-                      : 'Produto dentro do prazo de validade e próprio para consumo/venda.'}
+                  <p className="text-xs text-red-700 font-semibold mt-1">
+                    Este produto ainda está na validade ({formatDateToBR(scanAnalysis.dataValidade || '')}). O Padaria.io aceita EXCLUSIVAMENTE produtos que já venceram para o controle de perdas e descarte.
                   </p>
                 </div>
               </div>
@@ -526,16 +529,18 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
 
             {/* Action Buttons */}
             <div className="space-y-2 pt-1">
-              <button
-                onClick={handleConfirmResult}
-                className={`w-full py-3.5 rounded-xl font-black text-sm text-white shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-                  scanAnalysis.isExpired
-                    ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20'
-                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20'
-                }`}
-              >
-                <span>{scanAnalysis.isExpired ? 'Confirmar para Controle de Descarte' : '✅ Finalizar Cadastro do Produto'}</span>
-              </button>
+              {scanAnalysis.isExpired ? (
+                <button
+                  onClick={handleConfirmResult}
+                  className="w-full py-3.5 rounded-xl font-black text-sm text-white shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer bg-red-600 hover:bg-red-700 shadow-red-500/20"
+                >
+                  <span>🔴 Confirmar para Controle de Descarte</span>
+                </button>
+              ) : (
+                <div className="p-3 bg-red-100 border border-red-300 rounded-xl text-center text-xs font-bold text-red-800">
+                  ⛔ Registro Não Permitido: O Padaria.io aceita apenas produtos que já venceram.
+                </div>
+              )}
 
               <button
                 onClick={handleRescan}

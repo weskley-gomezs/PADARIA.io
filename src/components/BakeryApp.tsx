@@ -49,7 +49,6 @@ import { ImageScanner } from './ImageScanner';
 import { WasteChartSection } from './WasteChartSection';
 import { VipClubSection } from './VipClubSection';
 import { VipOfferModal } from './VipOfferModal';
-import { FechamentoInteligente } from './FechamentoInteligente';
 import { PadeIA } from './PadeIA';
 
 interface BakeryAppProps {
@@ -75,7 +74,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'padeia' | 'relatorio' | 'config' | 'fechamento' | 'vip'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'padeia' | 'relatorio' | 'config'>('dashboard');
 
   useEffect(() => {
     const handleOpenPadeia = () => setActiveTab('padeia');
@@ -237,6 +236,12 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   ) => {
     if (!company) return;
 
+    const todayStr = formatDateToISO(new Date());
+    if (dataValidade >= todayStr) {
+      alert('⛔ PRODUTO AINDA DENTRO DA VALIDADE!\n\nEste sistema é EXCLUSIVO para controle de VENCIDOS e DESPERDÍCIOS. Apenas produtos que já venceram (validade anterior a hoje) podem ser cadastrados.');
+      return;
+    }
+
     try {
       if (productToEdit) {
         await StorageService.updateProduct(
@@ -358,6 +363,12 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
     const valDate = result.dataValidade || formatDateToISO(new Date());
     const daysLeft = calculateDaysRemaining(valDate);
     const computedStatus = daysLeft < 0 ? 'vencido' : daysLeft <= 3 ? 'vencendo' : 'normal';
+
+    if (computedStatus !== 'vencido') {
+      alert('⛔ PRODUTO AINDA DENTRO DA VALIDADE!\n\nEste sistema foi reformulado para aceitar EXCLUSIVAMENTE o registro de produtos que já venceram (pelo menos 1 dia após a validade) para controle de perdas e descarte.');
+      setIsWasteScannerOpen(false);
+      return;
+    }
 
     // 1. FIRST attempt to match existing product by barcode!
     let bestMatch = scannedBarcode
@@ -723,15 +734,6 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         >
           <Settings className="w-3.5 h-3.5" />
           <span>⚙️ Config</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('fechamento')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'fechamento' ? 'bg-[#FF6B00] text-white shadow-sm font-black' : 'bg-white text-gray-600 hover:bg-gray-100 border border-orange-200'
-          }`}
-        >
-          <Moon className="w-3.5 h-3.5 text-[#FF6B00]" />
-          <span>🌙 Fechamento Inteligente</span>
         </button>
       </div>
 
@@ -1206,14 +1208,6 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         </div>
       )}
 
-      {(activeTab === 'fechamento' || activeTab === 'vip') && (
-        <FechamentoInteligente
-          company={company}
-          products={products}
-          onOpenReport={() => setIsPrintReportOpen(true)}
-        />
-      )}
-
       {activeTab === 'config' && (
         <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-6">
           <div>
@@ -1374,16 +1368,6 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         >
           <Settings className="w-5 h-5" />
           <span className="text-[10px] mt-0.5">Config</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('fechamento')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
-            activeTab === 'fechamento' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          <Moon className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">Fechamento</span>
         </button>
       </nav>
     </div>

@@ -57,6 +57,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [showImageScanner, setShowImageScanner] = useState(false);
 
   const todayIso = formatDateToISO(new Date());
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayIso = formatDateToISO(yesterday);
 
   useEffect(() => {
     if (productToEdit) {
@@ -74,10 +77,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     } else {
       setNome('');
       setQuantidade(1);
-      // Default validity date to 3 days from today
-      const future = new Date();
-      future.setDate(future.getDate() + 3);
-      setDataValidade(formatDateToISO(future));
+      // Default validity date to yesterday (must be expired to register)
+      setDataValidade(yesterdayIso);
       setCategoria('Panificação');
       setBarcode('');
       setPeso('');
@@ -106,9 +107,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       return;
     }
 
-    // Validation: Require dataValidade
+    // Validation: Require dataValidade and ensure it is EXPIRED
     if (!dataValidade) {
       setErrorMsg('Por favor, selecione a data de validade.');
+      return;
+    }
+
+    if (dataValidade >= todayIso) {
+      setErrorMsg('⛔ Este sistema é EXCLUSIVO para controle de VENCIDOS e DESPERDÍCIOS. Apenas produtos que já venceram (validade anterior a hoje) podem ser cadastrados.');
       return;
     }
 
@@ -288,17 +294,17 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 <input
                   type="date"
                   value={dataValidade}
-                  min={!productToEdit ? todayIso : undefined}
+                  max={!productToEdit ? yesterdayIso : undefined}
                   onChange={(e) => setDataValidade(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm font-bold text-[#2C2C2C]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-red-300 focus:outline-none focus:ring-2 focus:ring-red-400 text-sm font-bold text-red-700 bg-red-50/30"
                   required
                 />
-                <Calendar className="w-5 h-5 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                <Calendar className="w-5 h-5 text-red-400 absolute right-3 top-3 pointer-events-none" />
               </div>
             </div>
           </div>
-          <p className="text-[11px] text-gray-400 mt-1">
-            Produtos vencendo em até 3 dias receberão alerta amarelo.
+          <p className="text-[11px] text-red-600 font-bold mt-1">
+            🔴 Atenção: Apenas produtos com validade expirada (anterior a hoje) são aceitos.
           </p>
 
           {/* Peso e Valores */}
