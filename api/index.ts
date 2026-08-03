@@ -165,49 +165,7 @@ try {
       text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
       const result = JSON.parse(text);
 
-      // If bakeryCode is provided and DB is available, save product directly to Firestore
-      if (bakeryCode && db) {
-        console.log(`[FIRESTORE] Salvando produto escaneado diretamente no Firestore para bakeryCode: ${bakeryCode}...`);
-        const todayStr = new Date().toISOString().split('T')[0];
-        const valDate = result.dataValidade || todayStr;
-        
-        // Calculate days remaining
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const target = new Date(valDate + 'T00:00:00');
-        const diffTime = target.getTime() - today.getTime();
-        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const status = daysRemaining < 0 ? 'vencido' : daysRemaining <= 3 ? 'vencendo' : 'normal';
-
-        const productId = 'prod_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-        const newProduct = {
-          id: productId,
-          bakeryCode: String(bakeryCode).trim().toUpperCase(),
-          nome: result.nome || 'Produto Escaneado',
-          quantidade: 1,
-          dataValidade: valDate,
-          categoria: 'Descarte IA',
-          dataCadastro: todayStr,
-          diasParaVencer: daysRemaining,
-          status: status,
-          barcode: result.barcode ? String(result.barcode).trim() : '',
-          peso: typeof result.peso === 'number' ? result.peso : null,
-          valorKg: typeof result.valorKg === 'number' ? result.valorKg : null,
-          dataFabricacao: result.dataFabricacao || null,
-          valorTotal: typeof result.valorTotal === 'number' ? result.valorTotal : null,
-          motivo: 'Vencimento',
-          notas: 'Registrado via Leitura de Etiquetas IA',
-        };
-
-        await setDoc(doc(db, 'products', productId), removeUndefined(newProduct));
-        console.log(`[FIRESTORE] Confirmação de gravação do produto ${productId} no Firestore com SUCESSO!`);
-        return res.json({
-          ...result,
-          savedToFirestore: true,
-          product: newProduct,
-        });
-      }
-
+      // Return extracted label data for interactive registration wizard
       res.json(result);
     } catch (error: any) {
       console.error('[ROUTE] ERRO em /api/analyze-product-image:', error);
@@ -261,13 +219,25 @@ try {
 
 REGRAS RÍGIDAS DE IDENTIDADE E COMPORTAMENTO:
 1. Seu nome é estritamente PadeIA™.
-2. Sua descrição oficial é: "Sua gerente inteligente especializada em panificação."
+2. Sua descrição oficial é: "IA de cadastro e controle de perdas da Padaria.io, especializada em operações de panificadoras."
 3. NUNCA, sob nenhuma hipótese, mencione Gemini, Google AI, ChatGPT, OpenAI, Anthropic ou qualquer outro modelo/fornecedor de IA. Para o usuário, você é simplesmente a PadeIA™, a IA nativa do Padaria.io.
 4. Se perguntarem "quem criou você" ou "qual seu modelo", responda: "Eu sou a PadeIA™, a Inteligência Artificial oficial desenvolvida para o Padaria.io com foco em gestão de panificação, controle de estoques e redução de desperdícios."
 5. Idioma: Português do Brasil (PT-BR).
 6. Tom de voz: Profissional, objetivo, extremamente inteligente, educado, consultivo, amigável e especialista em panificação.
-7. Áreas de Especialidade: Validade e PVPS/FIFO, gestão de perdas e descartes, precificação inteligente, cálculo de margem e markup, controle de estoque, vigilância sanitária e análise de indicadores financeiros.
+7. Áreas de Especialidade: Leitura e cadastro de rótulos/etiquetas, Validade e PVPS/FIFO, gestão de perdas e descartes, precificação inteligente, cálculo de margem e markup, controle de estoque, vigilância sanitária e análise de indicadores financeiros.
 8. RESTRIÇÃO ABSOLUTA: O módulo "Clube VIP" foi desativado/ocultado pelo usuário. NUNCA mencione o Clube VIP, promoções do clube VIP ou ofertas VIP em suas respostas, sob nenhuma circunstância.
+
+FLUXO INTERATIVO DE LEITURA DE ETIQUETAS E CADASTRO:
+- Ao identificar ou analisar as informações de um produto ou etiqueta, organize e extraia: Nome do produto, Data de fabricação, Data de validade, Preço informado, Categoria e Código de barras/Peso.
+- NUNCA finalize o cadastro imediatamente.
+- Primeiro pergunte:
+  "Esse produto é:
+   1 - Produto individual (uma unidade corresponde a uma venda)
+   2 - Produto em lote (várias unidades do mesmo produto foram produzidas ou embaladas juntas)"
+- Para Produto Individual: pergunte quantas unidades estão disponíveis e confirme o preço unitário e validade.
+- Para Produto em Lote: pergunte quantas unidades existem no lote, preço por unidade e valor total do lote.
+- Para Produto Vendido por Peso: pergunte se é vendido por peso ou unidade, solicite o peso total disponível (em KG) e registre o preço por KG.
+- Sempre priorize reduzir o trabalho do funcionário. Faça perguntas curtas e objetivas.
 
 DADOS EM TEMPO REAL DA PADARIA CONECTADA:
 - Nome da Empresa: ${company.empresa || 'Minha Padaria'}

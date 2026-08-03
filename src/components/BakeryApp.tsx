@@ -337,17 +337,26 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
 
   const handleWasteScanResult = async (result: {
     nome: string;
+    quantidade?: number;
     dataFabricacao?: string;
     dataValidade?: string;
     peso?: number;
     valorKg?: number;
     valorTotal?: number;
     barcode?: string;
+    categoria?: string;
+    tipoProduto?: 'individual' | 'lote' | 'peso';
   }) => {
     if (!company) return;
 
     const normalizeStr = (s: string) => s.toLowerCase().trim();
     const scannedBarcode = result.barcode ? result.barcode.trim() : '';
+    const quantityToRegister = result.quantidade || 1;
+
+    // Calculate days remaining to determine status
+    const valDate = result.dataValidade || formatDateToISO(new Date());
+    const daysLeft = calculateDaysRemaining(valDate);
+    const computedStatus = daysLeft < 0 ? 'vencido' : daysLeft <= 3 ? 'vencendo' : 'normal';
 
     // 1. FIRST attempt to match existing product by barcode!
     let bestMatch = scannedBarcode
@@ -361,13 +370,13 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
       );
     }
 
-    if (bestMatch) {
-      if (bestMatch.quantidade > 1) {
+    if (bestMatch && computedStatus === 'vencido') {
+      if (bestMatch.quantidade > quantityToRegister) {
         // Decrement existing active stock
         await StorageService.updateProduct(
           bestMatch.id,
           bestMatch.nome,
-          bestMatch.quantidade - 1,
+          bestMatch.quantidade - quantityToRegister,
           bestMatch.dataValidade,
           bestMatch.categoria,
           bestMatch.barcode,
@@ -378,13 +387,13 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           bestMatch.notas,
           bestMatch.peso
         );
-        // Add a dedicated expired record for the 1 discarded unit
+        // Add a dedicated expired record for the discarded units
         await StorageService.addProduct(
           company.codigoAtivacao,
           bestMatch.nome,
-          1,
+          quantityToRegister,
           result.dataValidade || bestMatch.dataValidade,
-          bestMatch.categoria,
+          result.categoria || bestMatch.categoria,
           scannedBarcode || bestMatch.barcode,
           result.valorKg !== undefined ? result.valorKg : bestMatch.valorKg,
           result.dataFabricacao || bestMatch.dataFabricacao,
@@ -395,13 +404,13 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           'vencido'
         );
       } else {
-        // Update the single unit product to status 'vencido'
+        // Update the product to status 'vencido'
         await StorageService.updateProduct(
           bestMatch.id,
           bestMatch.nome,
-          1,
+          quantityToRegister,
           result.dataValidade || bestMatch.dataValidade,
-          bestMatch.categoria,
+          result.categoria || bestMatch.categoria,
           scannedBarcode || bestMatch.barcode,
           result.valorKg !== undefined ? result.valorKg : bestMatch.valorKg,
           result.dataFabricacao || bestMatch.dataFabricacao,
@@ -412,25 +421,25 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           'vencido'
         );
       }
-      showToast(`Descarte registrado! 1 unidade de "${bestMatch.nome}" contabilizada nas perdas do mês.`);
+      showToast(`Descarte registrado! ${quantityToRegister} unidade(s) de "${bestMatch.nome}" contabilizada(s) nas perdas.`);
     } else {
       const newProd = await StorageService.addProduct(
         company.codigoAtivacao,
         result.nome || 'Produto Escaneado',
-        1,
-        result.dataValidade || formatDateToISO(new Date()),
-        'Geral',
+        quantityToRegister,
+        valDate,
+        result.categoria || 'Panificação',
         scannedBarcode,
         result.valorKg,
         result.dataFabricacao,
         result.valorTotal,
-        'Vencimento',
-        'Cadastrado e descartado via Leitor IA (Rótulos)',
+        computedStatus === 'vencido' ? 'Vencimento' : 'Cadastro Novo',
+        `Cadastrado via Leitor IA (Tipo: ${result.tipoProduto || 'individual'})`,
         result.peso,
-        'vencido'
+        computedStatus
       );
       bestMatch = newProd;
-      showToast(`Descarte registrado: "${newProd.nome}" salvo nas perdas e painel atualizado.`);
+      showToast(`Produto cadastrado: "${newProd.nome}" (${quantityToRegister} un) adicionado ao estoque.`);
     }
 
     // Trigger VIP modal if scanned product is expiring in <= 3 days

@@ -420,6 +420,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         <ImageScanner
           onScanResult={(result) => {
             if (result.nome) setNome(result.nome);
+            if (result.quantidade) setQuantidade(result.quantidade);
+            if (result.categoria) setCategoria(result.categoria);
             if (result.barcode) setBarcode(result.barcode);
             if (result.peso !== undefined && result.peso !== null) setPeso(result.peso.toString());
             if (result.dataFabricacao) {

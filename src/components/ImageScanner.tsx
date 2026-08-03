@@ -6,12 +6,15 @@ interface ImageScannerProps {
   bakeryCode?: string;
   onScanResult: (result: {
     nome: string;
+    quantidade?: number;
     dataFabricacao?: string;
     dataValidade?: string;
     peso?: number;
     valorKg?: number;
     valorTotal?: number;
     barcode?: string;
+    categoria?: string;
+    tipoProduto?: 'individual' | 'lote' | 'peso';
   }) => void;
   onClose: () => void;
 }
@@ -39,6 +42,14 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
   const [cameraAvailable, setCameraAvailable] = useState<boolean>(true);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [scanAnalysis, setScanAnalysis] = useState<ScanAnalysis | null>(null);
+
+  // Interactive product registration wizard state
+  const [tipoProduto, setTipoProduto] = useState<'individual' | 'lote' | 'peso'>('individual');
+  const [qtdIndividual, setQtdIndividual] = useState<number>(1);
+  const [qtdLote, setQtdLote] = useState<number>(10);
+  const [precoUnitarioLote, setPrecoUnitarioLote] = useState<number>(5.0);
+  const [pesoKg, setPesoKg] = useState<number>(1.0);
+  const [precoKg, setPrecoKg] = useState<number>(25.0);
 
   const startCamera = async () => {
     setError('');
@@ -95,6 +106,30 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
       const daysRemaining = valDate ? calculateDaysRemaining(valDate) : undefined;
       const isExpired = daysRemaining !== undefined ? daysRemaining < 0 : false;
 
+      // Set defaults for interactive registration wizard based on extracted label data
+      if (typeof data.peso === 'number' && data.peso > 0) {
+        setTipoProduto('peso');
+        setPesoKg(data.peso);
+        if (typeof data.valorKg === 'number' && data.valorKg > 0) {
+          setPrecoKg(data.valorKg);
+        } else if (typeof data.valorTotal === 'number' && data.valorTotal > 0) {
+          setPrecoKg(parseFloat((data.valorTotal / data.peso).toFixed(2)));
+        }
+      } else if (typeof data.valorKg === 'number' && data.valorKg > 0) {
+        setTipoProduto('peso');
+        setPrecoKg(data.valorKg);
+        setPesoKg(1.0);
+      } else {
+        setTipoProduto('individual');
+        setQtdIndividual(1);
+        setQtdLote(10);
+        if (typeof data.valorTotal === 'number' && data.valorTotal > 0) {
+          setPrecoUnitarioLote(parseFloat((data.valorTotal / 10).toFixed(2)));
+        } else {
+          setPrecoUnitarioLote(5.0);
+        }
+      }
+
       setScanAnalysis({
         nome: data.nome || 'Produto Sem Nome',
         dataFabricacao: data.dataFabricacao || '',
@@ -117,14 +152,38 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
 
   const handleConfirmResult = () => {
     if (!scanAnalysis) return;
+
+    let finalQtd = 1;
+    let finalValorTotal = scanAnalysis.valorTotal;
+    let finalValorKg = scanAnalysis.valorKg;
+    let finalPeso = scanAnalysis.peso;
+
+    if (tipoProduto === 'individual') {
+      finalQtd = Math.max(1, qtdIndividual);
+      if (scanAnalysis.valorTotal) {
+        finalValorTotal = scanAnalysis.valorTotal * finalQtd;
+      }
+    } else if (tipoProduto === 'lote') {
+      finalQtd = Math.max(1, qtdLote);
+      finalValorTotal = precoUnitarioLote * finalQtd;
+    } else if (tipoProduto === 'peso') {
+      finalQtd = 1;
+      finalPeso = pesoKg;
+      finalValorKg = precoKg;
+      finalValorTotal = pesoKg * precoKg;
+    }
+
     onScanResult({
       nome: scanAnalysis.nome,
+      quantidade: finalQtd,
       dataFabricacao: scanAnalysis.dataFabricacao,
       dataValidade: scanAnalysis.dataValidade,
-      peso: scanAnalysis.peso,
-      valorKg: scanAnalysis.valorKg,
-      valorTotal: scanAnalysis.valorTotal,
+      peso: finalPeso,
+      valorKg: finalValorKg,
+      valorTotal: finalValorTotal,
       barcode: scanAnalysis.barcode,
+      categoria: 'Geral',
+      tipoProduto,
     });
   };
 
@@ -263,7 +322,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
             {/* Product Details Box */}
             <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-2">
               <div className="flex justify-between border-b border-gray-200 pb-1.5">
-                <span className="font-bold text-gray-500">Produto:</span>
+                <span className="font-bold text-gray-500">Produto Extraído:</span>
                 <span className="font-extrabold text-gray-900">{scanAnalysis.nome}</span>
               </div>
               {scanAnalysis.barcode && (
@@ -286,24 +345,183 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
                   </span>
                 </div>
               )}
-              {scanAnalysis.peso !== undefined && scanAnalysis.peso !== null && (
-                <div className="flex justify-between border-b border-gray-200 pb-1.5">
-                  <span className="font-bold text-gray-500">Peso do Produto:</span>
-                  <span className="font-bold text-gray-900">{scanAnalysis.peso} kg ({Math.round(scanAnalysis.peso * 1000)}g)</span>
-                </div>
-              )}
-              {scanAnalysis.valorKg !== undefined && scanAnalysis.valorKg !== null && (
-                <div className="flex justify-between border-b border-gray-200 pb-1.5">
-                  <span className="font-bold text-gray-500">Valor do Quilo (R$/KG):</span>
-                  <span className="font-bold text-gray-900">R$ {scanAnalysis.valorKg.toFixed(2)} /kg</span>
-                </div>
-              )}
               {scanAnalysis.valorTotal !== undefined && scanAnalysis.valorTotal !== null && (
                 <div className="flex justify-between">
-                  <span className="font-bold text-gray-500">Valor Total do Produto:</span>
-                  <span className="font-black text-gray-900 text-sm text-emerald-800">R$ {scanAnalysis.valorTotal.toFixed(2)}</span>
+                  <span className="font-bold text-gray-500">Preço Lido na Etiqueta:</span>
+                  <span className="font-black text-emerald-800 text-xs">R$ {scanAnalysis.valorTotal.toFixed(2)}</span>
                 </div>
               )}
+            </div>
+
+            {/* INTERACTIVE QUESTIONNAIRE */}
+            <div className="p-3.5 bg-orange-50/70 border border-orange-200 rounded-xl space-y-3">
+              <div className="border-b border-orange-200/80 pb-2">
+                <p className="text-xs font-black text-orange-950">
+                  Esse produto é:
+                </p>
+                <p className="text-[11px] text-orange-800 font-medium mt-0.5">
+                  Selecione o tipo correto para calcular o estoque e valor:
+                </p>
+              </div>
+
+              {/* Type Options Radio/Buttons */}
+              <div className="space-y-2">
+                {/* Option 1: Produto Individual */}
+                <button
+                  type="button"
+                  onClick={() => setTipoProduto('individual')}
+                  className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start space-x-2.5 ${
+                    tipoProduto === 'individual'
+                      ? 'bg-white border-[#FF6B00] ring-2 ring-[#FF6B00]/20 shadow-xs'
+                      : 'bg-white/80 border-gray-200 hover:bg-white text-gray-700'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
+                    tipoProduto === 'individual' ? 'border-[#FF6B00] bg-[#FF6B00]' : 'border-gray-400'
+                  }`}>
+                    {tipoProduto === 'individual' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-gray-900 block">1 - Produto individual</span>
+                    <span className="text-[10px] text-gray-500 font-medium block leading-tight">
+                      (uma unidade corresponde a uma venda)
+                    </span>
+                  </div>
+                </button>
+
+                {/* Option 2: Produto em Lote */}
+                <button
+                  type="button"
+                  onClick={() => setTipoProduto('lote')}
+                  className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start space-x-2.5 ${
+                    tipoProduto === 'lote'
+                      ? 'bg-white border-[#FF6B00] ring-2 ring-[#FF6B00]/20 shadow-xs'
+                      : 'bg-white/80 border-gray-200 hover:bg-white text-gray-700'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
+                    tipoProduto === 'lote' ? 'border-[#FF6B00] bg-[#FF6B00]' : 'border-gray-400'
+                  }`}>
+                    {tipoProduto === 'lote' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-gray-900 block">2 - Produto em lote</span>
+                    <span className="text-[10px] text-gray-500 font-medium block leading-tight">
+                      (várias unidades do mesmo produto foram produzidas ou embaladas juntas)
+                    </span>
+                  </div>
+                </button>
+
+                {/* Option 3: Vendido por Peso */}
+                <button
+                  type="button"
+                  onClick={() => setTipoProduto('peso')}
+                  className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start space-x-2.5 ${
+                    tipoProduto === 'peso'
+                      ? 'bg-white border-[#FF6B00] ring-2 ring-[#FF6B00]/20 shadow-xs'
+                      : 'bg-white/80 border-gray-200 hover:bg-white text-gray-700'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
+                    tipoProduto === 'peso' ? 'border-[#FF6B00] bg-[#FF6B00]' : 'border-gray-400'
+                  }`}>
+                    {tipoProduto === 'peso' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-gray-900 block">3 - Vendido por peso (KG)</span>
+                    <span className="text-[10px] text-gray-500 font-medium block leading-tight">
+                      (produto comercializado por quilo/grama)
+                    </span>
+                  </div>
+                </button>
+              </div>
+
+              {/* Dynamic Follow-Up Questions */}
+              <div className="pt-2 border-t border-orange-200/80 space-y-2">
+                {tipoProduto === 'individual' && (
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-800 mb-1">
+                      Esse produto possui quantas unidades disponíveis?
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={qtdIndividual}
+                      onChange={(e) => setQtdIndividual(parseInt(e.target.value) || 1)}
+                      className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
+                    />
+                  </div>
+                )}
+
+                {tipoProduto === 'lote' && (
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-800 mb-1">
+                        Quantas unidades existem nesse lote?
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={qtdLote}
+                        onChange={(e) => setQtdLote(parseInt(e.target.value) || 1)}
+                        className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-800 mb-1">
+                        Preço unitário por item do lote (R$)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={precoUnitarioLote}
+                        onChange={(e) => setPrecoUnitarioLote(parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
+                      />
+                    </div>
+                    <div className="p-2 bg-emerald-100/60 rounded-lg text-[11px] text-emerald-900 font-bold flex justify-between">
+                      <span>Valor Total do Lote:</span>
+                      <span>R$ {(qtdLote * precoUnitarioLote).toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {tipoProduto === 'peso' && (
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-800 mb-1">
+                        Peso total disponível (KG):
+                      </label>
+                      <input
+                        type="number"
+                        step="0.001"
+                        min="0.001"
+                        value={pesoKg}
+                        onChange={(e) => setPesoKg(parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-800 mb-1">
+                        Preço por KG (R$/KG):
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={precoKg}
+                        onChange={(e) => setPrecoKg(parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
+                      />
+                    </div>
+                    <div className="p-2 bg-emerald-100/60 rounded-lg text-[11px] text-emerald-900 font-bold flex justify-between">
+                      <span>Valor Total do Peso:</span>
+                      <span>R$ {(pesoKg * precoKg).toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Action Buttons */}
@@ -316,7 +534,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
                     : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20'
                 }`}
               >
-                <span>{scanAnalysis.isExpired ? 'Confirmar para Controle de Descarte' : 'Confirmar e Usar Dados'}</span>
+                <span>{scanAnalysis.isExpired ? 'Confirmar para Controle de Descarte' : '✅ Finalizar Cadastro do Produto'}</span>
               </button>
 
               <button
