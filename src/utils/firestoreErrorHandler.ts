@@ -26,10 +26,18 @@ export interface FirestoreErrorInfo {
   };
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): void {
   const currentUser = auth.currentUser;
+  const errMsg = error instanceof Error ? error.message : String(error);
+
+  // If network or Firestore connection is unavailable, log a warning and let local-first storage handle it
+  if (errMsg.includes('unavailable') || errMsg.includes('offline') || errMsg.includes('Could not reach Cloud Firestore')) {
+    console.warn(`[Firestore Offline/Unavailable] ${operationType} on ${path}:`, errMsg);
+    return;
+  }
+
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errMsg,
     authInfo: {
       userId: currentUser?.uid || null,
       email: currentUser?.email || null,

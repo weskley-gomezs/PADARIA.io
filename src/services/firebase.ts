@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer, setLogLevel } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setLogLevel } from 'firebase/firestore';
 import fs from 'fs';
 import path from 'path';
 
@@ -52,11 +52,11 @@ setLogLevel('error');
 
 export async function testFirestoreConnection(): Promise<boolean> {
   try {
-    await getDocFromServer(doc(db, 'settings', 'connection_check'));
+    await getDoc(doc(db, 'settings', 'connection_check'));
     return true;
   } catch (error) {
-    console.log('Firestore connection check status:', error);
-    return true;
+    console.warn('Firestore connection check status:', error);
+    return false;
   }
 }
 
