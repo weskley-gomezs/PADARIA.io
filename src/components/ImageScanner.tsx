@@ -260,17 +260,17 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/80 flex flex-col items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl relative animate-scale-up">
+    <div className="fixed inset-0 z-[60] bg-black/80 flex flex-col items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-sm sm:max-w-md w-full shadow-2xl relative my-auto max-h-[88vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-scale-up">
         {/* Header */}
-        <div className="p-4 flex items-center justify-between border-b border-gray-100 bg-gray-50">
+        <div className="p-3.5 sm:p-4 flex items-center justify-between border-b border-gray-100 bg-gray-50 shrink-0">
           <div className="flex items-center space-x-2">
             <Camera className="w-5 h-5 text-[#E8571A]" />
-            <h3 className="font-bold text-[#2C2C2C]">Leitor IA (Rótulos & Validade)</h3>
+            <h3 className="font-bold text-[#2C2C2C] text-sm sm:text-base">Leitor IA (Rótulos & Validade)</h3>
           </div>
           <button
             onClick={handleClose}
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-200 cursor-pointer"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-200 cursor-pointer"
             disabled={isProcessing}
           >
             <X className="w-5 h-5" />
@@ -280,280 +280,283 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
         {/* Main Content Area */}
         {scanAnalysis ? (
           /* SCAN ANALYSIS RESULT SCREEN */
-          <div className="p-5 space-y-4">
-            {/* Validity Banner */}
-            {scanAnalysis.isExpired ? (
-              <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl text-center space-y-2">
-                <div className="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
-                  <AlertTriangle className="w-7 h-7" />
-                </div>
-                <div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-600 text-white uppercase tracking-wider inline-block mb-1">
-                    🔴 PRODUTO VENCIDO
-                  </span>
-                  <h4 className="text-base font-black text-red-900 leading-snug">
-                    {scanAnalysis.daysRemaining !== undefined
-                      ? `Vencido há ${Math.abs(scanAnalysis.daysRemaining)} dia(s)`
-                      : 'Data Expirada'}
-                  </h4>
-                  <p className="text-xs text-red-700 font-semibold mt-1">
-                    Ultrapassou a data de vencimento ({formatDateToBR(scanAnalysis.dataValidade || '')}). Não pode ser vendido e deve ser descartado.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl text-center space-y-2">
-                <div className="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
-                  <AlertTriangle className="w-7 h-7" />
-                </div>
-                <div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-600 text-white uppercase tracking-wider inline-block mb-1">
-                    ⛔ PRODUTO DENTRO DA VALIDADE
-                  </span>
-                  <h4 className="text-base font-black text-red-900 leading-snug">
-                    {scanAnalysis.daysRemaining === 0
-                      ? 'Vence hoje!'
-                      : `Vence em ${scanAnalysis.daysRemaining} dia(s)`}
-                  </h4>
-                  <p className="text-xs text-red-700 font-semibold mt-1">
-                    Este produto ainda está na validade ({formatDateToBR(scanAnalysis.dataValidade || '')}). O Padaria.io aceita EXCLUSIVAMENTE produtos que já venceram para o controle de perdas e descarte.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Product Details Box */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-2">
-              <div className="flex justify-between border-b border-gray-200 pb-1.5">
-                <span className="font-bold text-gray-500">Produto Extraído:</span>
-                <span className="font-extrabold text-gray-900">{scanAnalysis.nome}</span>
-              </div>
-              {scanAnalysis.barcode && (
-                <div className="flex justify-between border-b border-gray-200 pb-1.5">
-                  <span className="font-bold text-gray-500">Código de Barras:</span>
-                  <span className="font-mono font-bold text-amber-900 bg-amber-100/80 px-1.5 py-0.5 rounded">{scanAnalysis.barcode}</span>
-                </div>
-              )}
-              {scanAnalysis.dataFabricacao && (
-                <div className="flex justify-between border-b border-gray-200 pb-1.5">
-                  <span className="font-bold text-gray-500">Data de Fabricação:</span>
-                  <span className="font-bold text-gray-800">{formatDateToBR(scanAnalysis.dataFabricacao)}</span>
-                </div>
-              )}
-              {scanAnalysis.dataValidade && (
-                <div className="flex justify-between border-b border-gray-200 pb-1.5">
-                  <span className="font-bold text-gray-500">Data de Validade:</span>
-                  <span className={`font-black ${scanAnalysis.isExpired ? 'text-red-600' : 'text-emerald-700'}`}>
-                    {formatDateToBR(scanAnalysis.dataValidade)}
-                  </span>
-                </div>
-              )}
-              {scanAnalysis.valorTotal !== undefined && scanAnalysis.valorTotal !== null && (
-                <div className="flex justify-between">
-                  <span className="font-bold text-gray-500">Preço Lido na Etiqueta:</span>
-                  <span className="font-black text-emerald-800 text-xs">R$ {scanAnalysis.valorTotal.toFixed(2)}</span>
-                </div>
-              )}
-            </div>
-
-            {/* INTERACTIVE QUESTIONNAIRE */}
-            <div className="p-3.5 bg-orange-50/70 border border-orange-200 rounded-xl space-y-3">
-              <div className="border-b border-orange-200/80 pb-2">
-                <p className="text-xs font-black text-orange-950">
-                  Esse produto é:
-                </p>
-                <p className="text-[11px] text-orange-800 font-medium mt-0.5">
-                  Selecione o tipo correto para calcular o estoque e valor:
-                </p>
-              </div>
-
-              {/* Type Options Radio/Buttons */}
-              <div className="space-y-2">
-                {/* Option 1: Produto Individual */}
-                <button
-                  type="button"
-                  onClick={() => setTipoProduto('individual')}
-                  className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start space-x-2.5 ${
-                    tipoProduto === 'individual'
-                      ? 'bg-white border-[#FF6B00] ring-2 ring-[#FF6B00]/20 shadow-xs'
-                      : 'bg-white/80 border-gray-200 hover:bg-white text-gray-700'
-                  }`}
-                >
-                  <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
-                    tipoProduto === 'individual' ? 'border-[#FF6B00] bg-[#FF6B00]' : 'border-gray-400'
-                  }`}>
-                    {tipoProduto === 'individual' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+          <div className="flex flex-col flex-1 overflow-hidden min-h-0">
+            {/* Scrollable Content Body */}
+            <div className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1">
+              {/* Validity Banner */}
+              {scanAnalysis.isExpired ? (
+                <div className="p-3.5 sm:p-4 bg-red-50 border-2 border-red-300 rounded-2xl text-center space-y-2">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-500 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
+                    <AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
                   <div>
-                    <span className="text-xs font-black text-gray-900 block">1 - Produto individual</span>
-                    <span className="text-[10px] text-gray-500 font-medium block leading-tight">
-                      (uma unidade corresponde a uma venda)
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-600 text-white uppercase tracking-wider inline-block mb-1">
+                      🔴 PRODUTO VENCIDO
                     </span>
+                    <h4 className="text-sm sm:text-base font-black text-red-900 leading-snug">
+                      {scanAnalysis.daysRemaining !== undefined
+                        ? `Vencido há ${Math.abs(scanAnalysis.daysRemaining)} dia(s)`
+                        : 'Data Expirada'}
+                    </h4>
+                    <p className="text-[11px] sm:text-xs text-red-700 font-semibold mt-1">
+                      Ultrapassou a data de vencimento ({formatDateToBR(scanAnalysis.dataValidade || '')}). Não pode ser vendido e deve ser descartado.
+                    </p>
                   </div>
-                </button>
-
-                {/* Option 2: Produto em Lote */}
-                <button
-                  type="button"
-                  onClick={() => setTipoProduto('lote')}
-                  className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start space-x-2.5 ${
-                    tipoProduto === 'lote'
-                      ? 'bg-white border-[#FF6B00] ring-2 ring-[#FF6B00]/20 shadow-xs'
-                      : 'bg-white/80 border-gray-200 hover:bg-white text-gray-700'
-                  }`}
-                >
-                  <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
-                    tipoProduto === 'lote' ? 'border-[#FF6B00] bg-[#FF6B00]' : 'border-gray-400'
-                  }`}>
-                    {tipoProduto === 'lote' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                </div>
+              ) : (
+                <div className="p-3.5 sm:p-4 bg-red-50 border-2 border-red-300 rounded-2xl text-center space-y-2">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-600 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
+                    <AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
                   <div>
-                    <span className="text-xs font-black text-gray-900 block">2 - Produto em lote</span>
-                    <span className="text-[10px] text-gray-500 font-medium block leading-tight">
-                      (várias unidades do mesmo produto foram produzidas ou embaladas juntas)
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-600 text-white uppercase tracking-wider inline-block mb-1">
+                      ⛔ PRODUTO DENTRO DA VALIDADE
                     </span>
+                    <h4 className="text-sm sm:text-base font-black text-red-900 leading-snug">
+                      {scanAnalysis.daysRemaining === 0
+                        ? 'Vence hoje!'
+                        : `Vence em ${scanAnalysis.daysRemaining} dia(s)`}
+                    </h4>
+                    <p className="text-[11px] sm:text-xs text-red-700 font-semibold mt-1">
+                      Este produto ainda está na validade ({formatDateToBR(scanAnalysis.dataValidade || '')}). O Padaria.io aceita EXCLUSIVAMENTE produtos que já venceram para o controle de perdas e descarte.
+                    </p>
                   </div>
-                </button>
+                </div>
+              )}
 
-                {/* Option 3: Vendido por Peso */}
-                <button
-                  type="button"
-                  onClick={() => setTipoProduto('peso')}
-                  className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start space-x-2.5 ${
-                    tipoProduto === 'peso'
-                      ? 'bg-white border-[#FF6B00] ring-2 ring-[#FF6B00]/20 shadow-xs'
-                      : 'bg-white/80 border-gray-200 hover:bg-white text-gray-700'
-                  }`}
-                >
-                  <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
-                    tipoProduto === 'peso' ? 'border-[#FF6B00] bg-[#FF6B00]' : 'border-gray-400'
-                  }`}>
-                    {tipoProduto === 'peso' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
-                  </div>
-                  <div>
-                    <span className="text-xs font-black text-gray-900 block">3 - Vendido por peso (KG)</span>
-                    <span className="text-[10px] text-gray-500 font-medium block leading-tight">
-                      (produto comercializado por quilo/grama)
-                    </span>
-                  </div>
-                </button>
-              </div>
-
-              {/* Dynamic Follow-Up Questions */}
-              <div className="pt-2 border-t border-orange-200/80 space-y-2">
-                {tipoProduto === 'individual' && (
-                  <div>
-                    <label className="block text-[11px] font-bold text-gray-800 mb-1">
-                      Esse produto possui quantas unidades disponíveis?
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={qtdIndividual}
-                      onChange={(e) => setQtdIndividual(parseInt(e.target.value) || 1)}
-                      className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
-                    />
+              {/* Product Details Box */}
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-2">
+                <div className="flex justify-between border-b border-gray-200 pb-1.5">
+                  <span className="font-bold text-gray-500">Produto Extraído:</span>
+                  <span className="font-extrabold text-gray-900">{scanAnalysis.nome}</span>
+                </div>
+                {scanAnalysis.barcode && (
+                  <div className="flex justify-between border-b border-gray-200 pb-1.5">
+                    <span className="font-bold text-gray-500">Código de Barras:</span>
+                    <span className="font-mono font-bold text-amber-900 bg-amber-100/80 px-1.5 py-0.5 rounded">{scanAnalysis.barcode}</span>
                   </div>
                 )}
+                {scanAnalysis.dataFabricacao && (
+                  <div className="flex justify-between border-b border-gray-200 pb-1.5">
+                    <span className="font-bold text-gray-500">Data de Fabricação:</span>
+                    <span className="font-bold text-gray-800">{formatDateToBR(scanAnalysis.dataFabricacao)}</span>
+                  </div>
+                )}
+                {scanAnalysis.dataValidade && (
+                  <div className="flex justify-between border-b border-gray-200 pb-1.5">
+                    <span className="font-bold text-gray-500">Data de Validade:</span>
+                    <span className={`font-black ${scanAnalysis.isExpired ? 'text-red-600' : 'text-emerald-700'}`}>
+                      {formatDateToBR(scanAnalysis.dataValidade)}
+                    </span>
+                  </div>
+                )}
+                {scanAnalysis.valorTotal !== undefined && scanAnalysis.valorTotal !== null && (
+                  <div className="flex justify-between">
+                    <span className="font-bold text-gray-500">Preço Lido na Etiqueta:</span>
+                    <span className="font-black text-emerald-800 text-xs">R$ {scanAnalysis.valorTotal.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
 
-                {tipoProduto === 'lote' && (
-                  <div className="space-y-2">
+              {/* INTERACTIVE QUESTIONNAIRE */}
+              <div className="p-3.5 bg-orange-50/70 border border-orange-200 rounded-xl space-y-3">
+                <div className="border-b border-orange-200/80 pb-2">
+                  <p className="text-xs font-black text-orange-950">
+                    Esse produto é:
+                  </p>
+                  <p className="text-[11px] text-orange-800 font-medium mt-0.5">
+                    Selecione o tipo correto para calcular o estoque e valor:
+                  </p>
+                </div>
+
+                {/* Type Options Radio/Buttons */}
+                <div className="space-y-2">
+                  {/* Option 1: Produto Individual */}
+                  <button
+                    type="button"
+                    onClick={() => setTipoProduto('individual')}
+                    className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start space-x-2.5 ${
+                      tipoProduto === 'individual'
+                        ? 'bg-white border-[#FF6B00] ring-2 ring-[#FF6B00]/20 shadow-xs'
+                        : 'bg-white/80 border-gray-200 hover:bg-white text-gray-700'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
+                      tipoProduto === 'individual' ? 'border-[#FF6B00] bg-[#FF6B00]' : 'border-gray-400'
+                    }`}>
+                      {tipoProduto === 'individual' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-gray-900 block">1 - Produto individual</span>
+                      <span className="text-[10px] text-gray-500 font-medium block leading-tight">
+                        (uma unidade corresponde a uma venda)
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Option 2: Produto em Lote */}
+                  <button
+                    type="button"
+                    onClick={() => setTipoProduto('lote')}
+                    className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start space-x-2.5 ${
+                      tipoProduto === 'lote'
+                        ? 'bg-white border-[#FF6B00] ring-2 ring-[#FF6B00]/20 shadow-xs'
+                        : 'bg-white/80 border-gray-200 hover:bg-white text-gray-700'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
+                      tipoProduto === 'lote' ? 'border-[#FF6B00] bg-[#FF6B00]' : 'border-gray-400'
+                    }`}>
+                      {tipoProduto === 'lote' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-gray-900 block">2 - Produto em lote</span>
+                      <span className="text-[10px] text-gray-500 font-medium block leading-tight">
+                        (várias unidades do mesmo produto foram produzidas ou embaladas juntas)
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Option 3: Vendido por Peso */}
+                  <button
+                    type="button"
+                    onClick={() => setTipoProduto('peso')}
+                    className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start space-x-2.5 ${
+                      tipoProduto === 'peso'
+                        ? 'bg-white border-[#FF6B00] ring-2 ring-[#FF6B00]/20 shadow-xs'
+                        : 'bg-white/80 border-gray-200 hover:bg-white text-gray-700'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
+                      tipoProduto === 'peso' ? 'border-[#FF6B00] bg-[#FF6B00]' : 'border-gray-400'
+                    }`}>
+                      {tipoProduto === 'peso' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-gray-900 block">3 - Vendido por peso (KG)</span>
+                      <span className="text-[10px] text-gray-500 font-medium block leading-tight">
+                        (produto comercializado por quilo/grama)
+                      </span>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Dynamic Follow-Up Questions */}
+                <div className="pt-2 border-t border-orange-200/80 space-y-2">
+                  {tipoProduto === 'individual' && (
                     <div>
                       <label className="block text-[11px] font-bold text-gray-800 mb-1">
-                        Quantas unidades existem nesse lote?
+                        Esse produto possui quantas unidades disponíveis?
                       </label>
                       <input
                         type="number"
                         min="1"
-                        value={qtdLote}
-                        onChange={(e) => setQtdLote(parseInt(e.target.value) || 1)}
+                        value={qtdIndividual}
+                        onChange={(e) => setQtdIndividual(parseInt(e.target.value) || 1)}
                         className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-800 mb-1">
-                        Preço unitário por item do lote (R$)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={precoUnitarioLote}
-                        onChange={(e) => setPrecoUnitarioLote(parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
-                      />
-                    </div>
-                    <div className="p-2 bg-emerald-100/60 rounded-lg text-[11px] text-emerald-900 font-bold flex justify-between">
-                      <span>Valor Total do Lote:</span>
-                      <span>R$ {(qtdLote * precoUnitarioLote).toFixed(2)}</span>
-                    </div>
-                  </div>
-                )}
+                  )}
 
-                {tipoProduto === 'peso' && (
-                  <div className="space-y-2">
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-800 mb-1">
-                        Peso total disponível (KG):
-                      </label>
-                      <input
-                        type="number"
-                        step="0.001"
-                        min="0.001"
-                        value={pesoKg}
-                        onChange={(e) => setPesoKg(parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
-                      />
+                  {tipoProduto === 'lote' && (
+                    <div className="space-y-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-800 mb-1">
+                          Quantas unidades existem nesse lote?
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={qtdLote}
+                          onChange={(e) => setQtdLote(parseInt(e.target.value) || 1)}
+                          className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-800 mb-1">
+                          Preço unitário por item do lote (R$)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={precoUnitarioLote}
+                          onChange={(e) => setPrecoUnitarioLote(parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
+                        />
+                      </div>
+                      <div className="p-2 bg-emerald-100/60 rounded-lg text-[11px] text-emerald-900 font-bold flex justify-between">
+                        <span>Valor Total do Lote:</span>
+                        <span>R$ {(qtdLote * precoUnitarioLote).toFixed(2)}</span>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-800 mb-1">
-                        Preço por KG (R$/KG):
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={precoKg}
-                        onChange={(e) => setPrecoKg(parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
-                      />
+                  )}
+
+                  {tipoProduto === 'peso' && (
+                    <div className="space-y-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-800 mb-1">
+                          Peso total disponível (KG):
+                        </label>
+                        <input
+                          type="number"
+                          step="0.001"
+                          min="0.001"
+                          value={pesoKg}
+                          onChange={(e) => setPesoKg(parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-800 mb-1">
+                          Preço por KG (R$/KG):
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={precoKg}
+                          onChange={(e) => setPrecoKg(parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-gray-300 text-gray-900 bg-white"
+                        />
+                      </div>
+                      <div className="p-2 bg-emerald-100/60 rounded-lg text-[11px] text-emerald-900 font-bold flex justify-between">
+                        <span>Valor Total do Peso:</span>
+                        <span>R$ {(pesoKg * precoKg).toFixed(2)}</span>
+                      </div>
                     </div>
-                    <div className="p-2 bg-emerald-100/60 rounded-lg text-[11px] text-emerald-900 font-bold flex justify-between">
-                      <span>Valor Total do Peso:</span>
-                      <span>R$ {(pesoKg * precoKg).toFixed(2)}</span>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="space-y-2 pt-1">
+            {/* Fixed Action Footer at Bottom */}
+            <div className="p-3 sm:p-4 bg-white border-t border-gray-100 space-y-2 shrink-0 shadow-md">
               {scanAnalysis.isExpired ? (
                 <button
                   onClick={handleConfirmResult}
-                  className="w-full py-3.5 rounded-xl font-black text-sm text-white shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer bg-red-600 hover:bg-red-700 shadow-red-500/20"
+                  className="w-full py-3 sm:py-3.5 rounded-xl font-black text-xs sm:text-sm text-white shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer bg-red-600 hover:bg-red-700 active:scale-98 shadow-red-500/20"
                 >
                   <span>🔴 Confirmar para Controle de Descarte</span>
                 </button>
               ) : (
-                <div className="p-3 bg-red-100 border border-red-300 rounded-xl text-center text-xs font-bold text-red-800">
+                <div className="p-2.5 sm:p-3 bg-red-100 border border-red-300 rounded-xl text-center text-xs font-bold text-red-800">
                   ⛔ Registro Não Permitido: O Padaria.io aceita apenas produtos que já venceram.
                 </div>
               )}
 
               <button
                 onClick={handleRescan}
-                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer"
+                className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>Escanear Outro Rótulo</span>
               </button>
             </div>
           </div>
         ) : (
           /* SCANNER CAMERA & FILE INPUT */
-          <>
+          <div className="overflow-y-auto flex-1">
             <div className="p-4 bg-black relative flex flex-col items-center justify-center min-h-[280px]">
               {previewImage && isProcessing ? (
                 <div className="relative w-full h-[280px] flex items-center justify-center">
@@ -672,7 +675,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
                 Aponte a câmera para o rótulo do produto ou envie uma foto com o nome e validade visíveis.
               </p>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

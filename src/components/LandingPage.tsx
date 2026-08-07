@@ -2,38 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShieldCheck,
-  Zap,
-  Sparkles,
   CheckCircle2,
   ArrowRight,
   Clock,
   FileText,
   Users,
   RefreshCw,
-  ChevronDown,
-  ChevronUp,
-  MessageSquare,
-  Check,
+  Sparkles,
+  MessageCircle,
   Menu,
   X,
-  Lock,
-  Camera,
-  Crown,
-  Moon,
-  Tag,
-  Share2,
-  DollarSign,
-  TrendingUp,
-  Image,
-  Flame,
-  ShoppingBag,
-  ArrowUpRight,
-  TrendingDown,
-  Sparkle,
-  Copy,
   Layers,
   BarChart3,
-  Award
+  Cloud,
+  Headphones,
+  Settings,
+  AlertTriangle,
+  Trash2,
+  PieChart,
+  ChefHat,
+  Smartphone,
+  Laptop,
+  Check,
+  Building,
+  TrendingUp,
+  Send,
+  Zap,
+  Bot
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -50,10 +45,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [demoModalOpen, setDemoModalOpen] = useState(false);
-  const [faqOpen, setFaqOpen] = useState<number | null>(null);
-
-  // Active step interactive preview in Hero/IA section
-  const [activeStep, setActiveStep] = useState<number>(1);
+  
+  // Interactive Demonstration section tab state
+  const [activeDemoTab, setActiveDemoTab] = useState<'validade' | 'producao' | 'desperdicio' | 'dashboard' | 'ia'>('dashboard');
 
   // Demo Form State
   const [demoName, setDemoName] = useState('');
@@ -69,23 +63,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Auto cycle active step for Hero/IA demo preview
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveStep((prev) => (prev >= 5 ? 1 : prev + 1));
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
+  const WHATSAPP_NUMBER = '5561996507712';
+
+  const openWhatsApp = (customMessage?: string) => {
+    const text = encodeURIComponent(
+      customMessage || 'Olá! Gostaria de agendar uma demonstração gratuita do Padaria.io para minha padaria.'
+    );
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, '_blank');
+  };
 
   const handleDemoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!demoName || !demoBakery || !demoPhone) return;
 
     setDemoSubmitted(true);
-    const text = encodeURIComponent(
-      `Olá! Meu nome é ${demoName}, da padaria ${demoBakery} (Tel: ${demoPhone}). Gostaria de agendar uma demonstração do sistema PADARIA.io.`
-    );
-    window.open(`https://wa.me/5561996507712?text=${text}`, '_blank');
+    const msg = `Olá! Meu nome é ${demoName}, proprietário/gerente da padaria "${demoBakery}". Telefone para contato: ${demoPhone}. Gostaria de agendar uma demonstração gratuita do Padaria.io.`;
+    openWhatsApp(msg);
 
     setTimeout(() => {
       setDemoModalOpen(false);
@@ -93,24 +86,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       setDemoName('');
       setDemoBakery('');
       setDemoPhone('');
-    }, 2000);
-  };
-
-  const whatsappTestUrl = `https://wa.me/5561996507712?text=${encodeURIComponent(
-    'Olá! Gostaria de testar grátis por 1 dia o sistema PADARIA.io.'
-  )}`;
-
-  const handleTestFree = () => {
-    window.open(whatsappTestUrl, '_blank');
+    }, 1500);
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#1A1A1A] font-sans selection:bg-[#E8571A] selection:text-white overflow-x-hidden">
-      {/* NAVBAR */}
+    <div className="min-h-screen bg-[#FDFBF7] text-[#111827] font-sans selection:bg-[#E8571A] selection:text-white overflow-x-hidden">
+      {/* HEADER / NAVBAR */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? 'bg-white/90 backdrop-blur-md shadow-xs border-b border-gray-200/60 py-3'
+            ? 'bg-white/95 backdrop-blur-md shadow-xs border-b border-gray-200/80 py-3'
             : 'bg-transparent py-5'
         }`}
       >
@@ -123,59 +108,45 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <img
               src="https://i.imgur.com/ZGsjvWy.png"
               alt="PADARIA.io Logo"
-              className="h-16 sm:h-20 object-contain group-hover:scale-105 transition-transform"
+              className="h-14 sm:h-16 object-contain group-hover:scale-105 transition-transform"
               referrerPolicy="no-referrer"
             />
           </div>
 
-          {/* Desktop Navigation Links */}
+          {/* Navigation Links */}
           <nav className="hidden md:flex items-center space-x-8 text-xs font-bold text-gray-600">
-            <a
-              href="#comparacao"
-              className="hover:text-[#E8571A] transition-colors cursor-pointer"
-            >
-              Comparação
+            <a href="#desafios" className="hover:text-[#E8571A] transition-colors cursor-pointer">
+              Desafios
             </a>
-            <a
-              href="#ia"
-              className="hover:text-[#E8571A] transition-colors cursor-pointer"
-            >
-              Tecnologia PadeIA
+            <a href="#como-funciona" className="hover:text-[#E8571A] transition-colors cursor-pointer">
+              Como Funciona
             </a>
-            <a
-              href="#beneficios"
-              className="hover:text-[#E8571A] transition-colors cursor-pointer"
-            >
-              Benefícios
+            <a href="#funcionalidades" className="hover:text-[#E8571A] transition-colors cursor-pointer">
+              Funcionalidades
             </a>
-            <a
-              href="#resultados"
-              className="hover:text-[#E8571A] transition-colors cursor-pointer"
-            >
-              Resultados
+            <a href="#diferenciais" className="hover:text-[#E8571A] transition-colors cursor-pointer">
+              Diferenciais
             </a>
-            <a
-              href="#contato"
-              className="text-[#E8571A] font-black hover:underline transition-colors cursor-pointer"
-            >
-              Entrar em Contato
+            <a href="#demonstracao" className="hover:text-[#E8571A] transition-colors cursor-pointer">
+              Demonstração
             </a>
           </nav>
 
           {/* Action Buttons */}
           <div className="hidden md:flex items-center space-x-3">
             <button
-              onClick={() => setDemoModalOpen(true)}
-              className="px-4 py-2 rounded-xl text-xs font-extrabold text-gray-700 hover:text-[#E8571A] hover:bg-orange-50/50 transition-all cursor-pointer border border-transparent hover:border-orange-200"
+              onClick={onEnterApp}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all cursor-pointer border border-gray-200"
+              title="Área reservada para clientes cadastrados"
             >
-              Ver Demonstração
+              Acessar Sistema
             </button>
             <button
-              onClick={onEnterApp}
-              className="px-5 py-2.5 rounded-xl text-xs font-black bg-[#1F2937] hover:bg-[#111827] text-white transition-all shadow-md hover:shadow-lg flex items-center space-x-2 cursor-pointer border border-gray-800"
+              onClick={() => openWhatsApp()}
+              className="px-5 py-2.5 rounded-xl text-xs font-black bg-[#E8571A] hover:bg-[#d44e15] text-white transition-all shadow-md hover:shadow-lg flex items-center space-x-2 cursor-pointer"
             >
-              <span>Acessar Sistema</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#E8571A]" />
+              <MessageCircle className="w-4 h-4 fill-white text-[#E8571A]" />
+              <span>Agendar Demonstração Gratuita</span>
             </button>
           </div>
 
@@ -190,1248 +161,1035 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 pt-3 pb-6 space-y-3 animate-fade-in">
+          <div className="md:hidden bg-white/98 backdrop-blur-md border-b border-gray-200 px-4 pt-3 pb-6 space-y-3 shadow-xl">
             <a
-              href="#comparacao"
+              href="#desafios"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
             >
-              Comparação
+              Desafios
             </a>
             <a
-              href="#ia"
+              href="#como-funciona"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
             >
-              Tecnologia PadeIA
+              Como Funciona
             </a>
             <a
-              href="#beneficios"
+              href="#funcionalidades"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
             >
-              Benefícios
+              Funcionalidades
             </a>
             <a
-              href="#resultados"
+              href="#diferenciais"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
             >
-              Resultados
+              Diferenciais
             </a>
             <a
-              href="#contato"
+              href="#demonstracao"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-extrabold text-[#E8571A]"
+              className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
             >
-              Entrar em Contato
+              Demonstração
             </a>
-            <div className="pt-2 space-y-2 border-t border-gray-100">
+            <div className="pt-3 space-y-2 border-t border-gray-100">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  setDemoModalOpen(true);
+                  openWhatsApp();
                 }}
-                className="w-full py-2.5 rounded-xl text-xs font-extrabold text-gray-800 bg-gray-100 hover:bg-gray-200 text-center"
+                className="w-full py-3 rounded-xl text-xs font-black bg-[#E8571A] text-white text-center shadow-md flex items-center justify-center space-x-2"
               >
-                Ver Demonstração
+                <MessageCircle className="w-4 h-4 fill-white text-[#E8571A]" />
+                <span>Agendar Demonstração Gratuita</span>
               </button>
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onEnterApp();
                 }}
-                className="w-full py-3 rounded-xl text-xs font-black bg-[#E8571A] text-white text-center shadow-md flex items-center justify-center space-x-2"
+                className="w-full py-2.5 rounded-xl text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 text-center"
               >
-                <span>Acessar Sistema</span>
-                <ArrowRight className="w-4 h-4" />
+                Acessar Sistema (Clientes)
               </button>
             </div>
           </div>
         )}
       </header>
 
-      {/* HERO SECTION */}
+      {/* 1. HERO SECTION */}
       <section className="pt-32 sm:pt-40 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
-        {/* Subtle decorative background gradient blobs with smooth floating motion */}
+        {/* Subtle decorative background gradient blob */}
         <motion.div
           animate={{
-            y: [0, -20, 0],
-            scale: [1, 1.08, 1],
-            opacity: [0.3, 0.5, 0.3]
+            y: [0, -15, 0],
+            opacity: [0.3, 0.45, 0.3]
           }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-gradient-to-tr from-amber-300/40 via-orange-400/30 to-rose-300/20 blur-3xl pointer-events-none -z-10 rounded-full"
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-24 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-gradient-to-tr from-orange-200/50 via-amber-200/30 to-orange-400/20 blur-3xl pointer-events-none -z-10 rounded-full"
         />
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="text-center space-y-6 max-w-4xl mx-auto"
-        >
-          {/* Badge */}
+        <div className="text-center space-y-8 max-w-4xl mx-auto">
+          {/* Eyebrow Badge */}
           <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-200/80 text-[#E8571A] text-xs font-extrabold tracking-wide shadow-2xs cursor-default"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-orange-50/90 border border-orange-200 text-[#E8571A] text-xs font-black tracking-wide shadow-2xs"
           >
-            <Sparkles className="w-4 h-4 text-[#E8571A] animate-pulse" />
-            <span>PadeIA: IA que irá te auxiliar no uso do sistema e te ajudar a evitar os desperdícios</span>
+            <ChefHat className="w-4 h-4 text-[#E8571A]" />
+            <span>PLATAFORMA ESPECIALIZADA PARA PADARIAS, CONFEITARIAS E CAFETERIAS</span>
           </motion.div>
 
-          {/* Main Headline */}
+          {/* Title */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            className="text-4xl sm:text-6xl lg:text-7xl font-black text-[#1A1A1A] tracking-tight leading-[1.08] uppercase"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#1A1A1A] tracking-tight leading-[1.12]"
           >
-            CONTROLE O DESPERDÍCIO <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-[#E8571A] via-[#D44E15] to-[#B33B0A] bg-clip-text text-transparent drop-shadow-xs">
-              DA SUA PADARIA
-            </span>
+            Reduza desperdícios, organize sua produção e tenha mais controle da sua padaria.
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
             className="text-base sm:text-xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed"
           >
-            Bata foto dos produtos vencidos para registrar. A <strong className="text-gray-900 font-black">PadeIA</strong> é a IA que irá te auxiliar no uso do sistema e te ajudar a evitar os desperdícios.
+            O <strong className="text-gray-900 font-bold">Padaria.io</strong> ajuda padarias a controlar validade, produção e desperdícios através de uma plataforma simples e inteligente.
           </motion.p>
 
-          {/* CTAs */}
+          {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2"
           >
-            <motion.button
-              whileHover={{ scale: 1.04, boxShadow: "0 20px 25px -5px rgba(232, 87, 26, 0.3)" }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleTestFree}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-base font-extrabold shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center space-x-3 cursor-pointer group"
+            <button
+              onClick={() => openWhatsApp()}
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white font-black text-base transition-all shadow-lg hover:shadow-orange-500/25 flex items-center justify-center space-x-3 cursor-pointer group"
             >
-              <span>Testar grátis por 1 dia</span>
+              <MessageCircle className="w-5 h-5 fill-white text-[#E8571A] group-hover:scale-110 transition-transform" />
+              <span>Agendar Demonstração Gratuita</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setDemoModalOpen(true)}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white hover:bg-gray-50 text-[#1A1A1A] border-2 border-gray-200 text-base font-extrabold shadow-xs hover:shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+            </button>
+
+            <a
+              href="#funcionalidades"
+              className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white hover:bg-gray-50 text-gray-800 font-bold text-sm transition-all border border-gray-300 shadow-2xs hover:shadow-sm flex items-center justify-center cursor-pointer"
             >
-              <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
-              <span>Ver demonstração</span>
-            </motion.button>
+              Conhecer a Plataforma
+            </a>
           </motion.div>
 
-          {/* Micro trust indicators */}
+          {/* Trust Highlights */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.7, delay: 0.4 }}
-            className="pt-3 flex items-center justify-center space-x-6 text-xs text-gray-500 font-bold"
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="pt-4 flex flex-wrap items-center justify-center gap-y-2 gap-x-6 text-xs font-semibold text-gray-500"
           >
             <span className="flex items-center space-x-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              <span>Sem necessidade de cartão</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Demonstração ao vivo com especialista</span>
             </span>
             <span className="flex items-center space-x-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              <span>Ativação em 1 minuto</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Implantação sem travar seu balcão</span>
             </span>
-            <span className="flex items-center space-x-1.5 hidden sm:flex">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              <span>100% Online</span>
+            <span className="flex items-center space-x-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Sem necessidade de cartão de crédito</span>
             </span>
           </motion.div>
-        </motion.div>
+        </div>
 
-        {/* HERO VISUAL FLOW ILLUSTRATION */}
+        {/* HERO MOCKUP / SYSTEM PREVIEW */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="mt-14 max-w-5xl mx-auto bg-white rounded-3xl border border-gray-200/90 shadow-2xl p-6 sm:p-8 relative overflow-hidden"
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="mt-14 max-w-5xl mx-auto rounded-3xl bg-white border border-gray-200/90 shadow-2xl overflow-hidden p-2 sm:p-4 relative"
         >
-          <div className="text-center mb-6">
-            <span className="text-[11px] font-black uppercase tracking-widest text-[#E8571A] block">
-              COMO O PADARIA.IO FUNCIONA PASSO A PASSO
-            </span>
-            <h3 className="text-lg sm:text-xl font-black text-gray-900 mt-1">
-              Do Escaneamento à Recuperação do Faturamento
-            </h3>
+          {/* Top Browser Bar */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 bg-gray-50/80 rounded-t-2xl mb-3">
+            <div className="flex items-center space-x-2">
+              <span className="w-3 h-3 rounded-full bg-rose-400 block" />
+              <span className="w-3 h-3 rounded-full bg-amber-400 block" />
+              <span className="w-3 h-3 rounded-full bg-emerald-400 block" />
+            </div>
+            <div className="text-[11px] font-bold text-gray-400 flex items-center space-x-1 bg-white px-3 py-1 rounded-full border border-gray-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span>https://padaria.io/gestao-inteligente</span>
+            </div>
+            <div className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
+              ● Ao Vivo
+            </div>
           </div>
 
-          {/* Stepper Flow Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 relative z-10">
-            {/* Step 1 */}
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveStep(1)}
-              className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
-                activeStep === 1
-                  ? 'bg-orange-50/80 border-[#E8571A] shadow-md ring-2 ring-orange-400/20'
-                  : 'bg-gray-50/60 border-gray-200 hover:bg-gray-100/80'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="w-7 h-7 rounded-xl bg-[#E8571A] text-white text-xs font-black flex items-center justify-center">
-                  1
-                </span>
-                <Camera className="w-4 h-4 text-[#E8571A]" />
+          {/* System Interface Snippet Mockup */}
+          <div className="p-4 sm:p-6 bg-gradient-to-b from-gray-50/50 to-white rounded-2xl space-y-6">
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs space-y-1">
+                <span className="text-[11px] font-bold text-gray-500 block uppercase">Desperdício Auditado</span>
+                <span className="text-lg sm:text-2xl font-black text-emerald-600">-64.2%</span>
+                <span className="text-[10px] text-gray-400 font-medium block">vs. mês anterior</span>
               </div>
-              <p className="text-xs font-extrabold text-gray-900 leading-snug">
-                Fotografar Etiqueta
-              </p>
-              <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                Funcionário tira foto pelo celular
-              </p>
-            </motion.div>
-
-            {/* Step 2 */}
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveStep(2)}
-              className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
-                activeStep === 2
-                  ? 'bg-amber-50/80 border-amber-500 shadow-md ring-2 ring-amber-400/20'
-                  : 'bg-gray-50/60 border-gray-200 hover:bg-gray-100/80'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="w-7 h-7 rounded-xl bg-amber-500 text-white text-xs font-black flex items-center justify-center">
-                  2
-                </span>
-                <Sparkles className="w-4 h-4 text-amber-500" />
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs space-y-1">
+                <span className="text-[11px] font-bold text-gray-500 block uppercase">Itens a Vencer (3d)</span>
+                <span className="text-lg sm:text-2xl font-black text-amber-600">8 lotes</span>
+                <span className="text-[10px] text-gray-400 font-medium block">Notificação no celular</span>
               </div>
-              <p className="text-xs font-extrabold text-gray-900 leading-snug">
-                IA Lê os Dados
-              </p>
-              <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                Extrai produto, lote e data de validade
-              </p>
-            </motion.div>
-
-            {/* Step 3 */}
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveStep(3)}
-              className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
-                activeStep === 3
-                  ? 'bg-purple-50/80 border-purple-500 shadow-md ring-2 ring-purple-400/20'
-                  : 'bg-gray-50/60 border-gray-200 hover:bg-gray-100/80'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="w-7 h-7 rounded-xl bg-purple-600 text-white text-xs font-black flex items-center justify-center">
-                  3
-                </span>
-                <CheckCircle2 className="w-4 h-4 text-purple-600" />
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs space-y-1">
+                <span className="text-[11px] font-bold text-gray-500 block uppercase">Eficiência de Produção</span>
+                <span className="text-lg sm:text-2xl font-black text-gray-900">98.4%</span>
+                <span className="text-[10px] text-gray-400 font-medium block">Fornadas sincronizadas</span>
               </div>
-              <p className="text-xs font-extrabold text-gray-900 leading-snug">
-                Filtro de Validade
-              </p>
-              <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                Aceita apenas produtos já vencidos
-              </p>
-            </motion.div>
-
-            {/* Step 4 */}
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveStep(4)}
-              className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
-                activeStep === 4
-                  ? 'bg-emerald-50/80 border-emerald-500 shadow-md ring-2 ring-emerald-400/20'
-                  : 'bg-gray-50/60 border-gray-200 hover:bg-gray-100/80'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="w-7 h-7 rounded-xl bg-emerald-600 text-white text-xs font-black flex items-center justify-center">
-                  4
-                </span>
-                <BarChart3 className="w-4 h-4 text-emerald-600" />
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs space-y-1">
+                <span className="text-[11px] font-bold text-gray-500 block uppercase">Aproveitamento PadeIA</span>
+                <span className="text-lg sm:text-2xl font-black text-[#E8571A]">R$ 1.840,00</span>
+                <span className="text-[10px] text-gray-400 font-medium block">Lucro recuperado</span>
               </div>
-              <p className="text-xs font-extrabold text-gray-900 leading-snug">
-                Registro de Baixa
-              </p>
-              <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                Controle exato de desperdício
-              </p>
-            </motion.div>
-
-            {/* Step 5 */}
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveStep(5)}
-              className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
-                activeStep === 5
-                  ? 'bg-blue-50/80 border-blue-500 shadow-md ring-2 ring-blue-400/20'
-                  : 'bg-gray-50/60 border-gray-200 hover:bg-gray-100/80'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="w-7 h-7 rounded-xl bg-blue-600 text-white text-xs font-black flex items-center justify-center">
-                  5
-                </span>
-                <DollarSign className="w-4 h-4 text-blue-600" />
-              </div>
-              <p className="text-xs font-extrabold text-gray-900 leading-snug">
-                Relatório de Perdas
-              </p>
-              <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                Gestão para reduzir o descarte
-              </p>
-            </motion.div>
-          </div>
-
-          {/* Live Dynamic Preview Area corresponding to activeStep with AnimatePresence */}
-          <div className="mt-6 p-6 rounded-2xl bg-gradient-to-br from-gray-900 via-[#111827] to-gray-950 text-white shadow-inner relative overflow-hidden min-h-[170px] flex items-center">
-            <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none">
-              <Sparkles className="w-40 h-40 text-orange-400" />
             </div>
 
-            <AnimatePresence mode="wait">
-              {activeStep === 1 && (
-                <motion.div
-                  key="step1"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.35 }}
-                  className="w-full flex flex-col md:flex-row items-center justify-between gap-6"
-                >
-                  <div className="space-y-2 max-w-md">
-                    <span className="px-3 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-black rounded-full uppercase inline-block">
-                      Passo 1: Captura Rápida
-                    </span>
-                    <h4 className="text-xl font-black">Escaneamento via Câmera do Celular</h4>
-                    <p className="text-xs text-gray-300 leading-relaxed">
-                      Sem digitação manual exaustiva. O operador simplesmente aponta o celular para a etiqueta de fabricação ou caixa.
-                    </p>
-                  </div>
-                  <div className="bg-gray-800/90 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2 relative overflow-hidden">
-                    <div className="flex items-center justify-between text-xs font-bold text-gray-400">
-                      <span>📷 Câmera Ativa</span>
-                      <span className="text-emerald-400 animate-pulse flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        Pronto
-                      </span>
+            {/* Interactive Preview Row */}
+            <div className="grid md:grid-cols-3 gap-4">
+              {/* Alert Card */}
+              <div className="md:col-span-2 bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+                      <Clock className="w-4 h-4" />
                     </div>
-                    <div className="h-28 bg-gray-900 rounded-xl border-2 border-dashed border-orange-500/60 flex flex-col items-center justify-center text-center p-2 relative overflow-hidden">
-                      {/* Laser scanning line animation */}
-                      <motion.div
-                        animate={{ y: [-40, 40, -40] }}
-                        transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
-                        className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#E8571A] to-transparent shadow-[0_0_12px_#E8571A]"
-                      />
-                      <Camera className="w-8 h-8 text-orange-400 mb-1" />
-                      <span className="text-[11px] font-bold text-gray-300">Enquadre a etiqueta de validade</span>
+                    <div>
+                      <h4 className="text-xs font-black text-gray-900">Validade Alerta Preventivo</h4>
+                      <p className="text-[11px] text-gray-500">Próximos lotes da confeitaria e panificação</p>
                     </div>
                   </div>
-                </motion.div>
-              )}
+                  <span className="px-2.5 py-1 bg-orange-50 text-[#E8571A] text-[10px] font-extrabold rounded-lg">
+                    Ação Recomendada
+                  </span>
+                </div>
 
-              {activeStep === 2 && (
-                <motion.div
-                  key="step2"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.35 }}
-                  className="w-full flex flex-col md:flex-row items-center justify-between gap-6"
-                >
-                  <div className="space-y-2 max-w-md">
-                    <span className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black rounded-full uppercase inline-block">
-                      Passo 2: Inteligência Artificial
-                    </span>
-                    <h4 className="text-xl font-black">Processamento OCR & Visão Computacional</h4>
-                    <p className="text-xs text-gray-300 leading-relaxed">
-                      Nossa IA lê o nome do produto, o peso, o valor original e calcula instantaneamente os dias exatos para o vencimento.
-                    </p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl text-xs">
+                    <span className="font-bold text-gray-800">Bolo de Cenoura com Cobertura (Lote 402)</span>
+                    <span className="text-amber-600 font-extrabold">Vence Amanhã (12 un)</span>
                   </div>
-                  <div className="bg-gray-800/90 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2">
-                    <div className="flex items-center justify-between text-xs font-bold text-amber-400">
-                      <span>🤖 Leitura IA</span>
-                      <span className="text-xs font-black bg-amber-500/20 px-2 py-0.5 rounded text-amber-300 border border-amber-500/30">
-                        100% Precisão
-                      </span>
-                    </div>
-                    <div className="space-y-1.5 text-xs bg-gray-900 p-3 rounded-xl border border-gray-700">
-                      <div className="flex justify-between text-gray-300">
-                        <span>Produto:</span>
-                        <strong className="text-white">Bolo de Fubá com Goiabada</strong>
-                      </div>
-                      <div className="flex justify-between text-gray-300">
-                        <span>Validade:</span>
-                        <strong className="text-amber-400 font-extrabold">2 dias restantes</strong>
-                      </div>
-                      <div className="flex justify-between text-gray-300">
-                        <span>Preço Original:</span>
-                        <strong className="text-white">R$ 18,00</strong>
-                      </div>
-                    </div>
+                  <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl text-xs">
+                    <span className="font-bold text-gray-800">Pão de Queijo Recheado (Congelado)</span>
+                    <span className="text-emerald-600 font-extrabold">Vence em 3 dias (5 kg)</span>
                   </div>
-                </motion.div>
-              )}
+                </div>
+              </div>
 
-              {activeStep === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.35 }}
-                  className="w-full flex flex-col md:flex-row items-center justify-between gap-6"
-                >
-                  <div className="space-y-2 max-w-md">
-                    <span className="px-3 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-black rounded-full uppercase inline-block">
-                      Passo 3: Regra de Validade
-                    </span>
-                    <h4 className="text-xl font-black">Validação Estreita de Vencidos</h4>
-                    <p className="text-xs text-gray-300 leading-relaxed">
-                      O sistema aceita apenas produtos que já venceram (a partir de 1 dia após a data de validade). A PadeIA impede o cadastro de produtos ainda válidos.
-                    </p>
+              {/* PadeIA Recommendation Box */}
+              <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-4 sm:p-5 rounded-2xl border border-orange-200/70 shadow-2xs space-y-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 text-[#E8571A]">
+                    <Sparkles className="w-4 h-4" />
+                    <span className="text-xs font-black uppercase tracking-wider">Sugestão PadeIA</span>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-900/80 to-purple-800/50 p-4 rounded-2xl border border-purple-500/40 w-full md:w-80 space-y-2">
-                    <div className="flex items-center justify-between text-xs font-black text-purple-300">
-                      <span>⚠️ Validação PadeIA</span>
-                      <span className="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black">
-                        VENCIDO
-                      </span>
-                    </div>
-                    <div className="p-3 bg-purple-950/90 rounded-xl text-xs space-y-1 text-purple-100 border border-purple-500/30">
-                      <p className="font-bold">STATUS DE VALIDADE</p>
-                      <p className="text-[11px] opacity-90">Produto Vencido há 1 dia • Permitido para Registro de Desperdício</p>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeStep === 4 && (
-                <motion.div
-                  key="step4"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.35 }}
-                  className="w-full flex flex-col md:flex-row items-center justify-between gap-6"
-                >
-                  <div className="space-y-2 max-w-md">
-                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black rounded-full uppercase inline-block">
-                      Passo 4: Registro de Baixa
-                    </span>
-                    <h4 className="text-xl font-black">Controle de Desperdício Confirmado</h4>
-                    <p className="text-xs text-gray-300 leading-relaxed">
-                      A PadeIA cadastra o produto vencido no sistema para fins de auditoria de perdas e acompanhamento da produção.
-                    </p>
-                  </div>
-                  <div className="bg-emerald-950/90 p-4 rounded-2xl border border-emerald-500/40 w-full md:w-80 text-center space-y-2">
-                    <motion.div
-                      initial={{ scale: 0.5 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                      className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto"
-                    >
-                      <CheckCircle2 className="w-6 h-6" />
-                    </motion.div>
-                    <p className="text-xs font-bold text-emerald-300">Item Cadastrado!</p>
-                    <p className="text-2xl font-black text-white">Perda Registrada</p>
-                    <p className="text-[10px] text-emerald-400 font-medium">Histórico atualizado automaticamente</p>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeStep === 5 && (
-                <motion.div
-                  key="step5"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.35 }}
-                  className="w-full flex flex-col md:flex-row items-center justify-between gap-6"
-                >
-                  <div className="space-y-2 max-w-md">
-                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-black rounded-full uppercase inline-block">
-                      Passo 5: Análise de Perdas
-                    </span>
-                    <h4 className="text-xl font-black">Relatórios de Controle & Indicadores</h4>
-                    <p className="text-xs text-gray-300 leading-relaxed">
-                      Acompanhe em tempo real o volume de vencidos e ajuste a produção da padaria para evitar futuros desperdícios.
-                    </p>
-                  </div>
-                  <div className="bg-gray-800/90 p-4 rounded-2xl border border-gray-700 w-full md:w-80 space-y-2">
-                    <div className="flex items-center justify-between text-xs font-bold text-blue-400">
-                      <span>📊 Indicador de Desperdício</span>
-                      <span className="text-orange-400">PadeIA Auxiliando</span>
-                    </div>
-                    <div className="bg-gray-900 p-3 rounded-xl border border-gray-700 flex justify-between items-center">
-                      <span className="text-xs text-gray-400">Total Vencidos:</span>
-                      <strong className="text-xl font-black text-orange-400">Controlado</strong>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  <p className="text-xs text-gray-700 font-medium leading-snug">
+                    "Reduza a fornada das 16h de Pão Francês em 15% para eliminar sobras noturnas de balcão."
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-orange-200/60 flex items-center justify-between text-[11px] font-bold text-[#E8571A]">
+                  <span>Economia projetada: R$ 45,00/dia</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
       </section>
 
-      {/* SEGUNDA SEÇÃO - COMPARAÇÃO (SEM PADARIA.IO vs COM PADARIA.IO) */}
-      <section id="comparacao" className="py-20 bg-white border-y border-gray-200/80 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center space-y-3 max-w-3xl mx-auto mb-14"
-          >
-            <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 border border-red-200 text-xs font-black uppercase tracking-wider inline-block">
-              A Escolha é Simples
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
-              O que acontece com o seu dinheiro hoje?
-            </h2>
-            <p className="text-sm sm:text-base text-gray-600 font-medium max-w-2xl mx-auto">
-              Sem o Padaria.io, o desperdício acontece. Com o Padaria.io, o desperdício passa a ser medido, entendido e reduzido.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* SEM PADARIA.IO */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="bg-gradient-to-b from-red-50/50 to-white rounded-3xl p-6 sm:p-8 border-2 border-red-200 shadow-sm space-y-6 relative"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center font-black text-lg">
-                  ❌
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-red-950 uppercase">SEM PADARIA.IO</h3>
-                  <p className="text-xs text-red-600 font-bold">O caminho tradicional para o prejuízo</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center space-x-3 p-4 bg-red-100/40 rounded-2xl border border-red-200/60">
-                  <span className="text-red-500 font-black text-lg shrink-0">❌</span>
-                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Produto vence sem ninguém perceber.</h4>
-                </div>
-
-                <div className="flex items-center space-x-3 p-4 bg-red-100/40 rounded-2xl border border-red-200/60">
-                  <span className="text-red-500 font-black text-lg shrink-0">❌</span>
-                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Prejuízo invisível.</h4>
-                </div>
-
-                <div className="flex items-center space-x-3 p-4 bg-red-100/40 rounded-2xl border border-red-200/60">
-                  <span className="text-red-500 font-black text-lg shrink-0">❌</span>
-                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Produção baseada em achismo.</h4>
-                </div>
-
-                <div className="flex items-center space-x-3 p-4 bg-red-100/40 rounded-2xl border border-red-200/60">
-                  <span className="text-red-500 font-black text-lg shrink-0">❌</span>
-                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Ninguém sabe quanto perdeu.</h4>
-                </div>
-              </div>
-
-              <div className="p-4 bg-red-50 rounded-2xl border border-red-200 text-center">
-                <span className="text-xs font-black text-red-700 uppercase block">
-                  Resultado Final:
-                </span>
-                <span className="text-sm font-extrabold text-red-900">
-                  Perda contínua de margem de lucro todos os meses.
-                </span>
-              </div>
-            </motion.div>
-
-            {/* COM PADARIA.IO */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              whileHover={{ scale: 1.01 }}
-              transition={{ duration: 0.6 }}
-              className="bg-gradient-to-b from-emerald-50/50 to-white rounded-3xl p-6 sm:p-8 border-2 border-emerald-400 shadow-xl space-y-6 relative"
-            >
-              {/* Highlight Badge */}
-              <div className="absolute -top-3.5 right-6 px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-full shadow-md">
-                Solução Inteligente
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-lg">
-                  ✅
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-emerald-950 uppercase">COM PADARIA.IO</h3>
-                  <p className="text-xs text-emerald-600 font-extrabold">O desperdício deixa de ser invisível.</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center space-x-3 p-4 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
-                  <span className="text-emerald-600 font-black text-lg shrink-0">✅</span>
-                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Todo desperdício é registrado e analisado.</h4>
-                </div>
-
-                <div className="flex items-center space-x-3 p-4 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
-                  <span className="text-emerald-600 font-black text-lg shrink-0">✅</span>
-                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Prejuízo identificado em tempo real.</h4>
-                </div>
-
-                <div className="flex items-center space-x-3 p-4 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
-                  <span className="text-emerald-600 font-black text-lg shrink-0">✅</span>
-                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Decisões baseadas em dados.</h4>
-                </div>
-
-                <div className="flex items-center space-x-3 p-4 bg-emerald-100/40 rounded-2xl border border-emerald-200/60">
-                  <span className="text-emerald-600 font-black text-lg shrink-0">✅</span>
-                  <h4 className="text-sm font-extrabold text-gray-900 leading-snug">Relatórios financeiros do desperdício.</h4>
-                </div>
-              </div>
-
-              <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-center">
-                <span className="text-xs font-black text-emerald-700 uppercase block">
-                  Resultado Final:
-                </span>
-                <span className="text-sm font-extrabold text-emerald-900">
-                  O desperdício passa a ser medido, entendido e reduzido!
-                </span>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* SEÇÃO IA - UMA FOTO. ALGUNS SEGUNDOS. TUDO ORGANIZADO */}
-      <section id="ia" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      {/* 2. SEÇÃO DE PROBLEMAS */}
+      <section id="desafios" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-white rounded-3xl border border-gray-200/80 my-10 shadow-xs">
         <div className="text-center space-y-3 max-w-3xl mx-auto mb-14">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-orange-50 text-[#E8571A] border border-orange-200 text-xs font-black uppercase">
-            <Sparkles className="w-4 h-4 text-[#E8571A]" />
-            <span>Visão Computacional Avançada</span>
-          </div>
-          <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
-            Uma foto. Alguns segundos. Tudo organizado.
+          <span className="text-xs font-black text-[#E8571A] uppercase tracking-widest bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
+            DESAFIOS DA OPERAÇÃO
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">
+            Sua padaria enfrenta algum destes desafios?
           </h2>
           <p className="text-sm sm:text-base text-gray-600 font-medium">
-            Entenda como nossa Inteligência Artificial simplifica a rotina da sua equipe.
+            Gerenciar um estabelecimento sem controle centralizado custa caro e gera retrabalho diário para a sua equipe.
           </p>
         </div>
 
-        {/* Timeline Visual Pipeline */}
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-3 text-center items-center">
-          {/* Node 1 */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center mx-auto font-black">
-              📷
-            </div>
-            <strong className="text-xs font-black text-gray-900 block">1. Foto</strong>
-            <span className="text-[10px] text-gray-500 font-medium">Captura simples da etiqueta</span>
-          </div>
-
-          <div className="hidden md:block text-gray-300 font-black">➔</div>
-
-          {/* Node 2 */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto font-black">
-              🤖
-            </div>
-            <strong className="text-xs font-black text-gray-900 block">2. IA</strong>
-            <span className="text-[10px] text-gray-500 font-medium">Leitura inteligente dos dados</span>
-          </div>
-
-          <div className="hidden md:block text-gray-300 font-black">➔</div>
-
-          {/* Node 3 */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mx-auto font-black">
-              📦
-            </div>
-            <strong className="text-xs font-black text-gray-900 block">3. Cadastrado</strong>
-            <span className="text-[10px] text-gray-500 font-medium">Produto salvo no sistema</span>
-          </div>
-
-          <div className="hidden md:block text-gray-300 font-black">➔</div>
-
-          {/* Node 4 */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto font-black">
-              ⏳
-            </div>
-            <strong className="text-xs font-black text-gray-900 block">4. Dias Restantes</strong>
-            <span className="text-[10px] text-gray-500 font-medium">Contagem regressiva exata</span>
-          </div>
-        </div>
-
-        {/* Second Row of Pipeline */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-center items-center mt-4 max-w-4xl mx-auto">
-          {/* Node 5 */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto font-black">
-              ⚡
-            </div>
-            <strong className="text-xs font-black text-gray-900 block">5. Status</strong>
-            <span className="text-[10px] text-gray-500 font-medium">Alerta visual automático</span>
-          </div>
-
-          <div className="hidden md:block text-gray-300 font-black">➔</div>
-
-          {/* Node 6 */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center mx-auto font-black">
-              📋
-            </div>
-            <strong className="text-xs font-black text-gray-900 block">6. Auditoria</strong>
-            <span className="text-[10px] text-gray-500 font-medium">Balanço de perdas e descarte</span>
-          </div>
-
-          <div className="hidden md:block text-gray-300 font-black">➔</div>
-
-          {/* Node 7 */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-[#1F2937] text-white flex items-center justify-center mx-auto font-black">
-              📊
-            </div>
-            <strong className="text-xs font-black text-gray-900 block">7. Relatório</strong>
-            <span className="text-[10px] text-gray-500 font-medium">Controle total financeiro</span>
-          </div>
-        </div>
-      </section>
-
-      {/* SEÇÃO BENEFÍCIOS (CARDS MODERNOS) */}
-      <section id="beneficios" className="py-20 bg-white border-t border-gray-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-3 max-w-3xl mx-auto">
-            <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200 text-xs font-black uppercase tracking-wider">
-              Recursos do Ecossistema
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
-              Tudo o que sua padaria precisa para crescer
-            </h2>
-            <p className="text-sm sm:text-base text-gray-500 font-medium">
-              Ferramentas desenvolvidas especificamente para a realidade de panificadoras e confeitarias.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Card 1 */}
-            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-black text-gray-900">Recupera faturamento</h3>
-              <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                Transforme itens que seriam descarrilados em receita real antes do vencimento.
-              </p>
-            </div>
-
-            {/* Card 2 */}
-            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                <TrendingDown className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-black text-gray-900">Reduz desperdício</h3>
-              <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                Diminua em até 80% o volume de alimentos descartados no lixo todos os meses.
-              </p>
-            </div>
-
-            {/* Card 3 */}
-            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                <Clock className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-black text-gray-900">Economiza tempo</h3>
-              <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                Elimine planilhas manuais e conferências demoradas na retaguarda.
-              </p>
-            </div>
-
-            {/* Card 4 */}
-            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-black text-gray-900">IA Integrada</h3>
-              <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                Reconhecimento fotográfico inteligente de etiquetas, produtos e validades.
-              </p>
-            </div>
-
-            {/* Card 5 */}
-            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                <BarChart3 className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-black text-gray-900">Relatórios Inteligentes</h3>
-              <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                Métricas claras de perdas evidadas, custos e desempenho por departamento.
-              </p>
-            </div>
-
-            {/* Card 6 */}
-            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-black text-gray-900">Controle de Vencidos</h3>
-              <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                Registro exclusivo de itens vencidos para readequar produções e eliminar prejuízos.
-              </p>
-            </div>
-
-            {/* Card 7 */}
-            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-teal-100 text-teal-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                <Layers className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-black text-gray-900">Histórico Completo</h3>
-              <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                Rastreabilidade de todas as vendas e baixas efetuadas na padaria.
-              </p>
-            </div>
-
-            {/* Card 8 */}
-            <div className="p-6 rounded-3xl bg-[#FDFBF7] border border-gray-200 hover:border-[#E8571A] hover:shadow-lg transition-all space-y-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                <Zap className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-black text-gray-900">Dashboard em Tempo Real</h3>
-              <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                Acompanhamento instantâneo do estado de validade de toda a loja.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SEÇÃO RESULTADOS / INDICADORES */}
-      <section id="resultados" className="py-20 bg-gradient-to-b from-[#1F2937] to-[#111827] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-3 max-w-3xl mx-auto">
-            <span className="px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-black uppercase">
-              Resultados Reais
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight">
-              Impacto direto na saúde financeira da sua padaria
-            </h2>
-            <p className="text-sm sm:text-base text-gray-300 font-medium">
-              Indicadores acumulados obtidos por panificadoras parceiras utilizando o PADARIA.io.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            {/* Indicator 1 */}
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-2 hover:bg-white/10 transition-all">
-              <span className="text-xs font-black text-emerald-400 uppercase tracking-widest block">
-                Produtos Recuperados
-              </span>
-              <p className="text-3xl sm:text-4xl font-black text-white">1.480+</p>
-              <span className="text-[11px] text-gray-400 block font-medium">Itens vendidos antes de vencer</span>
-            </div>
-
-            {/* Indicator 2 */}
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-2 hover:bg-white/10 transition-all">
-              <span className="text-xs font-black text-blue-400 uppercase tracking-widest block">
-                Valor Recuperado
-              </span>
-              <p className="text-3xl sm:text-4xl font-black text-white">R$ 42.500+</p>
-              <span className="text-[11px] text-gray-400 block font-medium">Receita salva no balanço</span>
-            </div>
-
-            {/* Indicator 3 */}
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-2 hover:bg-white/10 transition-all">
-              <span className="text-xs font-black text-orange-400 uppercase tracking-widest block">
-                Redução de Descarte
-              </span>
-              <p className="text-3xl sm:text-4xl font-black text-white">-78%</p>
-              <span className="text-[11px] text-gray-400 block font-medium">Queda no lixo da produção</span>
-            </div>
-
-            {/* Indicator 4 */}
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-2 hover:bg-white/10 transition-all">
-              <span className="text-xs font-black text-amber-400 uppercase tracking-widest block">
-                Economia Gerada
-              </span>
-              <p className="text-3xl sm:text-4xl font-black text-white">R$ 85.000+</p>
-              <span className="text-[11px] text-gray-400 block font-medium">Total preservado no caixa</span>
-            </div>
-
-            {/* Indicator 5 */}
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-2 hover:bg-white/10 transition-all">
-              <span className="text-xs font-black text-purple-400 uppercase tracking-widest block">
-                Tempo Economizado
-              </span>
-              <p className="text-3xl sm:text-4xl font-black text-white">15h/sem</p>
-              <span className="text-[11px] text-gray-400 block font-medium">Menos rotina operacional</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SEÇÃO ENTRAR EM CONTATO */}
-      <section id="contato" className="py-20 bg-[#FDFBF7] border-t border-gray-200/80 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Problem Card 1 */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center space-y-3 max-w-3xl mx-auto"
+            whileHover={{ y: -4 }}
+            className="p-6 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all shadow-2xs"
           >
-            <span className="px-3.5 py-1.5 rounded-full bg-orange-100 text-[#E8571A] border border-orange-200 text-xs font-black uppercase tracking-wider inline-block">
-              Fale Conosco
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-black text-[#1A1A1A] tracking-tight">
-              Pronto para controlar vencidos e zerar o desperdício?
-            </h2>
-            <p className="text-sm sm:text-base text-gray-600 font-medium">
-              Entre em contato direto com nossa equipe e saiba como implantar o PadeIA na sua padaria hoje mesmo.
+            <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
+              <Clock className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Produtos vencendo</h3>
+            <p className="text-xs text-gray-600 font-medium leading-relaxed">
+              Itens esquecidos no estoque ou no balcão que vencem sem ninguém perceber, gerando prejuízos diários e perda de margem.
             </p>
           </motion.div>
 
-          <div className="max-w-xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="bg-gradient-to-b from-[#1F2937] via-[#111827] to-[#0A0F1D] text-white rounded-3xl border-2 border-[#E8571A] p-8 sm:p-10 shadow-2xl text-center space-y-6 relative"
-            >
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
-                <MessageSquare className="w-8 h-8" />
-              </div>
+          {/* Problem Card 2 */}
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="p-6 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all shadow-2xs"
+          >
+            <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+              <ChefHat className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Produção sem previsibilidade</h3>
+            <p className="text-xs text-gray-600 font-medium leading-relaxed">
+              Fornadas calculadas no "achismo", que causam excesso de sobras ao final do dia ou falta de produtos nos horários de pico.
+            </p>
+          </motion.div>
 
+          {/* Problem Card 3 */}
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="p-6 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all shadow-2xs"
+          >
+            <div className="w-12 h-12 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <FileText className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Controle em papel ou planilhas</h3>
+            <p className="text-xs text-gray-600 font-medium leading-relaxed">
+              Anotações em cadernos ou planilhas difíceis de atualizar, sem padronização entre os turnos e sujeitas a erros humanos.
+            </p>
+          </motion.div>
+
+          {/* Problem Card 4 */}
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="p-6 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all shadow-2xs"
+          >
+            <div className="w-12 h-12 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Desperdício diário</h3>
+            <p className="text-xs text-gray-600 font-medium leading-relaxed">
+              Matérias-primas e produtos prontos descartados sem nenhum registro de causa, impedindo qualquer ação corretiva.
+            </p>
+          </motion.div>
+
+          {/* Problem Card 5 */}
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="p-6 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all shadow-2xs sm:col-span-2 lg:col-span-1"
+          >
+            <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+              <PieChart className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Falta de indicadores</h3>
+            <p className="text-xs text-gray-600 font-medium leading-relaxed">
+              Dificuldade em saber o valor exato perdido em cada setor e a rentabilidade real da sua produção diária.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* 3. COMO FUNCIONA */}
+      <section id="como-funciona" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center space-y-3 max-w-3xl mx-auto mb-16">
+          <span className="text-xs font-black text-[#E8571A] uppercase tracking-widest bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
+            PASSO A PASSO SIMPLES
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">
+            Como funciona a implantação do Padaria.io
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            Sua equipe começa a ter controle sem interrupção no fluxo de atendimento ou na cozinha.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+          {/* Step 1 */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200/90 shadow-2xs space-y-4 relative">
+            <div className="w-10 h-10 rounded-xl bg-[#E8571A] text-white font-black flex items-center justify-center text-sm">
+              01
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Agende uma demonstração</h3>
+            <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              Preencha o formulário ou entre em contato pelo WhatsApp para agendar uma conversa sem compromisso.
+            </p>
+          </div>
+
+          {/* Step 2 */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200/90 shadow-2xs space-y-4 relative">
+            <div className="w-10 h-10 rounded-xl bg-[#E8571A] text-white font-black flex items-center justify-center text-sm">
+              02
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Entendemos sua operação</h3>
+            <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              Analisamos a rotina da sua padaria, setores de produção, principais produtos e gargalos de desperdício.
+            </p>
+          </div>
+
+          {/* Step 3 */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200/90 shadow-2xs space-y-4 relative">
+            <div className="w-10 h-10 rounded-xl bg-[#E8571A] text-white font-black flex items-center justify-center text-sm">
+              03
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Configuramos o Padaria.io</h3>
+            <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              Ajustamos cadastros, regras de alertas de validade e parâmetros ideais para o seu estabelecimento.
+            </p>
+          </div>
+
+          {/* Step 4 */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200/90 shadow-2xs space-y-4 relative">
+            <div className="w-10 h-10 rounded-xl bg-[#E8571A] text-white font-black flex items-center justify-center text-sm">
+              04
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Sua equipe começa a utilizar</h3>
+            <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              Oferecemos treinamento intuitivo e acompanhamento contínuo para garantir a máxima adesão e resultados.
+            </p>
+          </div>
+        </div>
+
+        {/* CTA Banner inside process */}
+        <div className="mt-12 bg-orange-50 border border-orange-200/80 rounded-2xl p-6 text-center max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-left space-y-1">
+            <h4 className="text-sm font-extrabold text-gray-900">Quer ver o sistema na prática hoje mesmo?</h4>
+            <p className="text-xs text-gray-600">Apresentação online rápida de 15 minutos adaptada para sua padaria.</p>
+          </div>
+          <button
+            onClick={() => openWhatsApp()}
+            className="shrink-0 px-6 py-3 rounded-xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-xs font-black transition-all shadow-sm flex items-center space-x-2 cursor-pointer"
+          >
+            <MessageCircle className="w-4 h-4 fill-white text-[#E8571A]" />
+            <span>Agendar no WhatsApp</span>
+          </button>
+        </div>
+      </section>
+
+      {/* 4. FUNCIONALIDADES */}
+      <section id="funcionalidades" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-white rounded-3xl border border-gray-200/80 my-10 shadow-xs">
+        <div className="text-center space-y-3 max-w-3xl mx-auto mb-16">
+          <span className="text-xs font-black text-[#E8571A] uppercase tracking-widest bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
+            RECURSOS COMPLETOS
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">
+            Tudo o que você precisa para uma gestão eficiente
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            Ferramentas desenvolvidas sob medida para a rotina de panificação e confeitaria.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* 1. Controle de Validade */}
+          <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-gray-900 flex items-center space-x-1.5">
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span>Controle de Validade</span>
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                Monitoramento preventivo de lotes, alertas de vencimento próximo e gestão de exposição.
+              </p>
+            </div>
+          </div>
+
+          {/* 2. Gestão de Produção */}
+          <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <ChefHat className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-gray-900 flex items-center space-x-1.5">
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span>Gestão de Produção</span>
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                Programação diária de fornadas, fichas técnicas padronizadas e controle de fornecimento.
+              </p>
+            </div>
+          </div>
+
+          {/* 3. Controle de Desperdícios */}
+          <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <Trash2 className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-gray-900 flex items-center space-x-1.5">
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span>Controle de Desperdícios</span>
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                Auditoria de baixas por foto, motivos das perdas e mensuração financeira exata.
+              </p>
+            </div>
+          </div>
+
+          {/* 4. Dashboard */}
+          <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-gray-900 flex items-center space-x-1.5">
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span>Dashboard</span>
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                Painel gerencial com indicadores visuais em tempo real para tomada de decisão ágil.
+              </p>
+            </div>
+          </div>
+
+          {/* 5. Relatórios */}
+          <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-gray-900 flex items-center space-x-1.5">
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span>Relatórios</span>
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                Relatórios consolidados de perdas, validades e histórico prontos para impressão ou exportação.
+              </p>
+            </div>
+          </div>
+
+          {/* 6. Cadastros */}
+          <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-gray-900 flex items-center space-x-1.5">
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span>Cadastros</span>
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                Cadastro simplificado de produtos, categorias, fornecedores e receitas de produção.
+              </p>
+            </div>
+          </div>
+
+          {/* 7. Usuários */}
+          <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <Users className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-gray-900 flex items-center space-x-1.5">
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span>Usuários</span>
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                Níveis de acesso diferenciados para gerência, operadores de balcão e equipe de cozinha.
+              </p>
+            </div>
+          </div>
+
+          {/* 8. Inteligência Artificial */}
+          <div className="p-5 rounded-2xl bg-[#FDFBF7] border border-gray-200/80 space-y-3 hover:border-orange-300 transition-all">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-gray-900 flex items-center space-x-1.5">
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span>Inteligência Artificial</span>
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                A assistente PadeIA analisa o histórico para sugerir ajustes nas fornadas e receitas de reaproveitamento.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. DIFERENCIAIS */}
+      <section id="diferenciais" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center space-y-3 max-w-3xl mx-auto mb-16">
+          <span className="text-xs font-black text-[#E8571A] uppercase tracking-widest bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
+            NOSSO COMPROMISSO
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight leading-snug">
+            Não somos apenas um software. <br className="hidden sm:block" />
+            Nós ajudamos sua padaria a crescer.
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            Entendemos que tecnologia só funciona quando está aliada a suporte próximo e facilidade no dia a dia.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Diferencial 1 */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200/90 shadow-2xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <Settings className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Implantação personalizada</h3>
+            <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              Acompanhamento passo a passo para cadastrar e estruturar os parâmetros específicos do seu negócio.
+            </p>
+          </div>
+
+          {/* Diferencial 2 */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200/90 shadow-2xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <Headphones className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Suporte humano</h3>
+            <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              Equipe pronta para ajudar sua gerência e funcionários via WhatsApp ou chamadas sempre que precisar.
+            </p>
+          </div>
+
+          {/* Diferencial 3 */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200/90 shadow-2xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <RefreshCw className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Atualizações constantes</h3>
+            <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              Novas melhorias e funcionalidades desenvolvidas continuadamente a partir do feedback dos nossos clientes.
+            </p>
+          </div>
+
+          {/* Diferencial 4 */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200/90 shadow-2xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <Cloud className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Plataforma em nuvem</h3>
+            <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              Sem necessidade de servidores locais. Acesse de forma segura pelo celular, tablet ou computador.
+            </p>
+          </div>
+
+          {/* Diferencial 5 */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200/90 shadow-2xs space-y-3 sm:col-span-2 lg:col-span-2">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center font-bold">
+              <Zap className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-extrabold text-gray-900">Fácil utilização</h3>
+            <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              Telas limpas e botões grandes pensados para a correria do balcão e da cozinha de produção, garantindo que qualquer colaborador aprenda em poucos minutos.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. DEMONSTRAÇÃO EXCLUSIVA */}
+      <section id="demonstracao" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-white rounded-3xl border border-gray-200/80 my-10 shadow-xs">
+        <div className="text-center space-y-3 max-w-3xl mx-auto mb-12">
+          <span className="text-xs font-black text-[#E8571A] uppercase tracking-widest bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
+            INTERFACE EM AÇÃO
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">
+            Veja o Padaria.io funcionando
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            Conheça a simplicidade das telas e a clareza das informações no dia a dia da sua operação.
+          </p>
+        </div>
+
+        {/* Demo Tab Selectors */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-8 max-w-3xl mx-auto">
+          <button
+            onClick={() => setActiveDemoTab('dashboard')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold cursor-pointer transition-all ${
+              activeDemoTab === 'dashboard'
+                ? 'bg-[#E8571A] text-white shadow-sm'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            }`}
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => setActiveDemoTab('validade')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold cursor-pointer transition-all ${
+              activeDemoTab === 'validade'
+                ? 'bg-[#E8571A] text-white shadow-sm'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            }`}
+          >
+            Controle de Validades
+          </button>
+          <button
+            onClick={() => setActiveDemoTab('producao')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold cursor-pointer transition-all ${
+              activeDemoTab === 'producao'
+                ? 'bg-[#E8571A] text-white shadow-sm'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            }`}
+          >
+            Gestão de Produção
+          </button>
+          <button
+            onClick={() => setActiveDemoTab('desperdicio')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold cursor-pointer transition-all ${
+              activeDemoTab === 'desperdicio'
+                ? 'bg-[#E8571A] text-white shadow-sm'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            }`}
+          >
+            Relatório de Desperdícios
+          </button>
+          <button
+            onClick={() => setActiveDemoTab('ia')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold cursor-pointer transition-all ${
+              activeDemoTab === 'ia'
+                ? 'bg-[#E8571A] text-white shadow-sm'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            }`}
+          >
+            Assistente PadeIA
+          </button>
+        </div>
+
+        {/* Dynamic Interactive Tab Preview */}
+        <div className="bg-[#FDFBF7] p-6 sm:p-8 rounded-2xl border border-gray-200/90 max-w-4xl mx-auto min-h-[320px] flex flex-col justify-between shadow-2xs">
+          {activeDemoTab === 'dashboard' && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <h4 className="text-sm font-black text-gray-900 flex items-center space-x-2">
+                  <BarChart3 className="w-4 h-4 text-[#E8571A]" />
+                  <span>Painel de Controle - Visão Geral da Padaria</span>
+                </h4>
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2 py-0.5 rounded-full">
+                  Atualizado em Tempo Real
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="bg-white p-3.5 rounded-xl border border-gray-200 text-left">
+                  <span className="text-[10px] text-gray-400 font-bold block">Fornadas do Dia</span>
+                  <span className="text-lg font-black text-gray-900">14 fornadas</span>
+                </div>
+                <div className="bg-white p-3.5 rounded-xl border border-gray-200 text-left">
+                  <span className="text-[10px] text-gray-400 font-bold block">Taxa de Perda</span>
+                  <span className="text-lg font-black text-emerald-600">1.2% (Meta ok)</span>
+                </div>
+                <div className="bg-white p-3.5 rounded-xl border border-gray-200 text-left col-span-2 sm:col-span-1">
+                  <span className="text-[10px] text-gray-400 font-bold block">Lotes Auditados</span>
+                  <span className="text-lg font-black text-blue-600">100% gravados</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium pt-2">
+                Visão consolidada das suas vendas, produções ativas e baixas diárias para manter a diretoria e a gerência sempre informadas.
+              </p>
+            </div>
+          )}
+
+          {activeDemoTab === 'validade' && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <h4 className="text-sm font-black text-gray-900 flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-[#E8571A]" />
+                  <span>Módulo de Controle Preventivo de Validades</span>
+                </h4>
+                <span className="text-[10px] bg-amber-100 text-amber-800 font-black px-2 py-0.5 rounded-full">
+                  Alertas Ativos
+                </span>
+              </div>
               <div className="space-y-2">
-                <h3 className="text-2xl font-black text-white">Atendimento via WhatsApp</h3>
-                <p className="text-xs text-gray-300">
-                  Tire dúvidas, solicite demonstração ou ative seu teste grátis por 1 dia diretamente pelo WhatsApp.
+                <div className="bg-white p-3 rounded-xl border border-gray-200 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-extrabold text-gray-900 block">Torta Holandesa (Fatia)</span>
+                    <span className="text-[10px] text-gray-500">Setor: Confeitaria Central</span>
+                  </div>
+                  <span className="text-rose-600 font-black bg-rose-50 px-2 py-1 rounded-lg text-[10px]">
+                    Vence Hoje (3 un)
+                  </span>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-gray-200 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-extrabold text-gray-900 block">Broa de Milho Tradicional</span>
+                    <span className="text-[10px] text-gray-500">Setor: Balcão Principal</span>
+                  </div>
+                  <span className="text-amber-600 font-black bg-amber-50 px-2 py-1 rounded-lg text-[10px]">
+                    Vence em 2 dias (15 un)
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                Notificações organizadas por urgência para que sua equipe de balcão tome medidas preventivas antes do vencimento.
+              </p>
+            </div>
+          )}
+
+          {activeDemoTab === 'producao' && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <h4 className="text-sm font-black text-gray-900 flex items-center space-x-2">
+                  <ChefHat className="w-4 h-4 text-[#E8571A]" />
+                  <span>Programação da Cozinha e Fornadas</span>
+                </h4>
+                <span className="text-[10px] bg-blue-100 text-blue-800 font-black px-2 py-0.5 rounded-full">
+                  Turno Manhã
+                </span>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-2 text-left">
+                <div className="flex justify-between text-xs font-bold text-gray-800">
+                  <span>Pão Francês - 06:00h</span>
+                  <span className="text-emerald-600">30 kg (Concluído)</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold text-gray-800">
+                  <span>Pão Doce de Leite - 08:30h</span>
+                  <span className="text-amber-600">12 kg (Em andamento)</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold text-gray-800">
+                  <span>Croissant Folhado - 11:00h</span>
+                  <span className="text-gray-400">8 kg (Agendado)</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                Evite a falta de pão quente nos horários nobres e previna excessos desnecessários nos momentos de menor movimento.
+              </p>
+            </div>
+          )}
+
+          {activeDemoTab === 'desperdicio' && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <h4 className="text-sm font-black text-gray-900 flex items-center space-x-2">
+                  <Trash2 className="w-4 h-4 text-[#E8571A]" />
+                  <span>Auditoria e Baixas por Foto</span>
+                </h4>
+                <span className="text-[10px] bg-rose-100 text-rose-800 font-black px-2 py-0.5 rounded-full">
+                  Relatório Sanitário
+                </span>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-gray-200 text-left space-y-2">
+                <div className="flex items-center justify-between text-xs font-extrabold text-gray-900">
+                  <span>Mês Atual: R$ 340,00 descartados</span>
+                  <span className="text-emerald-600">-78% vs Mês Anterior</span>
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  Motivo principal: Excesso de umidade no armazenamento (Resolvido).
                 </p>
               </div>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                Sua equipe tira foto e registra o motivo de qualquer perda. Nada é descartado sem rastro ou justificativa.
+              </p>
+            </div>
+          )}
 
-              <div className="pt-2">
-                <motion.a
-                  whileHover={{ scale: 1.03, boxShadow: "0 15px 30px -5px rgba(16, 185, 129, 0.4)" }}
-                  whileTap={{ scale: 0.97 }}
-                  href={`https://wa.me/5561996507712?text=${encodeURIComponent('Olá! Gostaria de testar grátis por 1 dia e tirar dúvidas sobre o sistema PadeIA de controle de vencidos.')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black shadow-xl transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                >
-                  <MessageSquare className="w-5 h-5" />
-                  <span>Entrar em contato no WhatsApp</span>
-                </motion.a>
+          {activeDemoTab === 'ia' && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <h4 className="text-sm font-black text-gray-900 flex items-center space-x-2">
+                  <Bot className="w-4 h-4 text-[#E8571A]" />
+                  <span>Assistente Virtual PadeIA</span>
+                </h4>
+                <span className="text-[10px] bg-purple-100 text-purple-800 font-black px-2 py-0.5 rounded-full">
+                  Inteligência Ativa
+                </span>
               </div>
-            </motion.div>
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-xl border border-orange-200 text-left space-y-2">
+                <p className="text-xs font-bold text-gray-800">
+                  "Detectei que o consumo de Croissant de Presunto aumenta 35% aos sábados de manhã. Deseja ajustar a sugestão de fornada?"
+                </p>
+              </div>
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                Análises automatizadas que auxiliam seu mestre padeiro a tomar decisões certeiras sem precisar de tabelas complexas.
+              </p>
+            </div>
+          )}
+
+          {/* Section Action Button */}
+          <div className="pt-6 text-center border-t border-gray-200/80">
+            <button
+              onClick={() => openWhatsApp()}
+              className="px-8 py-3.5 rounded-xl bg-[#E8571A] hover:bg-[#d44e15] text-white font-black text-sm transition-all shadow-md flex items-center justify-center space-x-2 mx-auto cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4 fill-white text-[#E8571A]" />
+              <span>Quero uma Demonstração</span>
+            </button>
           </div>
         </div>
       </section>
 
-      {/* FAQ SECTION */}
-      <section className="py-20 bg-white border-t border-gray-200/80">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-black text-[#E8571A] uppercase tracking-wider">Tire suas Dúvidas</span>
-            <h2 className="text-3xl font-black text-gray-900">Perguntas Frequentes</h2>
-          </div>
+      {/* 7. CTA FINAL (Conversion focus) */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="rounded-3xl bg-gradient-to-br from-[#1F2937] via-[#111827] to-[#0A0F1D] text-white p-8 sm:p-14 text-center space-y-8 relative overflow-hidden shadow-2xl border border-gray-800">
+          {/* Subtle glowing circle */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#E8571A]/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="space-y-4">
-            {[
-              {
-                q: "Como a PadeIA ajuda no controle de vencidos e desperdícios?",
-                a: "A PadeIA permite registrar exclusivamente produtos que já venceram (a partir de 1 dia após a data de validade). Através do escaneamento por foto, ela registra e organiza o histórico de perdas, auxiliando a padaria a readequar produções futuras e eliminar o desperdício."
-              },
-              {
-                q: "Preciso baixar algum aplicativo pesado no celular?",
-                a: "Não! O PADARIA.io é um Web App (PWA) de última geração. Você pode instalá-lo com 1 clique na tela inicial do seu celular, tablet ou computador sem ocupar memória, ou usá-lo direto pelo navegador."
-              },
-              {
-                q: "Qualquer funcionário consegue usar a câmera para cadastrar?",
-                a: "Sim. A interface é extremamente simples e intuitiva. Basta abrir o scanner, tirar a foto da etiqueta e a IA faz todo o reconhecimento dos dados automaticamente."
-              },
-              {
-                q: "Como funciona o teste grátis?",
-                a: "Você pode acessar o sistema imediatamente e testar sem necessidade de cadastrar cartão de crédito ou assinar compromissos."
-              }
-            ].map((item, idx) => (
-              <div
-                key={idx}
-                className="border border-gray-200 rounded-2xl overflow-hidden transition-all bg-[#FDFBF7]"
-              >
-                <button
-                  onClick={() => setFaqOpen(faqOpen === idx ? null : idx)}
-                  className="w-full p-5 text-left font-black text-sm text-gray-900 flex justify-between items-center cursor-pointer hover:bg-gray-100/60"
-                >
-                  <span>{item.q}</span>
-                  {faqOpen === idx ? (
-                    <ChevronUp className="w-5 h-5 text-[#E8571A] shrink-0" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400 shrink-0" />
-                  )}
-                </button>
-                {faqOpen === idx && (
-                  <div className="px-5 pb-5 text-xs text-gray-600 font-medium leading-relaxed border-t border-gray-100 pt-3">
-                    {item.a}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+          <div className="space-y-4 max-w-3xl mx-auto relative z-10">
+            <span className="inline-block px-4 py-1 rounded-full bg-orange-500/20 text-[#E8571A] text-xs font-black uppercase tracking-widest border border-orange-500/30">
+              PRÓXIMO PASSO PARA SUA PADARIA
+            </span>
 
-      {/* ULTRA HIGH-TECH HIGH-CONVERTING CTA FINAL SECTION */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 30 }}
-          whileInView={{ opacity: 1, scale: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="bg-gradient-to-br from-[#1A1C23] via-[#111827] to-[#0A0F1D] rounded-3xl p-8 sm:p-16 text-center text-white shadow-2xl relative overflow-hidden border border-gray-800 space-y-8"
-        >
-          {/* Animated Ambient Light Rings */}
-          <motion.div
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.15, 0.3, 0.15]
-            }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-0 right-0 w-96 h-96 bg-[#E8571A]/20 rounded-full blur-3xl pointer-events-none"
-          />
-          <motion.div
-            animate={{
-              scale: [1, 1.25, 1],
-              opacity: [0.1, 0.25, 0.1]
-            }}
-            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"
-          />
-
-          <motion.div
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-orange-500/20 border border-orange-500/40 text-orange-400 text-xs font-black uppercase tracking-widest shadow-inner"
-          >
-            <Zap className="w-4 h-4 text-amber-400 animate-bounce" />
-            <span>RECUPERAÇÃO IMEDIATA DE VALIDADE</span>
-          </motion.div>
-
-          <div className="space-y-4 max-w-4xl mx-auto">
-            <h2 className="text-3xl sm:text-6xl font-black tracking-tight leading-tight uppercase">
-              SUA PADARIA PRONTA PARA <br />
-              <span className="bg-gradient-to-r from-orange-400 via-[#E8571A] to-amber-300 bg-clip-text text-transparent">
-                FATURAR MAIS HOJE MESMO.
-              </span>
+            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+              Vamos transformar a gestão da sua padaria?
             </h2>
 
-            <p className="text-sm sm:text-lg text-gray-300 font-medium max-w-2xl mx-auto leading-relaxed">
-              Instalação zero, ative pelo celular em menos de 1 minuto e recupere o valor dos seus produtos antes de vencerem.
+            <p className="text-sm sm:text-lg text-gray-300 font-medium leading-relaxed">
+              Agende uma demonstração gratuita e descubra como o <strong className="text-white font-bold">Padaria.io</strong> pode ajudar sua equipe a produzir melhor, reduzir desperdícios e aumentar a organização.
             </p>
           </div>
 
-          {/* Value Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Garantia Anti-Prejuízo</span>
-            </span>
-            <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-amber-300 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>IA OCR de Leitura Instantânea</span>
-            </span>
-            <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-orange-300 flex items-center gap-1.5">
-              <Crown className="w-4 h-4 text-orange-300" />
-              <span>Controle de Vencidos & Desperdício</span>
-            </span>
-          </div>
-
-          {/* High-converting CTAs */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto">
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 30px -5px rgba(232, 87, 26, 0.4)" }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleTestFree}
-              className="w-full sm:w-1/2 py-5 px-8 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white text-base font-black shadow-2xl transition-all flex items-center justify-center space-x-3 cursor-pointer group"
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
+            <button
+              onClick={() => openWhatsApp()}
+              className="w-full sm:w-auto px-9 py-4 rounded-2xl bg-[#E8571A] hover:bg-[#d44e15] text-white font-black text-base transition-all shadow-lg hover:shadow-orange-500/30 flex items-center justify-center space-x-3 cursor-pointer group"
             >
-              <span>Testar grátis por 1 dia</span>
+              <MessageCircle className="w-5 h-5 fill-white text-[#E8571A] group-hover:scale-110 transition-transform" />
+              <span>Agendar Demonstração</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-
-            <motion.a
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.97 }}
-              href={`https://wa.me/5561996507712?text=${encodeURIComponent('Olá! Quero conhecer o PADARIA.io e tirar dúvidas no WhatsApp.')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-1/2 py-5 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-base font-black shadow-xl transition-all flex items-center justify-center space-x-2 cursor-pointer border border-emerald-400/30"
-            >
-              <MessageSquare className="w-5 h-5" />
-              <span>Falar no WhatsApp</span>
-            </motion.a>
+            </button>
           </div>
 
-          <p className="text-xs text-gray-400 font-bold pt-2">
-            ⚡ Acesso imediato no navegador • Teste 100% livre de cartão de crédito
+          <p className="text-xs text-gray-400 font-medium pt-2 relative z-10">
+            Atendimento imediato via WhatsApp de segunda a sábado.
           </p>
-        </motion.div>
+        </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-[#111827] text-gray-400 py-12 border-t border-gray-800 text-xs font-medium">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center">
-              <img
-                src="https://i.imgur.com/JCynwKe.png"
-                alt="PADARIA.io"
-                className="h-14 sm:h-16 object-contain"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-6 text-gray-400">
-              <a href="#como-funciona" className="hover:text-white transition-colors">
-                Como Funciona
-              </a>
-              <a href="#ia" className="hover:text-white transition-colors">
-                PadeIA
-              </a>
-              <a href="#beneficios" className="hover:text-white transition-colors">
-                Benefícios
-              </a>
-              <a href="#resultados" className="hover:text-white transition-colors">
-                Resultados
-              </a>
-              <a href="#contato" className="hover:text-white transition-colors">
-                Entrar em Contato
-              </a>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={onOpenPrivacy}
-                className="hover:text-white transition-colors cursor-pointer"
-              >
-                Política de Privacidade
-              </button>
-              <span>•</span>
-              <button
-                onClick={onOpenAdmin}
-                className="hover:text-white transition-colors cursor-pointer flex items-center space-x-1 font-semibold text-gray-300"
-              >
-                <Lock className="w-3.5 h-3.5 text-[#E8571A]" />
-                <span>Painel Admin</span>
-              </button>
-            </div>
+      <footer className="bg-white border-t border-gray-200/80 py-12 px-4 sm:px-6 lg:px-8 text-xs font-medium text-gray-500">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex items-center space-x-3">
+            <img
+              src="https://i.imgur.com/ZGsjvWy.png"
+              alt="PADARIA.io"
+              className="h-10 object-contain"
+              referrerPolicy="no-referrer"
+            />
+            <span className="text-gray-400">|</span>
+            <span>Gestão Inteligente para Padarias & Confeitaria</span>
           </div>
 
-          <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row justify-between items-center text-[11px] text-gray-500 gap-4">
-            <p>© {new Date().getFullYear()} PADARIA.io - Todos os direitos reservados.</p>
-            <p className="flex items-center space-x-1">
-              <span>Inteligência em Gestão de Validade & Vendas</span>
-            </p>
+          <div className="flex items-center space-x-6 text-gray-600 font-bold">
+            <button onClick={onOpenPrivacy} className="hover:text-[#E8571A] cursor-pointer">
+              Política de Privacidade
+            </button>
+            <button onClick={onOpenAdmin} className="hover:text-[#E8571A] cursor-pointer">
+              Painel Admin
+            </button>
+            <button onClick={onEnterApp} className="hover:text-[#E8571A] cursor-pointer">
+              Acessar Sistema
+            </button>
+          </div>
+
+          <div>
+            © {new Date().getFullYear()} PADARIA.io - Todos os direitos reservados.
           </div>
         </div>
       </footer>
 
-      {/* DEMO MODAL */}
-      {demoModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-200 space-y-6 relative animate-scale-up text-gray-900">
-            <button
-              onClick={() => setDemoModalOpen(false)}
-              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-1 rounded-lg"
+      {/* DEMO MODAL (FALLBACK FOR DIRECT FORM ENTRY) */}
+      <AnimatePresence>
+        {demoModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-gray-200 shadow-2xl relative space-y-6"
             >
-              <X className="w-5 h-5" />
-            </button>
+              <button
+                onClick={() => setDemoModalOpen(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-            <div className="space-y-1">
-              <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-orange-50 text-[#E8571A] rounded-full text-[10px] font-black uppercase">
-                <Zap className="w-3.5 h-3.5" />
-                <span>Atendimento Especializado</span>
+              <div className="space-y-2 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-orange-100 text-[#E8571A] flex items-center justify-center mx-auto">
+                  <MessageCircle className="w-6 h-6 fill-[#E8571A] text-orange-100" />
+                </div>
+                <h3 className="text-xl font-black text-gray-900">Agender Demonstração Gratuita</h3>
+                <p className="text-xs text-gray-600 font-medium">
+                  Preencha seus dados para conectar diretamente com nossa equipe no WhatsApp.
+                </p>
               </div>
-              <h3 className="text-xl font-black text-gray-900">Agendar Demonstração</h3>
-              <p className="text-xs text-gray-500 font-medium">
-                Preencha os dados abaixo para conversar com um de nossos especialistas no WhatsApp.
-              </p>
-            </div>
 
-            {demoSubmitted ? (
-              <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-200 text-center space-y-2">
-                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto animate-bounce" />
-                <h4 className="font-black text-sm text-emerald-900">Redirecionando para o WhatsApp...</h4>
-                <p className="text-xs text-emerald-700">Aguarde alguns segundos.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleDemoSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Seu Nome</label>
-                  <input
-                    type="text"
-                    required
-                    value={demoName}
-                    onChange={(e) => setDemoName(e.target.value)}
-                    placeholder="Ex: Carlos Silva"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-xs font-medium focus:ring-2 focus:ring-[#E8571A] focus:outline-none"
-                  />
+              {demoSubmitted ? (
+                <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-200 text-center space-y-2">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                  <h4 className="text-sm font-black text-emerald-900">Redirecionando para o WhatsApp...</h4>
+                  <p className="text-xs text-emerald-700">Se a janela não abrir, clique no botão abaixo.</p>
                 </div>
+              ) : (
+                <form onSubmit={handleDemoSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-extrabold text-gray-700 mb-1">Seu Nome</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Carlos Silva"
+                      value={demoName}
+                      onChange={(e) => setDemoName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-xs focus:ring-2 focus:ring-[#E8571A] focus:border-transparent outline-hidden"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Nome da Padaria</label>
-                  <input
-                    type="text"
-                    required
-                    value={demoBakery}
-                    onChange={(e) => setDemoBakery(e.target.value)}
-                    placeholder="Ex: Padaria Pão Doce"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-xs font-medium focus:ring-2 focus:ring-[#E8571A] focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-extrabold text-gray-700 mb-1">Nome da Padaria / Estabelecimento</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Padaria Pão D'Ouro"
+                      value={demoBakery}
+                      onChange={(e) => setDemoBakery(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-xs focus:ring-2 focus:ring-[#E8571A] focus:border-transparent outline-hidden"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">WhatsApp de Contato</label>
-                  <input
-                    type="tel"
-                    required
-                    value={demoPhone}
-                    onChange={(e) => setDemoPhone(e.target.value)}
-                    placeholder="Ex: (61) 99999-9999"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-xs font-medium focus:ring-2 focus:ring-[#E8571A] focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-extrabold text-gray-700 mb-1">WhatsApp de Contato</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="Ex: (61) 99999-9999"
+                      value={demoPhone}
+                      onChange={(e) => setDemoPhone(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-xs focus:ring-2 focus:ring-[#E8571A] focus:border-transparent outline-hidden"
+                    />
+                  </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-3.5 rounded-xl bg-[#E8571A] hover:bg-[#d44e15] text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Falar com Consultor no WhatsApp</span>
-                </button>
-              </form>
-            )}
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 rounded-xl bg-[#E8571A] hover:bg-[#d44e15] text-white font-black text-xs transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>Confirmar e Abrir no WhatsApp</span>
+                  </button>
+
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDemoModalOpen(false);
+                        openWhatsApp();
+                      }}
+                      className="text-[11px] font-bold text-gray-500 hover:text-[#E8571A] underline cursor-pointer"
+                    >
+                      Ou clique aqui para abrir diretamente no WhatsApp
+                    </button>
+                  </div>
+                </form>
+              )}
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };
