@@ -56,8 +56,8 @@ export const SupportModal: React.FC<SupportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden border border-[#E0E0E0] shadow-2xl space-y-0 animate-scale-up">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden border border-[#E0E0E0] shadow-2xl space-y-0 animate-scale-up my-auto max-h-[90dvh] sm:max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="bg-[#2C2C2C] text-white p-5 flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
@@ -107,7 +107,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {activeTab === 'novo' ? (
             <div>
               {isSuccess ? (

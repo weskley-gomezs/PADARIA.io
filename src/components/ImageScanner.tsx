@@ -261,7 +261,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/80 flex flex-col items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-sm sm:max-w-md w-full shadow-2xl relative my-auto max-h-[88vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-scale-up">
+      <div className="bg-white rounded-2xl max-w-sm sm:max-w-md w-full shadow-2xl relative my-auto max-h-[90dvh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-scale-up">
         {/* Header */}
         <div className="p-3.5 sm:p-4 flex items-center justify-between border-b border-gray-100 bg-gray-50 shrink-0">
           <div className="flex items-center space-x-2">

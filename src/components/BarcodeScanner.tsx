@@ -106,8 +106,8 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/80 flex flex-col items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl relative">
+    <div className="fixed inset-0 z-[60] bg-black/80 flex flex-col items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl relative my-auto max-h-[90dvh] flex flex-col">
         <div className="p-4 flex items-center justify-between border-b border-gray-100 bg-gray-50">
           <div className="flex items-center space-x-2">
             <Camera className="w-5 h-5 text-[#E8571A]" />

@@ -141,8 +141,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-[#E0E0E0] space-y-5 max-h-[90vh] overflow-y-auto animate-slide-up-mobile sm:animate-scale-up">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-[#E0E0E0] space-y-4 sm:space-y-5 max-h-[90dvh] sm:max-h-[90vh] overflow-y-auto animate-slide-up-mobile sm:animate-scale-up my-0 sm:my-auto">
         {/* Mobile drag pill indicator */}
         <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto sm:hidden -mt-1 mb-2" />
 

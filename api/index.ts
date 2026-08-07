@@ -90,6 +90,38 @@ try {
     res.json({ status: 'ok', timestamp: new Date().toISOString(), env: process.env.VERCEL ? 'vercel' : 'local' });
   });
 
+  app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    const robotsPath = path.join(process.cwd(), 'public', 'robots.txt');
+    if (fs.existsSync(robotsPath)) {
+      return res.sendFile(robotsPath);
+    }
+    res.send("User-agent: *\nAllow: /\nAllow: /api/\nDisallow: /admin\nDisallow: /app\nSitemap: https://padaria.io/sitemap.xml\n");
+  });
+
+  app.get('/sitemap.xml', (req, res) => {
+    res.type('application/xml');
+    const sitemapPath = path.join(process.cwd(), 'public', 'sitemap.xml');
+    if (fs.existsSync(sitemapPath)) {
+      return res.sendFile(sitemapPath);
+    }
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://padaria.io/</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/sistema-para-padaria</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>`);
+  });
+
   app.post('/api/analyze-product-image', async (req, res) => {
     console.log("[ROUTE] POST /api/analyze-product-image - Recebido");
     try {

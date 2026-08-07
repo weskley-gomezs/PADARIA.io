@@ -28,7 +28,10 @@ import {
   TrendingUp,
   Send,
   Zap,
-  Bot
+  Bot,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -54,6 +57,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [demoBakery, setDemoBakery] = useState('');
   const [demoPhone, setDemoPhone] = useState('');
   const [demoSubmitted, setDemoSubmitted] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -130,6 +134,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <a href="#demonstracao" className="hover:text-[#E8571A] transition-colors cursor-pointer">
               Demonstração
             </a>
+            <a href="#faq" className="hover:text-[#E8571A] transition-colors cursor-pointer">
+              Perguntas Frequentes
+            </a>
           </nav>
 
           {/* Action Buttons */}
@@ -197,6 +204,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             >
               Demonstração
             </a>
+            <a
+              href="#faq"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-bold text-gray-700 hover:text-[#E8571A]"
+            >
+              Perguntas Frequentes (FAQ)
+            </a>
             <div className="pt-3 space-y-2 border-t border-gray-100">
               <button
                 onClick={() => {
@@ -253,7 +267,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#1A1A1A] tracking-tight leading-[1.12]"
           >
-            Reduza desperdícios, organize sua produção e tenha mais controle da sua padaria.
+            Software para Padaria: Reduza desperdícios, controle validades e organize sua produção.
           </motion.h1>
 
           {/* Subtitle */}
@@ -263,7 +277,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-base sm:text-xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed"
           >
-            O <strong className="text-gray-900 font-bold">Padaria.io</strong> ajuda padarias a controlar validade, produção e desperdícios através de uma plataforma simples e inteligente.
+            O <strong className="text-gray-900 font-bold">Padaria.io</strong> é o sistema para padaria completo que automatiza o controle de validade, gestão de estoque alimentício e redução de perdas na panificação e confeitaria com inteligência artificial.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -420,10 +434,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             DESAFIOS DA OPERAÇÃO
           </span>
           <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">
-            Sua padaria enfrenta algum destes desafios?
+            Sua padaria, confeitaria ou cafeteria enfrenta algum destes desafios?
           </h2>
           <p className="text-sm sm:text-base text-gray-600 font-medium">
-            Gerenciar um estabelecimento sem controle centralizado custa caro e gera retrabalho diário para a sua equipe.
+            Gerenciar um estabelecimento alimentício sem um software para padaria especializado custa caro e gera perdas diárias.
           </p>
         </div>
 
@@ -436,9 +450,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
               <Clock className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-extrabold text-gray-900">Produtos vencendo</h3>
+            <h3 className="text-base font-extrabold text-gray-900">Controle de validade ineficiente</h3>
             <p className="text-xs text-gray-600 font-medium leading-relaxed">
-              Itens esquecidos no estoque ou no balcão que vencem sem ninguém perceber, gerando prejuízos diários e perda de margem.
+              Insumos e produtos vencidos no estoque ou balcão sem aviso prévio, gerando multas da Vigilância Sanitária e prejuízos.
             </p>
           </motion.div>
 
@@ -450,9 +464,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
               <ChefHat className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-extrabold text-gray-900">Produção sem previsibilidade</h3>
+            <h3 className="text-base font-extrabold text-gray-900">Gestão de produção sem previsibilidade</h3>
             <p className="text-xs text-gray-600 font-medium leading-relaxed">
-              Fornadas calculadas no "achismo", que causam excesso de sobras ao final do dia ou falta de produtos nos horários de pico.
+              Fornadas calculadas no "achismo", causando excesso de sobra de pães e salgados ao final do dia ou falta nos horários de pico.
             </p>
           </motion.div>
 
@@ -478,9 +492,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="w-12 h-12 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
               <Trash2 className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-extrabold text-gray-900">Desperdício diário</h3>
+            <h3 className="text-base font-extrabold text-gray-900">Alto índice de desperdício</h3>
             <p className="text-xs text-gray-600 font-medium leading-relaxed">
-              Matérias-primas e produtos prontos descartados sem nenhum registro de causa, impedindo qualquer ação corretiva.
+              Matérias-primas e produtos do estoque descartados sem controle de perdas, elevando o custo de fabricação.
             </p>
           </motion.div>
 
@@ -492,9 +506,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
               <PieChart className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-extrabold text-gray-900">Falta de indicadores</h3>
+            <h3 className="text-base font-extrabold text-gray-900">Estoque alimentício desorganizado</h3>
             <p className="text-xs text-gray-600 font-medium leading-relaxed">
-              Dificuldade em saber o valor exato perdido em cada setor e a rentabilidade real da sua produção diária.
+              Falta de controle de estoque para padaria e confeitaria, sem indicadores claros do valor real em risco no estabelecimento.
             </p>
           </motion.div>
         </div>
@@ -1024,6 +1038,78 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
+      {/* 6.5. PERGUNTAS FREQUENTES (SEO FAQ SECTION) */}
+      <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto my-10">
+        <div className="text-center space-y-3 max-w-3xl mx-auto mb-14">
+          <span className="text-xs font-black text-[#E8571A] uppercase tracking-widest bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
+            DÚVIDAS FREQUENTES
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">
+            Perguntas Frequentes sobre Software para Padaria
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            Tire suas dúvidas sobre o funcionamento do Padaria.io, controle de validade e gestão de perdas na panificação.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {[
+            {
+              question: "Qual é o diferencial do Padaria.io comparado a um ERP tradicional de caixa?",
+              answer: "O Padaria.io é um software para padaria focado especificamente no controle de validade, gestão de estoque alimentício e redução de desperdício em tempo real. Enquanto um ERP tradicional de caixa foca nas vendas do PDV, o Padaria.io atua no balcão e na cozinha de produção para prevenir perdas e vencimentos antes que aconteçam."
+            },
+            {
+              question: "Como funciona o controle de validade e vencimento no sistema?",
+              answer: "Nossa plataforma automatiza o monitoramento de lotes e datas de vencimento via leitura de etiquetas e assistente PadeIA™. O sistema emite alertas preventivos por nível de urgência para que sua equipe execute ações de exposição prioritária, degustação ou remarcação antes do vencimento do item."
+            },
+            {
+              question: "O sistema de gestão atende também confeitarias, cafeterias e food service?",
+              answer: "Sim! O software foi desenvolvido sob medida para todo o setor de alimentação que lida com produtos perecíveis e manipulação de insumos — incluindo padarias artesanais, confeitarias, cafeterias, rotisserias e pequenos mercados."
+            },
+            {
+              question: "Como o Padaria.io auxilia no cumprimento das normas da Vigilância Sanitária?",
+              answer: "A plataforma registra cada baixa de descarte com foto, lote, data e justificativa técnica. Isso gera um histórico sanitário auditável que comprova as boas práticas de manipulação de alimentos e etiquetagem perante a fiscalização sanitária."
+            },
+            {
+              question: "A inteligência artificial PadeIA™ necessita de treinamentos complexos?",
+              answer: "Não. A PadeIA™ é uma assistente conversacional simples e inteligente. Basta falar ou digitar em português para que ela calcule prejuízos, registre descartes, leia dados de etiquetas e ofereça sugestões para ajustar suas fornadas diárias."
+            },
+            {
+              question: "Quais dispositivos são compatíveis com a plataforma em nuvem?",
+              answer: "O Padaria.io é 100% responsivo e em nuvem. Funciona em smartphones (Android e iOS), tablets de balcão, notebooks e computadores sem necessidade de instalação de servidores locais."
+            }
+          ].map((faq, idx) => {
+            const isOpen = openFaqIndex === idx;
+            return (
+              <div
+                key={idx}
+                className="bg-white rounded-2xl border border-gray-200/90 overflow-hidden shadow-2xs transition-all"
+              >
+                <button
+                  onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                  className="w-full p-5 sm:p-6 text-left flex items-center justify-between space-x-4 cursor-pointer hover:bg-gray-50/80 transition-colors"
+                >
+                  <span className="text-sm sm:text-base font-extrabold text-gray-900 flex items-center space-x-3">
+                    <HelpCircle className="w-5 h-5 text-[#E8571A] shrink-0" />
+                    <span>{faq.question}</span>
+                  </span>
+                  {isOpen ? (
+                    <ChevronUp className="w-5 h-5 text-gray-500 shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />
+                  )}
+                </button>
+                {isOpen && (
+                  <div className="px-5 pb-6 sm:px-6 pt-0 text-xs sm:text-sm text-gray-600 font-medium leading-relaxed border-t border-gray-100 bg-gray-50/50">
+                    <p className="pt-4">{faq.answer}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {/* 7. CTA FINAL (Conversion focus) */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="rounded-3xl bg-gradient-to-br from-[#1F2937] via-[#111827] to-[#0A0F1D] text-white p-8 sm:p-14 text-center space-y-8 relative overflow-hidden shadow-2xl border border-gray-800">
@@ -1063,32 +1149,72 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* FOOTER */}
       <footer className="bg-white border-t border-gray-200/80 py-12 px-4 sm:px-6 lg:px-8 text-xs font-medium text-gray-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center space-x-3">
-            <img
-              src="https://i.imgur.com/ZGsjvWy.png"
-              alt="PADARIA.io"
-              className="h-10 object-contain"
-              referrerPolicy="no-referrer"
-            />
-            <span className="text-gray-400">|</span>
-            <span>Gestão Inteligente para Padarias & Confeitaria</span>
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-8 border-b border-gray-100">
+            <div className="space-y-2">
+              <h4 className="font-bold text-gray-900 text-xs uppercase tracking-wider">Soluções</h4>
+              <ul className="space-y-1.5 text-gray-600">
+                <li><a href="#funcionalidades" className="hover:text-[#E8571A]">Software para Padaria</a></li>
+                <li><a href="#funcionalidades" className="hover:text-[#E8571A]">Controle de Validade</a></li>
+                <li><a href="#funcionalidades" className="hover:text-[#E8571A]">Controle de Estoque</a></li>
+                <li><a href="#funcionalidades" className="hover:text-[#E8571A]">Gestão de Desperdício</a></li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-bold text-gray-900 text-xs uppercase tracking-wider">Segmentos</h4>
+              <ul className="space-y-1.5 text-gray-600">
+                <li><a href="#desafios" className="hover:text-[#E8571A]">Padarias & Panificadoras</a></li>
+                <li><a href="#desafios" className="hover:text-[#E8571A]">Confeiteiras & Docerias</a></li>
+                <li><a href="#desafios" className="hover:text-[#E8571A]">Cafeterias & Bistrôs</a></li>
+                <li><a href="#desafios" className="hover:text-[#E8571A]">Food Service & Mercados</a></li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-bold text-gray-900 text-xs uppercase tracking-wider">Plataforma</h4>
+              <ul className="space-y-1.5 text-gray-600">
+                <li><a href="#como-funciona" className="hover:text-[#E8571A]">Como Funciona</a></li>
+                <li><a href="#diferenciais" className="hover:text-[#E8571A]">Diferenciais</a></li>
+                <li><a href="#demonstracao" className="hover:text-[#E8571A]">Demonstração Interativa</a></li>
+                <li><a href="#faq" className="hover:text-[#E8571A]">Perguntas Frequentes</a></li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-bold text-gray-900 text-xs uppercase tracking-wider">Legal & Suporte</h4>
+              <ul className="space-y-1.5 text-gray-600">
+                <li><button onClick={onOpenPrivacy} className="hover:text-[#E8571A] text-left cursor-pointer">Política de Privacidade</button></li>
+                <li><button onClick={onOpenAdmin} className="hover:text-[#E8571A] text-left cursor-pointer">Painel de Gestão</button></li>
+                <li><button onClick={onEnterApp} className="hover:text-[#E8571A] text-left cursor-pointer">Acessar Sistema</button></li>
+              </ul>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-6 text-gray-600 font-bold">
-            <button onClick={onOpenPrivacy} className="hover:text-[#E8571A] cursor-pointer">
-              Política de Privacidade
-            </button>
-            <button onClick={onOpenAdmin} className="hover:text-[#E8571A] cursor-pointer">
-              Painel Admin
-            </button>
-            <button onClick={onEnterApp} className="hover:text-[#E8571A] cursor-pointer">
-              Acessar Sistema
-            </button>
-          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center space-x-3">
+              <img
+                src="https://i.imgur.com/ZGsjvWy.png"
+                alt="PADARIA.io Logo - Software para Padaria"
+                className="h-10 object-contain"
+                referrerPolicy="no-referrer"
+              />
+              <span className="text-gray-400">|</span>
+              <span>Gestão Inteligente e Controle de Validade para Padarias</span>
+            </div>
 
-          <div>
-            © {new Date().getFullYear()} PADARIA.io - Todos os direitos reservados.
+            <div className="flex items-center space-x-6 text-gray-600 font-bold">
+              <button onClick={onOpenPrivacy} className="hover:text-[#E8571A] cursor-pointer">
+                Privacidade
+              </button>
+              <button onClick={onOpenAdmin} className="hover:text-[#E8571A] cursor-pointer">
+                Painel Admin
+              </button>
+              <button onClick={onEnterApp} className="hover:text-[#E8571A] cursor-pointer">
+                Acessar Sistema
+              </button>
+            </div>
+
+            <div>
+              © {new Date().getFullYear()} PADARIA.io - Todos os direitos reservados.
+            </div>
           </div>
         </div>
       </footer>
