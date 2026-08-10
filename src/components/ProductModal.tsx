@@ -77,8 +77,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     } else {
       setNome('');
       setQuantidade(1);
-      // Default validity date to yesterday (must be expired to register)
-      setDataValidade(yesterdayIso);
+      // Default validity date to today (can be registered from today or earlier)
+      setDataValidade(todayIso);
       setCategoria('Panificação');
       setBarcode('');
       setPeso('');
@@ -113,8 +113,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       return;
     }
 
-    if (dataValidade >= todayIso) {
-      setErrorMsg('⛔ Este sistema é EXCLUSIVO para controle de VENCIDOS e DESPERDÍCIOS. Apenas produtos que já venceram (validade anterior a hoje) podem ser cadastrados.');
+    if (dataValidade > todayIso) {
+      setErrorMsg('⛔ Este sistema é EXCLUSIVO para controle de VENCIDOS, DESPERDÍCIOS e DESCARTES. Produtos com data de validade futura (a partir de amanhã) não podem ser cadastrados.');
       return;
     }
 

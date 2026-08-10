@@ -251,8 +251,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
     if (!company) return;
 
     const todayStr = formatDateToISO(new Date());
-    if (dataValidade >= todayStr) {
-      alert('⛔ PRODUTO AINDA DENTRO DA VALIDADE!\n\nEste sistema é EXCLUSIVO para controle de VENCIDOS e DESPERDÍCIOS. Apenas produtos que já venceram (validade anterior a hoje) podem ser cadastrados.');
+    if (dataValidade > todayStr) {
+      alert('⛔ PRODUTO COM VALIDADE FUTURA!\n\nEste sistema é EXCLUSIVO para controle de VENCIDOS, DESPERDÍCIOS e DESCARTES. Produtos com data de validade futura (a partir de amanhã) não podem ser cadastrados para descarte.');
       return;
     }
 

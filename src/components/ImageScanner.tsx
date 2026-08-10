@@ -104,7 +104,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
 
       const valDate = data.dataValidade || '';
       const daysRemaining = valDate ? calculateDaysRemaining(valDate) : undefined;
-      const isExpired = daysRemaining !== undefined ? daysRemaining < 0 : false;
+      const isExpired = daysRemaining !== undefined ? daysRemaining <= 0 : false;
 
       // Set defaults for interactive registration wizard based on extracted label data
       if (typeof data.peso === 'number' && data.peso > 0) {
@@ -154,7 +154,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
     if (!scanAnalysis) return;
 
     if (!scanAnalysis.isExpired) {
-      alert('⛔ PRODUTO AINDA DENTRO DA VALIDADE!\n\nEste sistema é EXCLUSIVO para controle de VENCIDOS e DESPERDÍCIOS. Apenas produtos que já venceram podem ser registrados.');
+      alert('⛔ PRODUTO COM VALIDADE FUTURA!\n\nEste sistema é EXCLUSIVO para controle de VENCIDOS, DESPERDÍCIOS e DESCARTES. Apenas produtos que já venceram ou vencem hoje podem ser registrados.');
       return;
     }
 
@@ -291,15 +291,17 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
                   </div>
                   <div>
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-600 text-white uppercase tracking-wider inline-block mb-1">
-                      🔴 PRODUTO VENCIDO
+                      🔴 PRODUTO VENCIDO / VENCE HOJE
                     </span>
                     <h4 className="text-sm sm:text-base font-black text-red-900 leading-snug">
                       {scanAnalysis.daysRemaining !== undefined
-                        ? `Vencido há ${Math.abs(scanAnalysis.daysRemaining)} dia(s)`
+                        ? (scanAnalysis.daysRemaining === 0 ? 'Vence hoje!' : `Vencido há ${Math.abs(scanAnalysis.daysRemaining)} dia(s)`)
                         : 'Data Expirada'}
                     </h4>
                     <p className="text-[11px] sm:text-xs text-red-700 font-semibold mt-1">
-                      Ultrapassou a data de vencimento ({formatDateToBR(scanAnalysis.dataValidade || '')}). Não pode ser vendido e deve ser descartado.
+                      {scanAnalysis.daysRemaining === 0
+                        ? `Atingiu a data de validade hoje (${formatDateToBR(scanAnalysis.dataValidade || '')}). Deve ser retirado de venda e enviado para descarte/doação.`
+                        : `Ultrapassou a data de vencimento (${formatDateToBR(scanAnalysis.dataValidade || '')}). Não pode ser vendido e deve ser descartado.`}
                     </p>
                   </div>
                 </div>
@@ -318,7 +320,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
                         : `Vence em ${scanAnalysis.daysRemaining} dia(s)`}
                     </h4>
                     <p className="text-[11px] sm:text-xs text-red-700 font-semibold mt-1">
-                      Este produto ainda está na validade ({formatDateToBR(scanAnalysis.dataValidade || '')}). O Padaria.io aceita EXCLUSIVAMENTE produtos que já venceram para o controle de perdas e descarte.
+                      Este produto ainda está na validade ({formatDateToBR(scanAnalysis.dataValidade || '')}). O Padaria.io aceita apenas produtos que venceram ou que vencem hoje para o controle de perdas, doação e descarte.
                     </p>
                   </div>
                 </div>
