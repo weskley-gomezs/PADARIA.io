@@ -33,6 +33,7 @@ import {
 import confetti from 'canvas-confetti';
 import { BakeryCompany, AdminStats, FinancialStats, Product, SaleHistoryItem, SupportTicket, VipOffer, DailyClosing } from '../types';
 import { StorageService } from '../services/storageService';
+import { calculateDaysRemaining, formatDateToBR } from '../utils/dateUtils';
 import { generateSystemManualPDF } from '../utils/pdfGenerator';
 import { AdminBilling } from './admin/AdminBilling';
 import { AdminContracts } from './admin/AdminContracts';
@@ -63,18 +64,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
   const [senhaInput, setSenhaInput] = useState<string>('');
   const [telefoneInput, setTelefoneInput] = useState<string>('');
   const [cnpjInput, setCnpjInput] = useState<string>('');
-  
-  // Custom Billing & Asaas Form States
-  const defaultNextMonthDate = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + 30);
-    return d.toISOString().split('T')[0];
-  };
-  const [dataInicioCobrancaInput, setDataInicioCobrancaInput] = useState<string>(defaultNextMonthDate());
-  const [valorImpInput, setValorImpInput] = useState<string>('1500');
-  const [valorMensalInput, setValorMensalInput] = useState<string>('199');
-  const [teste1DiaInput, setTeste1DiaInput] = useState<boolean>(false);
-  const [integrarAsaasInput, setIntegrarAsaasInput] = useState<boolean>(false);
+  const [diasTesteInput, setDiasTesteInput] = useState<string>('7');
 
   const [generatedCompany, setGeneratedCompany] = useState<BakeryCompany | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -211,50 +201,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
     }
 
     try {
-      const valImp = Number(valorImpInput) || 1500;
-      const valMensal = Number(valorMensalInput) || 199;
-      let asaasInfo = undefined;
-
-      if (integrarAsaasInput) {
-        const res = await fetch('/api/asaas/create-subscription', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            empresa: empresaName,
-            email: emailInput,
-            telefone: telefoneInput,
-            cnpj: cnpjInput,
-            valorImplementacao: valImp,
-            valorMensalidade: valMensal,
-            teste1Dia: teste1DiaInput,
-            dataInicioCobranca: dataInicioCobrancaInput,
-          }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'Erro ao conectar com o Asaas.');
-        }
-
-        asaasInfo = {
-          customerId: data.customerId,
-          subscriptionId: data.subscriptionId,
-          paymentLink: data.paymentLink,
-          asaasEnvironment: data.asaasEnvironment || 'sandbox',
-        };
-      }
-
+      const trialDays = Number(diasTesteInput) >= 0 ? Number(diasTesteInput) : 7;
       const newComp = await StorageService.addCompany(
         empresaName,
         emailInput,
         senhaInput || 'padaria123',
         telefoneInput,
         cnpjInput,
-        valImp,
-        valMensal,
-        teste1DiaInput,
-        asaasInfo,
-        dataInicioCobrancaInput
+        trialDays
       );
 
       setGeneratedCompany(newComp);
@@ -263,8 +217,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
       setSenhaInput('');
       setTelefoneInput('');
       setCnpjInput('');
-      setIntegrarAsaasInput(false);
-      showToast(`Empresa ${newComp.empresa} cadastrada com sucesso!`, 'success');
+      setDiasTesteInput('7');
+      showToast(`Empresa ${newComp.empresa} cadastrada com ${trialDays} dia(s) de teste grátis!`, 'success');
 
       // Trigger confetti
       confetti({
@@ -856,70 +810,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
-                      <div>
-                        <label className="block text-[11px] font-bold text-[#2C2C2C] mb-1">
-                          Implantação (R$)
-                        </label>
-                        <input
-                          type="number"
-                          value={valorImpInput}
-                          onChange={(e) => setValorImpInput(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-xs font-bold"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-[#2C2C2C] mb-1">
-                          Mensalidade (R$)
-                        </label>
-                        <input
-                          type="number"
-                          value={valorMensalInput}
-                          onChange={(e) => setValorMensalInput(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-xs font-bold"
-                          required
-                        />
-                      </div>
-                    </div>
-
                     <div>
-                      <label className="block text-[11px] font-bold text-[#2C2C2C] mb-1">
-                        Data de Início da Cobrança da Mensalidade
+                      <label className="block text-xs font-bold text-[#2C2C2C] mb-1">
+                        Dias de Teste Grátis *
                       </label>
                       <input
-                        type="date"
-                        value={dataInicioCobrancaInput}
-                        onChange={(e) => setDataInicioCobrancaInput(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-xs font-bold font-mono"
+                        type="number"
+                        min="0"
+                        max="365"
+                        value={diasTesteInput}
+                        onChange={(e) => setDiasTesteInput(e.target.value)}
+                        placeholder="Ex: 7, 14, 30"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-xs font-bold"
                         required
                       />
-                    </div>
-
-                    <div className="space-y-1.5 pt-1">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={teste1DiaInput}
-                          onChange={(e) => setTeste1DiaInput(e.target.checked)}
-                          className="rounded border-gray-300 text-[#E8571A] focus:ring-[#E8571A] w-4 h-4"
-                        />
-                        <span className="text-xs font-bold text-[#2C2C2C]">
-                          Habilitar Teste de 1 Dia (Isenção inicial)
-                        </span>
-                      </label>
-
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={integrarAsaasInput}
-                          onChange={(e) => setIntegrarAsaasInput(e.target.checked)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
-                        />
-                        <span className="text-xs font-bold text-blue-700">
-                          Gerar Cobrança e Link no Asaas
-                        </span>
-                      </label>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        A padaria terá acesso liberado pelo número de dias informado.
+                      </p>
                     </div>
 
                     {formError && (
@@ -1053,6 +960,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
                                 <div className="text-sm font-extrabold text-[#2C2C2C]">{c.empresa}</div>
                                 {c.cnpj && (
                                   <div className="text-[10px] text-gray-400 font-mono">CNPJ: {c.cnpj}</div>
+                                )}
+                                {c.financeiro?.dataFimTeste && (
+                                  <div className="mt-1">
+                                    {(() => {
+                                      const daysLeft = calculateDaysRemaining(c.financeiro.dataFimTeste!);
+                                      const isPaid = c.financeiro.statusAssinatura === 'ativo' || c.financeiro.statusAssinatura === 'concluido';
+                                      if (isPaid) {
+                                        return <span className="text-[10px] text-emerald-600 font-extrabold bg-emerald-50 px-2 py-0.5 rounded">Assinatura Ativa</span>;
+                                      }
+                                      if (daysLeft > 0) {
+                                        return <span className="text-[10px] text-blue-700 font-extrabold bg-blue-50 px-2 py-0.5 rounded">Teste: Restam {daysLeft} dia(s)</span>;
+                                      }
+                                      return <span className="text-[10px] text-red-600 font-extrabold bg-red-50 px-2 py-0.5 rounded">Teste Expirado</span>;
+                                    })()}
+                                  </div>
                                 )}
                               </td>
 

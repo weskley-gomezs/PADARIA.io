@@ -42,8 +42,10 @@ export interface InvoiceItem {
 }
 
 export interface BillingInfo {
-  implementacaoPaga: boolean;
-  valorImplementacao: number; // default R$ 1500
+  diasTesteGratis?: number;
+  dataFimTeste?: string;
+  implementacaoPaga?: boolean;
+  valorImplementacao?: number;
   dataPagamentoImplementacao?: string;
   assinaturaMensalAtiva: boolean;
   valorMensalidade: number; // default R$ 199
@@ -54,7 +56,6 @@ export interface BillingInfo {
   tipoUltimoLink?: 'implementacao' | 'mensalidade';
   diaVencimentoMensal?: number; // ex: 15
   teste1Dia?: boolean;
-  dataFimTeste?: string;
   asaasCustomerId?: string | null;
   asaasSubscriptionId?: string | null;
   asaasPaymentLink?: string | null;

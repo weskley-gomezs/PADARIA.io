@@ -51,14 +51,7 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState<BillingStatus>('pendente');
   const [editDueDate, setEditDueDate] = useState<string>('');
-  const [editValorImp, setEditValorImp] = useState<number>(1500);
   const [editValorMensal, setEditValorMensal] = useState<number>(199);
-
-  // Implementation Fee Asaas Send Modal State
-  const [sendImpModalCompany, setSendImpModalCompany] = useState<BakeryCompany | null>(null);
-  const [sendImpValue, setSendImpValue] = useState<number>(1500);
-  const [sendImpDueDate, setSendImpDueDate] = useState<string>(formatDateToISO(new Date()));
-  const [isSendingImp, setIsSendingImp] = useState<boolean>(false);
 
   // Monthly Subscription Asaas Send Modal State
   const [sendSubModalCompany, setSendSubModalCompany] = useState<BakeryCompany | null>(null);
@@ -75,7 +68,6 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
     setEditingCode(company.codigoAtivacao);
     setEditStatus(company.financeiro?.statusAssinatura || 'pendente');
     setEditDueDate(company.financeiro?.dataProximaCobranca || formatDateToISO(new Date()));
-    setEditValorImp(company.financeiro?.valorImplementacao ?? 1500);
     setEditValorMensal(company.financeiro?.valorMensalidade ?? 199);
   };
 
@@ -84,12 +76,11 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
       await StorageService.updateCompanyBilling(code, {
         statusAssinatura: editStatus,
         dataProximaCobranca: editDueDate,
-        valorImplementacao: isNaN(Number(editValorImp)) ? 1500 : Number(editValorImp),
         valorMensalidade: isNaN(Number(editValorMensal)) ? 199 : Number(editValorMensal),
       });
       setEditingCode(null);
       onRefresh();
-      showToast(`Status, datas e valores financeiros atualizados com sucesso!`);
+      showToast(`Valor da mensalidade, status e vencimento atualizados!`);
     } catch (err: any) {
       console.error("Erro ao salvar dados financeiros:", err);
       showToast(`Erro ao salvar dados financeiros: ${err.message || err}`);
@@ -107,66 +98,6 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
       showToast(`Assinatura da padaria ${name} CANCELADA / SUSPENSA por inadimplência!`);
     } else {
       showToast(`Assinatura da padaria ${name} REATIVADA com sucesso!`);
-    }
-  };
-
-  const handleToggleImpPaid = async (code: string, currentPaid: boolean) => {
-    try {
-      await StorageService.updateCompanyBilling(code, {
-        implementacaoPaga: !currentPaid,
-        dataPagamentoImplementacao: !currentPaid ? new Date().toISOString() : undefined,
-      });
-      onRefresh();
-      showToast(!currentPaid ? `Taxa de implementação marcada como PAGA!` : `Taxa de implementação marcada como PENDENTE.`);
-    } catch (err: any) {
-      showToast(`Erro ao alterar status da implementação: ${err.message || err}`);
-    }
-  };
-
-  const handleOpenSendImpModal = (c: BakeryCompany) => {
-    setSendImpModalCompany(c);
-    setSendImpValue(c.financeiro?.valorImplementacao ?? 1500);
-    setSendImpDueDate(formatDateToISO(new Date()));
-  };
-
-  const handleSendImplementationBoleto = async () => {
-    if (!sendImpModalCompany) return;
-    setIsSendingImp(true);
-    try {
-      const res = await fetch('/api/asaas/send-implementation-fee', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          codigoAtivacao: sendImpModalCompany.codigoAtivacao,
-          empresa: sendImpModalCompany.empresa,
-          email: sendImpModalCompany.email,
-          telefone: sendImpModalCompany.telefone,
-          cnpj: sendImpModalCompany.cnpj,
-          valorImplementacao: sendImpValue,
-          dataVencimento: sendImpDueDate,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Erro ao enviar taxa de implementação no Asaas.');
-      }
-
-      await StorageService.updateCompanyBilling(sendImpModalCompany.codigoAtivacao, {
-        valorImplementacao: sendImpValue,
-        asaasPaymentLink: data.paymentUrl,
-        ultimoLinkPagamento: data.paymentUrl,
-        tipoUltimoLink: 'implementacao',
-        implementacaoPaga: false,
-      });
-
-      setSendImpModalCompany(null);
-      onRefresh();
-      showToast(data.message || `Boleto de implementação enviado com sucesso para ${sendImpModalCompany.email}!`);
-    } catch (err: any) {
-      showToast(`Erro: ${err.message}`);
-    } finally {
-      setIsSendingImp(false);
     }
   };
 
@@ -216,47 +147,6 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
       showToast(`Erro: ${err.message}`);
     } finally {
       setIsSendingSub(false);
-    }
-  };
-
-  const handleSimulateWebhook = async (company: BakeryCompany, eventType: 'PAYMENT_CONFIRMED' | 'SUBSCRIPTION_DELETED') => {
-    try {
-      showToast(`Enviando evento de Webhook Asaas (${eventType})...`);
-      const payload = {
-        event: eventType,
-        externalReference: company.codigoAtivacao,
-        payment: {
-          id: 'pay_test_' + Date.now(),
-          customer: company.financeiro?.asaasCustomerId || 'cus_test',
-          subscription: company.financeiro?.asaasSubscriptionId || 'sub_test',
-          externalReference: company.codigoAtivacao,
-          value: company.financeiro?.valorMensalidade || 199,
-          status: eventType === 'PAYMENT_CONFIRMED' ? 'CONFIRMED' : 'CANCELLED',
-          description: 'Mensalidade Assinatura PADARIA.io - Pagamento Confirmado',
-        },
-        subscription: {
-          id: company.financeiro?.asaasSubscriptionId || 'sub_test',
-          customer: company.financeiro?.asaasCustomerId || 'cus_test',
-          externalReference: company.codigoAtivacao,
-          status: eventType === 'PAYMENT_CONFIRMED' ? 'ACTIVE' : 'INACTIVE',
-        },
-      };
-
-      const res = await fetch('/api/asaas/webhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      onRefresh();
-      if (data.processed) {
-        showToast(`⚡ Webhook processado! Status da ${company.empresa} alterado para '${data.updatedStatus}' na Firestore.`);
-      } else {
-        showToast(`Webhook executado: ${data.message}`);
-      }
-    } catch (err: any) {
-      showToast(`Erro ao simular webhook: ${err.message}`);
     }
   };
 
@@ -375,7 +265,7 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
       )}
 
       {/* Dashboard Financeiro Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* MRR Total Recorrente */}
         <div className="bg-white p-5 rounded-2xl border border-[#E0E0E0] shadow-xs flex items-center justify-between">
           <div>
@@ -419,22 +309,6 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
           </div>
           <div className="p-3 bg-red-50 text-red-600 rounded-xl">
             <XCircle className="w-6 h-6" />
-          </div>
-        </div>
-
-        {/* Receita Implantação / Setup */}
-        <div className="bg-white p-5 rounded-2xl border border-[#E0E0E0] shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Setup Implantação</p>
-            <p className="text-3xl font-black text-[#FF6B00] mt-1">
-              R$ {(stats.receitaImplementacaoPendente || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-            <p className="text-[11px] font-bold text-emerald-600 mt-1">
-              R$ {(stats.receitaImplementacaoPaga || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} Recebido
-            </p>
-          </div>
-          <div className="p-3 bg-amber-50 text-amber-700 rounded-xl">
-            <Receipt className="w-6 h-6" />
           </div>
         </div>
       </div>
@@ -492,7 +366,6 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
               <tr className="bg-[#FAFAF8] text-gray-500 font-extrabold uppercase tracking-wider border-b border-gray-200">
                 <th className="py-3 px-4">Empresa</th>
                 <th className="py-3 px-4">Código</th>
-                <th className="py-3 px-4">Setup Implantação</th>
                 <th className="py-3 px-4">Mensalidade</th>
                 <th className="py-3 px-4">Status Recorrência / Asaas</th>
                 <th className="py-3 px-4">Próximo Vencimento</th>
@@ -502,15 +375,13 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
             <tbody className="divide-y divide-gray-100 text-[#111111]">
               {filteredCompanies.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-gray-400">
+                  <td colSpan={6} className="text-center py-8 text-gray-400">
                     Nenhuma empresa encontrada com o filtro selecionado.
                   </td>
                 </tr>
               ) : (
                 filteredCompanies.map((c) => {
                   const fin = c.financeiro || {
-                    implementacaoPaga: false,
-                    valorImplementacao: 1500,
                     valorMensalidade: 199,
                     statusAssinatura: 'pendente',
                     dataProximaCobranca: formatDateToISO(new Date()),
@@ -528,6 +399,21 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
                         {c.cnpj && (
                           <div className="text-[10px] text-gray-400 font-mono">CNPJ: {c.cnpj}</div>
                         )}
+                        {c.financeiro?.dataFimTeste && (
+                          <div className="mt-1">
+                            {(() => {
+                              const daysLeft = calculateDaysRemaining(c.financeiro.dataFimTeste!);
+                              const isPaid = fin.statusAssinatura === 'ativo' || fin.statusAssinatura === 'concluido';
+                              if (isPaid) {
+                                return <span className="text-[10px] text-emerald-600 font-extrabold bg-emerald-50 px-2 py-0.5 rounded">Assinatura Ativa</span>;
+                              }
+                              if (daysLeft > 0) {
+                                return <span className="text-[10px] text-blue-700 font-extrabold bg-blue-50 px-2 py-0.5 rounded">Teste: Restam {daysLeft} dia(s)</span>;
+                              }
+                              return <span className="text-[10px] text-red-600 font-extrabold bg-red-50 px-2 py-0.5 rounded">Teste Expirado</span>;
+                            })()}
+                          </div>
+                        )}
                       </td>
 
                       {/* Code */}
@@ -535,56 +421,11 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
                         {c.codigoAtivacao}
                       </td>
 
-                      {/* Implementation Value */}
-                      <td className="py-3.5 px-4">
-                        {isEditing ? (
-                          <div>
-                            <label className="block text-[10px] font-bold text-gray-500 mb-0.5">Setup (R$)</label>
-                            <input
-                              type="number"
-                              value={editValorImp}
-                              onChange={(e) => setEditValorImp(Number(e.target.value))}
-                              className="w-28 bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-[#FF6B00] focus:outline-none"
-                            />
-                          </div>
-                        ) : (
-                          <div className="space-y-1.5">
-                            <div className="flex items-center space-x-1">
-                              <button
-                                onClick={() => handleToggleImpPaid(c.codigoAtivacao, !!fin.implementacaoPaga)}
-                                className={`inline-flex items-center space-x-1 font-bold px-2.5 py-1 rounded-lg transition-colors cursor-pointer text-xs ${
-                                  fin.implementacaoPaga 
-                                    ? 'text-green-700 bg-green-50 hover:bg-green-100' 
-                                    : 'text-amber-800 bg-amber-50 hover:bg-amber-100'
-                                }`}
-                                title="Clique para alternar entre PAGO e PENDENTE"
-                              >
-                                {fin.implementacaoPaga ? (
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                                ) : (
-                                  <Clock className="w-3.5 h-3.5 text-amber-600" />
-                                )}
-                                <span>R$ {(fin.valorImplementacao || 1500).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({fin.implementacaoPaga ? 'Pago' : 'Pendente'})</span>
-                              </button>
-                            </div>
-
-                            <button
-                              onClick={() => handleOpenSendImpModal(c)}
-                              className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] border border-blue-200 transition-all cursor-pointer flex items-center space-x-1"
-                              title="Enviar boleto da taxa de implementação via Asaas para o e-mail"
-                            >
-                              <Send className="w-3 h-3 text-blue-600" />
-                              <span>Enviar Boleto Imp.</span>
-                            </button>
-                          </div>
-                        )}
-                      </td>
-
                       {/* Monthly Fee Value */}
                       <td className="py-3.5 px-4 font-bold text-[#111111]">
                         {isEditing ? (
                           <div>
-                            <label className="block text-[10px] font-bold text-gray-500 mb-0.5">Mensal (R$)</label>
+                            <label className="block text-[10px] font-bold text-gray-500 mb-0.5">Mensalidade (R$)</label>
                             <input
                               type="number"
                               value={editValorMensal}
@@ -732,7 +573,7 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
                             <button
                               onClick={() => handleStartEdit(c)}
                               className="px-2.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#111111] font-bold text-[11px] transition-all cursor-pointer inline-flex items-center space-x-1"
-                              title="Alterar Valor de Implantação, Mensalidade, Status ou Vencimento"
+                              title="Alterar Mensalidade, Status ou Vencimento"
                             >
                               <Sliders className="w-3.5 h-3.5 text-[#FF6B00]" />
                               <span>Editar</span>
@@ -750,16 +591,6 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
                               <AlertOctagon className="w-3.5 h-3.5" />
                               <span>{fin.statusAssinatura === 'suspenso' || fin.statusAssinatura === 'cancelado' ? 'Reativar' : 'Cancelar'}</span>
                             </button>
-
-                            {/* Asaas Webhook Test Trigger */}
-                            <button
-                              onClick={() => handleSimulateWebhook(c, fin.statusAssinatura === 'ativo' ? 'SUBSCRIPTION_DELETED' : 'PAYMENT_CONFIRMED')}
-                              className="px-2 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-[#FF6B00] font-extrabold text-[10px] transition-all cursor-pointer inline-flex items-center space-x-1 border border-orange-200"
-                              title="Testar recebimento do Webhook Asaas e atualização automática na Firestore"
-                            >
-                              <Zap className="w-3 h-3 text-[#FF6B00]" />
-                              <span>Testar Webhook</span>
-                            </button>
                           </div>
                         )}
                       </td>
@@ -771,90 +602,6 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
           </table>
         </div>
       </div>
-
-      {/* Modal: Enviar Taxa de Implementação via Asaas */}
-      {sendImpModalCompany && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-                  <Send className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-[#111111]">Enviar Taxa de Implementação</h3>
-                  <p className="text-xs text-gray-500 font-medium">{sendImpModalCompany.empresa}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setSendImpModalCompany(null)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Valor da Taxa de Implementação (R$)
-                </label>
-                <input
-                  type="number"
-                  value={sendImpValue}
-                  onChange={(e) => setSendImpValue(Number(e.target.value))}
-                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-[#111111] focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none"
-                  placeholder="1500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Data de Vencimento do Boleto
-                </label>
-                <input
-                  type="date"
-                  value={sendImpDueDate}
-                  onChange={(e) => setSendImpDueDate(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-[#111111] focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none"
-                />
-              </div>
-
-              <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-blue-800 text-[11px] leading-relaxed">
-                <p className="font-bold mb-0.5">Envio Direto pelo Asaas (Azulzinho):</p>
-                <p>O boleto de <strong>R$ {sendImpValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong> será gerado e enviado diretamente para o e-mail <strong>{sendImpModalCompany.email}</strong> com vencimento em <strong>{formatDateToBR(sendImpDueDate)}</strong>.</p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end space-x-2 pt-2">
-              <button
-                onClick={() => setSendImpModalCompany(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
-                disabled={isSendingImp}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSendImplementationBoleto}
-                disabled={isSendingImp}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-md flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
-              >
-                {isSendingImp ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Gerando & Enviando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Enviar Boleto por E-mail</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal: Enviar / Ativar Mensalidade via Asaas */}
       {sendSubModalCompany && (

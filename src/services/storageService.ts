@@ -108,8 +108,9 @@ export class StorageService {
             }
           }
         });
-        setItem(KEYS.COMPANIES, companies);
-        callback(companies);
+        const validated = StorageService.validateAndCheckTrials(companies);
+        setItem(KEYS.COMPANIES, validated);
+        callback(validated);
       },
       (err) => {
         if (err.message?.includes('Quota') || String(err).includes('Quota')) {
@@ -457,9 +458,38 @@ export class StorageService {
     setItem(KEYS.ASAAS_SETTINGS, { apiKey: apiKey.trim(), environment });
   }
 
+  static validateAndCheckTrials(companies: BakeryCompany[]): BakeryCompany[] {
+    const todayStr = formatDateToISO(new Date());
+    let updated = false;
+
+    for (const c of companies) {
+      if (c.financeiro && c.financeiro.dataFimTeste) {
+        const trialEndDate = c.financeiro.dataFimTeste;
+        const isTrialOver = todayStr > trialEndDate;
+        const isPaidOrActive = c.financeiro.statusAssinatura === 'ativo' || c.financeiro.statusAssinatura === 'concluido';
+
+        if (isTrialOver && !isPaidOrActive) {
+          if (c.ativo) {
+            c.ativo = false;
+            c.financeiro.statusAssinatura = 'vencido';
+            updated = true;
+            setDoc(doc(db, 'companies', c.codigoAtivacao), removeUndefined(c)).catch(() => {});
+          }
+        }
+      }
+    }
+
+    if (updated) {
+      setItem(KEYS.COMPANIES, companies);
+    }
+
+    return companies;
+  }
+
   // Companies CRUD
   static getCompanies(): BakeryCompany[] {
-    return getItem<BakeryCompany[]>(KEYS.COMPANIES, []);
+    const comps = getItem<BakeryCompany[]>(KEYS.COMPANIES, []);
+    return StorageService.validateAndCheckTrials(comps);
   }
 
   static getCompanyByCode(code: string): BakeryCompany | undefined {
@@ -478,12 +508,31 @@ export class StorageService {
     const companies = StorageService.getCompanies();
     const cleanEmail = email.trim().toLowerCase();
     const cleanPass = pass.trim();
-    return companies.find((c) => {
+    const comp = companies.find((c) => {
       const emailMatches = c.email.trim().toLowerCase() === cleanEmail;
       const storedPwd = (c.senha && c.senha.trim()) ? c.senha.trim() : 'padaria123';
       const passMatches = storedPwd === cleanPass || c.codigoAtivacao.toUpperCase() === cleanPass.toUpperCase();
       return emailMatches && passMatches;
     });
+
+    if (comp) {
+      const todayStr = formatDateToISO(new Date());
+      if (comp.financeiro?.dataFimTeste && todayStr > comp.financeiro.dataFimTeste) {
+        const isPaid = comp.financeiro.statusAssinatura === 'ativo' || comp.financeiro.statusAssinatura === 'concluido';
+        if (!isPaid) {
+          comp.ativo = false;
+          comp.financeiro.statusAssinatura = 'vencido';
+          setItem(KEYS.COMPANIES, companies);
+          setDoc(doc(db, 'companies', comp.codigoAtivacao), removeUndefined(comp)).catch(() => {});
+          return undefined;
+        }
+      }
+      if (!comp.ativo) {
+        return undefined;
+      }
+    }
+
+    return comp;
   }
 
   static async updateCompanyPassword(code: string, newPassword: string): Promise<BakeryCompany | undefined> {
@@ -507,16 +556,8 @@ export class StorageService {
     senha?: string,
     telefone?: string,
     cnpj?: string,
-    valorImplementacao = 1500,
-    valorMensalidade = 199,
-    teste1Dia = false,
-    asaasInfo?: {
-      customerId?: string;
-      subscriptionId?: string;
-      paymentLink?: string;
-      asaasEnvironment?: 'sandbox' | 'production';
-    },
-    dataInicioCobranca?: string
+    diasTesteGratis = 7,
+    valorMensalidade = 199
   ): Promise<BakeryCompany> {
     const companies = StorageService.getCompanies();
     let code = generateActivationCode();
@@ -525,48 +566,25 @@ export class StorageService {
     }
 
     const todayStr = formatDateToISO(new Date());
-    let nextDueDateStr = '';
-
-    if (dataInicioCobranca && dataInicioCobranca.trim() !== '') {
-      nextDueDateStr = dataInicioCobranca.trim();
-    } else {
-      const nextMonth = new Date();
-      if (teste1Dia) {
-        nextMonth.setDate(nextMonth.getDate() + 1);
-      } else {
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-      }
-      nextDueDateStr = formatDateToISO(nextMonth);
-    }
+    const trialDays = Number(diasTesteGratis) >= 0 ? Number(diasTesteGratis) : 7;
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + trialDays);
+    const trialEndDateStr = formatDateToISO(trialEndDate);
 
     const nextYear = new Date();
     nextYear.setFullYear(nextYear.getFullYear() + 1);
     const nextYearStr = formatDateToISO(nextYear);
 
     const defaultBilling: BillingInfo = {
-      implementacaoPaga: false,
-      valorImplementacao: Number(valorImplementacao) || 1500,
+      diasTesteGratis: trialDays,
+      dataFimTeste: trialEndDateStr,
+      implementacaoPaga: true,
+      valorImplementacao: 0,
       assinaturaMensalAtiva: true,
       valorMensalidade: Number(valorMensalidade) || 199,
-      dataProximaCobranca: nextDueDateStr,
-      statusAssinatura: teste1Dia ? 'ativo' : 'pendente',
-      teste1Dia: teste1Dia,
-      asaasCustomerId: asaasInfo?.customerId || null,
-      asaasSubscriptionId: asaasInfo?.subscriptionId || null,
-      asaasPaymentLink: asaasInfo?.paymentLink || null,
-      asaasEnvironment: asaasInfo?.asaasEnvironment || 'sandbox',
-      ultimoLinkPagamento: asaasInfo?.paymentLink || null,
-      tipoUltimoLink: 'implementacao',
-      historicoCobrancas: [
-        {
-          id: 'inv_' + Date.now(),
-          data: todayStr,
-          valor: Number(valorImplementacao) || 1500,
-          tipo: 'implementacao',
-          status: 'pendente',
-          linkBoleto: asaasInfo?.paymentLink || '',
-        },
-      ],
+      dataProximaCobranca: trialEndDateStr,
+      statusAssinatura: 'ativo',
+      historicoCobrancas: [],
     };
 
     const companyPassword = senha && senha.trim() ? senha.trim() : 'padaria123';
@@ -589,7 +607,7 @@ export class StorageService {
         fornecedorNome: 'PADARIA.IO TECNOLOGIA E SISTEMAS - Weskley Gomes',
         clienteNome: empresa.trim(),
         clienteCnpj: cnpj ? cnpj.trim() : '',
-        valorImplementacao: Number(valorImplementacao) || 1500,
+        valorImplementacao: 0,
         valorMensalidade: Number(valorMensalidade) || 199,
       },
     };
