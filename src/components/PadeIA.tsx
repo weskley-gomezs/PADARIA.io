@@ -631,39 +631,37 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
   else if (numDays === 3) recDiscountPercent = 25;
 
   const promoPrice = normalSellPrice * (1 - recDiscountPercent / 100);
-  const profitPerUnit = promoPrice - numCost;
-  const isBelowCost = promoPrice < numCost;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[750px]">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] sm:min-h-[750px] w-full max-w-full box-border">
       {/* BRANDING HEADER */}
-      <div className="bg-gradient-to-r from-[#111111] via-[#1F2937] to-[#2C2C2C] text-white p-4 sm:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-800">
+      <div className="bg-gradient-to-r from-[#111111] via-[#1F2937] to-[#2C2C2C] text-white p-3.5 sm:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 border-b border-gray-800 w-full max-w-full overflow-hidden box-border">
         <div className="flex items-center space-x-3.5">
-          <div className="relative">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-[#FF6B00] to-[#E8571A] flex items-center justify-center text-white shadow-lg shadow-orange-500/20 ring-2 ring-white/20">
-              <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 animate-pulse text-amber-200" />
+          <div className="relative shrink-0">
+            <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-[#FF6B00] to-[#E8571A] flex items-center justify-center text-white shadow-lg shadow-orange-500/20 ring-2 ring-white/20">
+              <Sparkles className="w-5 h-5 sm:w-7 sm:h-7 animate-pulse text-amber-200" />
             </div>
-            <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-[#111111] rounded-full" title="PadeIA™ Online"></span>
+            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-emerald-500 border-2 border-[#111111] rounded-full" title="PadeIA™ Online"></span>
           </div>
 
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center space-x-2">
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">PadeIA™</h2>
-              <span className="bg-orange-500/20 text-[#FF6B00] border border-orange-500/30 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full tracking-wider">
+              <h2 className="text-lg sm:text-2xl font-black tracking-tight text-white truncate">PadeIA™</h2>
+              <span className="bg-orange-500/20 text-[#FF6B00] border border-orange-500/30 text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full tracking-wider shrink-0">
                 IA Oficial Padaria.io
               </span>
             </div>
-            <p className="text-xs text-gray-300 font-medium mt-0.5">
+            <p className="text-[11px] sm:text-xs text-gray-300 font-medium mt-0.5 truncate">
               Sua gerente inteligente especializada em panificação
             </p>
           </div>
         </div>
 
         {/* TOP NAVIGATION TABS */}
-        <div className="flex items-center bg-black/40 p-1.5 rounded-xl border border-white/10 gap-1 overflow-x-auto no-scrollbar">
+        <div className="flex items-center bg-black/40 p-1 sm:p-1.5 rounded-xl border border-white/10 gap-1 overflow-x-auto no-scrollbar w-full max-w-full">
           <button
             onClick={() => setActiveTab('chat')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
               activeTab === 'chat'
                 ? 'bg-[#FF6B00] text-white shadow-md font-extrabold'
                 : 'text-gray-300 hover:text-white hover:bg-white/5'
@@ -675,7 +673,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
 
           <button
             onClick={() => setActiveTab('resumo')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
               activeTab === 'resumo'
                 ? 'bg-[#FF6B00] text-white shadow-md font-extrabold'
                 : 'text-gray-300 hover:text-white hover:bg-white/5'
@@ -687,7 +685,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
 
           <button
             onClick={() => setActiveTab('precificacao')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
               activeTab === 'precificacao'
                 ? 'bg-[#FF6B00] text-white shadow-md font-extrabold'
                 : 'text-gray-300 hover:text-white hover:bg-white/5'
@@ -699,7 +697,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
 
           <button
             onClick={() => setActiveTab('alertas')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer relative ${
+            className={`px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer relative ${
               activeTab === 'alertas'
                 ? 'bg-[#FF6B00] text-white shadow-md font-extrabold'
                 : 'text-gray-300 hover:text-white hover:bg-white/5'
@@ -713,14 +711,14 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
 
       {/* TAB 1: CHAT INTELIGENTE */}
       {activeTab === 'chat' && (
-        <div className="flex-1 flex flex-col justify-between bg-gray-50/50">
+        <div className="flex-1 flex flex-col justify-between bg-gray-50/50 w-full max-w-full">
           {/* Quick Questions & Voice Action Chips */}
-          <div className="p-3 bg-white border-b border-gray-100 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <div className="p-2.5 sm:p-3 bg-white border-b border-gray-100 flex items-center gap-2 overflow-x-auto no-scrollbar w-full max-w-full">
             {/* PROMINENT VOICE BUTTON */}
             <button
               onClick={voiceStatus === 'listening' ? handleStopVoice : handleStartVoice}
               disabled={isLoading || voiceStatus === 'processing'}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm flex items-center space-x-1.5 ${
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm flex items-center space-x-1.5 ${
                 voiceStatus === 'listening'
                   ? 'bg-red-600 text-white animate-pulse ring-2 ring-red-400'
                   : 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white'
@@ -728,10 +726,10 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
               title="Converse com a PadeIA por comando de voz"
             >
               <Mic className="w-3.5 h-3.5 text-emerald-200" />
-              <span>🎙️ Falar com a PadeIA</span>
+              <span>🎙️ Falar com PadeIA</span>
             </button>
 
-            <span className="text-gray-300">|</span>
+            <span className="text-gray-300 shrink-0">|</span>
 
             <span className="text-[11px] font-extrabold uppercase text-gray-400 shrink-0 flex items-center space-x-1">
               <Zap className="w-3 h-3 text-amber-500" />
@@ -749,45 +747,45 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 max-h-[500px]">
+          <div className="flex-1 p-3 sm:p-6 overflow-y-auto space-y-3.5 sm:space-y-4 max-h-[420px] sm:max-h-[500px] min-h-0 w-full max-w-full box-border">
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-3 max-w-[92%] sm:max-w-[85%] ${
+                className={`flex gap-2.5 sm:gap-3 max-w-[95%] sm:max-w-[85%] ${
                   msg.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'
                 }`}
               >
                 {/* Avatar */}
                 <div
-                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+                  className={`w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
                     msg.role === 'user'
                       ? 'bg-[#1F2937] text-white'
                       : 'bg-gradient-to-tr from-[#FF6B00] to-[#E8571A] text-white'
                   }`}
                 >
                   {msg.role === 'user' ? (
-                    <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <User className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                   ) : (
-                    <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-200" />
+                    <Sparkles className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-amber-200" />
                   )}
                 </div>
 
                 {/* Message Bubble */}
                 <div
-                  className={`rounded-2xl p-4 text-xs sm:text-sm space-y-2 shadow-xs ${
+                  className={`rounded-2xl p-3 sm:p-4 text-xs sm:text-sm space-y-2 shadow-xs break-words [overflow-wrap:anywhere] max-w-full overflow-hidden ${
                     msg.role === 'user'
                       ? 'bg-[#1F2937] text-white rounded-tr-none'
                       : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-4 border-b pb-1.5 mb-1.5 border-current/10">
+                  <div className="flex items-center justify-between gap-2 border-b pb-1.5 mb-1.5 border-current/10">
                     <span className="font-extrabold text-[11px] opacity-80">
                       {msg.role === 'user' ? 'Você' : 'PadeIA™'}
                     </span>
                     <span className="text-[10px] opacity-60 font-mono">{msg.timestamp}</span>
                   </div>
 
-                  <div className="markdown-body leading-relaxed space-y-1">
+                  <div className="markdown-body leading-relaxed space-y-1 overflow-x-auto max-w-full break-words [overflow-wrap:anywhere]">
                     <Markdown>{cleanDisplayText(msg.text)}</Markdown>
                   </div>
 
@@ -819,14 +817,14 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
 
             {/* Loading Typing Indicator */}
             {isLoading && (
-              <div className="flex gap-3 max-w-[85%] mr-auto items-center animate-fade-in">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-[#FF6B00] to-[#E8571A] text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Sparkles className="w-4 h-4 text-amber-200 animate-spin" />
+              <div className="flex gap-2.5 sm:gap-3 max-w-[85%] mr-auto items-center animate-fade-in">
+                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-[#FF6B00] to-[#E8571A] text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-spin" />
                 </div>
-                <div className="bg-white border border-gray-200 rounded-2xl p-4 text-xs text-gray-600 flex items-center space-x-2 shadow-xs">
+                <div className="bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 text-xs text-gray-600 flex items-center space-x-2 shadow-xs">
                   <span className="font-bold text-[#E8571A]">PadeIA™</span>
-                  <span>está analisando os dados do estoque...</span>
-                  <span className="flex space-x-1 ml-2">
+                  <span>analisando o estoque...</span>
+                  <span className="flex space-x-1 ml-1.5">
                     <span className="w-1.5 h-1.5 bg-[#E8571A] rounded-full animate-bounce"></span>
                     <span className="w-1.5 h-1.5 bg-[#E8571A] rounded-full animate-bounce [animation-delay:0.2s]"></span>
                     <span className="w-1.5 h-1.5 bg-[#E8571A] rounded-full animate-bounce [animation-delay:0.4s]"></span>
@@ -839,11 +837,11 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
           </div>
 
           {/* Input Bar & Voice Command Panel */}
-          <div className="p-3 sm:p-4 bg-white border-t border-gray-200">
+          <div className="p-2.5 sm:p-4 bg-white border-t border-gray-200 w-full max-w-full box-border">
             {/* VOICE STATUS CARD OVERLAY */}
             {voiceStatus !== 'idle' && (
               <div
-                className={`mb-3 p-3.5 rounded-2xl border transition-all shadow-md flex flex-col space-y-2.5 ${
+                className={`mb-3 p-3 sm:p-3.5 rounded-2xl border transition-all shadow-md flex flex-col space-y-2.5 w-full max-w-full overflow-hidden box-border ${
                   voiceStatus === 'listening'
                     ? 'border-red-300 bg-red-50/80'
                     : voiceStatus === 'processing'
@@ -880,7 +878,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                       <>
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                         <span className="font-extrabold text-xs text-emerald-700 uppercase tracking-wider">
-                          Resposta Pronta / Prévia do Texto
+                          Resposta Pronta / Prévia
                         </span>
                       </>
                     )}
@@ -889,7 +887,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                       <>
                         <AlertTriangle className="w-4 h-4 text-red-600" />
                         <span className="font-extrabold text-xs text-red-700 uppercase tracking-wider">
-                          Aviso de Microfone
+                          Aviso
                         </span>
                       </>
                     )}
@@ -899,7 +897,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                     <button
                       type="button"
                       onClick={handleStopVoice}
-                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs cursor-pointer"
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs cursor-pointer shrink-0"
                     >
                       <Square className="w-3.5 h-3.5 fill-current" />
                       <span>Concluir fala</span>
@@ -907,7 +905,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                   )}
 
                   {voiceStatus === 'error' && (
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 shrink-0">
                       <button
                         type="button"
                         onClick={handleStartVoice}
@@ -932,7 +930,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                     {voiceError}
                   </p>
                 ) : (
-                  <div className="p-3 bg-white rounded-xl border border-gray-200 text-xs text-gray-800 font-medium flex flex-col space-y-1 shadow-xs">
+                  <div className="p-2.5 sm:p-3 bg-white rounded-xl border border-gray-200 text-xs text-gray-800 font-medium flex flex-col space-y-1 shadow-xs">
                     <span className="text-[10px] uppercase font-extrabold text-gray-400">
                       {voiceStatus === 'listening' ? 'Fale seu comando:' : 'Texto reconhecido:'}
                     </span>
@@ -944,7 +942,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
 
                 {/* Ready / Confirmation Action Bar */}
                 {voiceStatus === 'ready' && (
-                  <div className="flex items-center justify-end gap-2 pt-1">
+                  <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2 pt-1">
                     <button
                       type="button"
                       onClick={handleCancelVoice}
@@ -963,10 +961,10 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                     <button
                       type="button"
                       onClick={handleConfirmVoiceSend}
-                      className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold flex items-center space-x-1.5 shadow-sm cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
-                      <span>🚀 Enviar para PadeIA</span>
+                      <span>🚀 Enviar</span>
                     </button>
                   </div>
                 )}
@@ -978,15 +976,15 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5 sm:gap-2 w-full max-w-full"
             >
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Pergunte sobre perdas, validade, fechamento ou precificação..."
+                placeholder="Pergunte sobre perdas, validade ou precificação..."
                 disabled={isLoading || voiceStatus === 'listening'}
-                className="flex-1 px-4 py-3 text-xs sm:text-sm rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-gray-800 bg-gray-50 focus:bg-white font-medium"
+                className="flex-1 min-w-0 px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-gray-800 bg-gray-50 focus:bg-white font-medium box-border"
               />
 
               {/* MICROPHONE VOICE BUTTON */}
@@ -994,7 +992,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                 type="button"
                 onClick={voiceStatus === 'listening' ? handleStopVoice : handleStartVoice}
                 disabled={isLoading || voiceStatus === 'processing'}
-                className={`px-3.5 py-3 rounded-xl font-bold text-xs transition-all shadow-md flex items-center justify-center space-x-1.5 cursor-pointer shrink-0 ${
+                className={`p-2.5 sm:px-3.5 sm:py-3 rounded-xl font-bold text-xs transition-all shadow-md flex items-center justify-center space-x-1 cursor-pointer shrink-0 min-w-[40px] min-h-[40px] ${
                   voiceStatus === 'listening'
                     ? 'bg-red-600 text-white animate-pulse ring-2 ring-red-300'
                     : voiceStatus === 'processing'
@@ -1016,7 +1014,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                 ) : (
                   <>
                     <Mic className="w-4 h-4 text-white" />
-                    <span className="hidden sm:inline font-extrabold">🎙️ Falar com a PadeIA</span>
+                    <span className="hidden sm:inline font-extrabold">🎙️ Falar</span>
                   </>
                 )}
               </button>
@@ -1024,14 +1022,14 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
               <button
                 type="submit"
                 disabled={isLoading || !inputMessage.trim() || voiceStatus === 'listening'}
-                className="px-5 py-3 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#E8571A] hover:from-[#e05e00] hover:to-[#d44e15] text-white font-extrabold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center space-x-1.5 disabled:opacity-50 cursor-pointer shrink-0"
+                className="px-3.5 py-2.5 sm:px-5 sm:py-3 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#E8571A] hover:from-[#e05e00] hover:to-[#d44e15] text-white font-extrabold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center space-x-1 disabled:opacity-50 cursor-pointer shrink-0 min-w-[40px] min-h-[40px]"
               >
                 <span>Enviar</span>
-                <Send className="w-4 h-4" />
+                <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               </button>
             </form>
-            <div className="flex items-center justify-between text-[10px] text-gray-400 mt-2 px-1">
-              <span>PadeIA™ v2.5 • Inteligência nativa de panificação do Padaria.io</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[10px] text-gray-400 mt-2 px-1 gap-1 leading-normal w-full max-w-full">
+              <span className="break-words">PadeIA™ v2.5 • Inteligência nativa de panificação do Padaria.io</span>
               {messages.length > 2 && (
                 <button
                   type="button"
@@ -1045,7 +1043,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
                       }
                     ])
                   }
-                  className="text-gray-400 hover:text-red-600 transition-colors flex items-center space-x-1"
+                  className="text-gray-400 hover:text-red-600 transition-colors flex items-center space-x-1 shrink-0"
                 >
                   <Trash2 className="w-3 h-3" />
                   <span>Limpar conversa</span>
