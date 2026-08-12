@@ -1,7 +1,7 @@
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing } from '../types/index.js';
 import { calculateDaysRemaining, getProductStatus, formatDateToISO, generateActivationCode } from '../utils/dateUtils.js';
 import { db, testFirestoreConnection } from './firebase.js';
-import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe, query, where } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler.js';
 
 export function removeUndefined(obj: any): any {
@@ -91,6 +91,28 @@ export class StorageService {
   }
 
   // Real-time Subscriptions using Firestore onSnapshot
+  static subscribeCompany(code: string, callback: (company: BakeryCompany | null) => void): Unsubscribe {
+    const docRef = doc(db, 'companies', code.trim().toUpperCase());
+    return onSnapshot(
+      docRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const company = snapshot.data() as BakeryCompany;
+          const validated = StorageService.validateAndCheckTrials([company])[0] || null;
+          callback(validated);
+        } else {
+          callback(null);
+        }
+      },
+      (err) => {
+        console.warn('Error subscribing to company doc, fallback to local storage:', err);
+        const localComps = StorageService.getCompanies();
+        const found = localComps.find(c => c.codigoAtivacao.toUpperCase() === code.trim().toUpperCase());
+        callback(found || null);
+      }
+    );
+  }
+
   static subscribeCompanies(callback: (companies: BakeryCompany[]) => void): Unsubscribe {
     const colRef = collection(db, 'companies');
     return onSnapshot(
@@ -115,6 +137,7 @@ export class StorageService {
       (err) => {
         if (err.message?.includes('Quota') || String(err).includes('Quota')) {
           console.warn('Quota limit exceeded for companies subscription, falling back to local storage.');
+          callback(StorageService.getCompanies());
         } else {
           console.error('Error subscribing to companies:', err);
         }
@@ -123,9 +146,12 @@ export class StorageService {
   }
 
   static subscribeProducts(callback: (products: Product[]) => void, bakeryCode?: string): Unsubscribe {
-    const colRef = collection(db, 'products');
+    let q: any = collection(db, 'products');
+    if (bakeryCode) {
+      q = query(q, where('bakeryCode', '==', bakeryCode.trim().toUpperCase()));
+    }
     return onSnapshot(
-      colRef,
+      q,
       (snapshot) => {
         const products: Product[] = [];
         snapshot.forEach((d) => {
@@ -147,18 +173,20 @@ export class StorageService {
             }
           }
         });
-        setItem(KEYS.PRODUCTS, products);
 
         if (bakeryCode) {
-          const cleanCode = bakeryCode.trim().toUpperCase();
-          callback(products.filter((p) => p.bakeryCode.toUpperCase() === cleanCode));
+          // Merge or overwrite local cache for this tenant
+          setItem(KEYS.PRODUCTS, products);
+          callback(products);
         } else {
+          setItem(KEYS.PRODUCTS, products);
           callback(products);
         }
       },
       (err) => {
         if (err.message?.includes('Quota') || String(err).includes('Quota')) {
           console.warn('Quota limit exceeded for products subscription, falling back to local storage.');
+          callback(StorageService.getProducts(bakeryCode));
         } else {
           console.error('Error subscribing to products:', err);
         }
@@ -167,9 +195,12 @@ export class StorageService {
   }
 
   static subscribeSalesHistory(callback: (sales: SaleHistoryItem[]) => void, bakeryCode?: string): Unsubscribe {
-    const colRef = collection(db, 'sales');
+    let q: any = collection(db, 'sales');
+    if (bakeryCode) {
+      q = query(q, where('bakeryCode', '==', bakeryCode.trim().toUpperCase()));
+    }
     return onSnapshot(
-      colRef,
+      q,
       (snapshot) => {
         const sales: SaleHistoryItem[] = [];
         snapshot.forEach((d) => {
@@ -182,18 +213,14 @@ export class StorageService {
             }
           }
         });
-        setItem(KEYS.SALES_HISTORY, sales);
 
-        if (bakeryCode) {
-          const cleanCode = bakeryCode.trim().toUpperCase();
-          callback(sales.filter((s) => s.bakeryCode.toUpperCase() === cleanCode));
-        } else {
-          callback(sales);
-        }
+        setItem(KEYS.SALES_HISTORY, sales);
+        callback(sales);
       },
       (err) => {
         if (err.message?.includes('Quota') || String(err).includes('Quota')) {
           console.warn('Quota limit exceeded for sales subscription, falling back to local storage.');
+          callback(StorageService.getSalesHistory(bakeryCode));
         } else {
           console.error('Error subscribing to sales:', err);
         }
@@ -202,9 +229,12 @@ export class StorageService {
   }
 
   static subscribeTickets(callback: (tickets: SupportTicket[]) => void, bakeryCode?: string): Unsubscribe {
-    const colRef = collection(db, 'tickets');
+    let q: any = collection(db, 'tickets');
+    if (bakeryCode) {
+      q = query(q, where('bakeryCode', '==', bakeryCode.trim().toUpperCase()));
+    }
     return onSnapshot(
-      colRef,
+      q,
       (snapshot) => {
         const tickets: SupportTicket[] = [];
         snapshot.forEach((d) => {
@@ -217,18 +247,14 @@ export class StorageService {
             }
           }
         });
-        setItem(KEYS.TICKETS, tickets);
 
-        if (bakeryCode) {
-          const cleanCode = bakeryCode.trim().toUpperCase();
-          callback(tickets.filter((t) => t.bakeryCode.toUpperCase() === cleanCode));
-        } else {
-          callback(tickets);
-        }
+        setItem(KEYS.TICKETS, tickets);
+        callback(tickets);
       },
       (err) => {
         if (err.message?.includes('Quota') || String(err).includes('Quota')) {
           console.warn('Quota limit exceeded for tickets subscription, falling back to local storage.');
+          callback(StorageService.getTickets(bakeryCode));
         } else {
           console.error('Error subscribing to tickets:', err);
         }
@@ -310,7 +336,7 @@ export class StorageService {
 
   static async pullFromFirestore(): Promise<void> {
     try {
-      // 1. Settings
+      // 1. Settings (Only specific config document, no tenant data)
       try {
         const adminDoc = await getDoc(doc(db, 'settings', 'admin'));
         if (adminDoc.exists()) {
@@ -322,92 +348,8 @@ export class StorageService {
       } catch (e) {
         console.warn('Firestore fetch settings warning:', e);
       }
-
-      // 2. Companies
-      try {
-        const compSnap = await getDocs(collection(db, 'companies'));
-        if (!compSnap.empty) {
-          const remoteCompanies: BakeryCompany[] = [];
-          compSnap.forEach((d) => {
-            const data = d.data() as BakeryCompany;
-            if (data && data.codigoAtivacao) {
-              const cleanCode = data.codigoAtivacao.trim().toUpperCase();
-              if (EXCLUDED_CODES.includes(cleanCode)) {
-                deleteDoc(doc(db, 'companies', d.id)).catch(() => {});
-              } else {
-                remoteCompanies.push(data);
-              }
-            }
-          });
-          setItem(KEYS.COMPANIES, remoteCompanies);
-        }
-      } catch (e) {
-        console.warn('Firestore fetch companies warning:', e);
-      }
-
-      // 3. Products
-      try {
-        const prodSnap = await getDocs(collection(db, 'products'));
-        if (!prodSnap.empty) {
-          const remoteProducts: Product[] = [];
-          prodSnap.forEach((d) => {
-            const data = d.data() as Product;
-            if (data && data.bakeryCode) {
-              const cleanCode = data.bakeryCode.trim().toUpperCase();
-              if (EXCLUDED_CODES.includes(cleanCode) || DEMO_PROD_IDS.includes(data.id)) {
-                deleteDoc(doc(db, 'products', d.id)).catch(() => {});
-              } else {
-                remoteProducts.push(data);
-              }
-            }
-          });
-          setItem(KEYS.PRODUCTS, remoteProducts);
-        }
-      } catch (e) {
-        console.warn('Firestore fetch products warning:', e);
-      }
-
-      // 4. Sales History
-      try {
-        const salesSnap = await getDocs(collection(db, 'sales'));
-        if (!salesSnap.empty) {
-          const remoteSales: SaleHistoryItem[] = [];
-          salesSnap.forEach((d) => remoteSales.push(d.data() as SaleHistoryItem));
-          setItem(KEYS.SALES_HISTORY, remoteSales);
-        }
-      } catch (e) {
-        console.warn('Firestore fetch sales warning:', e);
-      }
-
-      // 5. Tickets
-      try {
-        const ticketsSnap = await getDocs(collection(db, 'tickets'));
-        if (!ticketsSnap.empty) {
-          const remoteTickets: SupportTicket[] = [];
-          ticketsSnap.forEach((d) => remoteTickets.push(d.data() as SupportTicket));
-          setItem(KEYS.TICKETS, remoteTickets);
-        }
-      } catch (e) {
-        console.warn('Firestore fetch tickets warning:', e);
-      }
-
-      // 6. VIP Offers
-      try {
-        const vipSnap = await getDocs(collection(db, 'vipOffers'));
-        if (!vipSnap.empty) {
-          const remoteVipOffers: VipOffer[] = [];
-          vipSnap.forEach((d) => remoteVipOffers.push(d.data() as VipOffer));
-          setItem(KEYS.VIP_OFFERS, remoteVipOffers);
-        }
-      } catch (e) {
-        console.warn('Firestore fetch vipOffers warning:', e);
-      }
     } catch (err: any) {
-      if (err.message?.includes('Quota') || String(err).includes('Quota')) {
-        console.warn('Quota limit exceeded during pullFromFirestore, falling back to local storage.');
-      } else {
-        console.error('Error syncing from Firestore:', err);
-      }
+      console.error('Error syncing settings from Firestore:', err);
     }
   }
 
@@ -1305,9 +1247,12 @@ export class StorageService {
 
   // VIP Offers CRUD
   static subscribeVipOffers(callback: (offers: VipOffer[]) => void, bakeryCode?: string): Unsubscribe {
-    const colRef = collection(db, 'vipOffers');
+    let q: any = collection(db, 'vipOffers');
+    if (bakeryCode) {
+      q = query(q, where('bakeryCode', '==', bakeryCode.trim().toUpperCase()));
+    }
     return onSnapshot(
-      colRef,
+      q,
       (snapshot) => {
         const offers: VipOffer[] = [];
         snapshot.forEach((d) => {
@@ -1321,17 +1266,12 @@ export class StorageService {
           }
         });
         setItem(KEYS.VIP_OFFERS, offers);
-
-        if (bakeryCode) {
-          const cleanCode = bakeryCode.trim().toUpperCase();
-          callback(offers.filter((o) => o.bakeryCode.toUpperCase() === cleanCode));
-        } else {
-          callback(offers);
-        }
+        callback(offers);
       },
       (err) => {
         if (err.message?.includes('Quota') || String(err).includes('Quota')) {
           console.warn('Quota limit exceeded for vipOffers subscription, falling back to local storage.');
+          callback(StorageService.getVipOffers(bakeryCode));
         } else {
           console.error('Error subscribing to vipOffers:', err);
         }
@@ -1498,17 +1438,18 @@ export class StorageService {
   }
 
   static subscribeDailyClosings(callback: (closings: DailyClosing[]) => void, bakeryCode?: string): Unsubscribe {
-    const colRef = collection(db, 'dailyClosings');
+    let q: any = collection(db, 'dailyClosings');
+    if (bakeryCode) {
+      q = query(q, where('bakeryCode', '==', bakeryCode.trim().toUpperCase()));
+    }
 
     const unsub = onSnapshot(
-      colRef,
+      q,
       (snapshot) => {
         const closings: DailyClosing[] = [];
         snapshot.forEach((d) => {
           const c = d.data() as DailyClosing;
-          if (!bakeryCode || (c.bakeryCode && c.bakeryCode.toUpperCase() === bakeryCode.trim().toUpperCase())) {
-            closings.push(c);
-          }
+          closings.push(c);
         });
         closings.sort((a, b) => new Date(b.dataFechamento).getTime() - new Date(a.dataFechamento).getTime());
         setItem(KEYS.DAILY_CLOSINGS, closings);
@@ -1533,6 +1474,275 @@ export class StorageService {
       totalProdutos: products.length,
       produtosVencidos: products.filter((p) => p.status === 'vencido').length,
     };
+  }
+
+  // ON-DEMAND SERVERSIDE FETCHERS (Extremely cost-effective, no permanent listeners)
+  static async getCompaniesFromServer(): Promise<BakeryCompany[]> {
+    try {
+      const compSnap = await getDocs(collection(db, 'companies'));
+      const remoteCompanies: BakeryCompany[] = [];
+      compSnap.forEach((d) => {
+        const data = d.data() as BakeryCompany;
+        if (data && data.codigoAtivacao) {
+          const cleanCode = data.codigoAtivacao.trim().toUpperCase();
+          if (EXCLUDED_CODES.includes(cleanCode)) {
+            deleteDoc(doc(db, 'companies', d.id)).catch(() => {});
+          } else {
+            remoteCompanies.push(data);
+          }
+        }
+      });
+      const validated = StorageService.validateAndCheckTrials(remoteCompanies);
+      setItem(KEYS.COMPANIES, validated);
+      return validated;
+    } catch (e) {
+      console.error('Error fetching companies from server:', e);
+      return StorageService.getCompanies();
+    }
+  }
+
+  static async getProductsFromServer(bakeryCode: string): Promise<Product[]> {
+    try {
+      const q = query(collection(db, 'products'), where('bakeryCode', '==', bakeryCode.trim().toUpperCase()));
+      const snapshot = await getDocs(q);
+      const products: Product[] = [];
+      snapshot.forEach((d) => {
+        const p = d.data() as Product;
+        if (p && p.id) {
+          if (
+            !(p.bakeryCode && EXCLUDED_CODES.includes(p.bakeryCode.trim().toUpperCase())) &&
+            !DEMO_PROD_IDS.includes(p.id)
+          ) {
+            const daysRemaining = calculateDaysRemaining(p.dataValidade);
+            const status = getProductStatus(daysRemaining);
+            products.push({
+              ...p,
+              diasParaVencer: daysRemaining,
+              status,
+            });
+          }
+        }
+      });
+      // Store only this tenant's products locally to isolate
+      setItem(`padarias_products_${bakeryCode.trim().toUpperCase()}`, products);
+      setItem(KEYS.PRODUCTS, products); // backward compatibility
+      return products;
+    } catch (e) {
+      console.error('Error fetching products from Firestore:', e);
+      return StorageService.getProducts(bakeryCode);
+    }
+  }
+
+  static async getSalesHistoryFromServer(
+    bakeryCode: string,
+    startDate?: string,
+    endDate?: string,
+    limitCount = 300
+  ): Promise<SaleHistoryItem[]> {
+    try {
+      const q = query(
+        collection(db, 'sales'),
+        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+      );
+      const snapshot = await getDocs(q);
+      let sales: SaleHistoryItem[] = [];
+      snapshot.forEach((d) => {
+        const s = d.data() as SaleHistoryItem;
+        if (s && s.id) {
+          if (!(s.bakeryCode && EXCLUDED_CODES.includes(s.bakeryCode.trim().toUpperCase()))) {
+            sales.push(s);
+          }
+        }
+      });
+
+      // Sort by date descending
+      sales.sort((a, b) => new Date(b.dataVenda).getTime() - new Date(a.dataVenda).getTime());
+
+      // Filter by period
+      if (startDate) {
+        sales = sales.filter((s) => s.dataVenda >= startDate);
+      }
+      if (endDate) {
+        sales = sales.filter((s) => s.dataVenda <= endDate + 'T23:59:59');
+      }
+
+      const isolatedKey = `padarias_sales_history_${bakeryCode.trim().toUpperCase()}`;
+      setItem(isolatedKey, sales);
+      setItem(KEYS.SALES_HISTORY, sales); // backward compatibility
+      return sales.slice(0, limitCount);
+    } catch (e) {
+      console.error('Error fetching sales history from server:', e);
+      return StorageService.getSalesHistory(bakeryCode);
+    }
+  }
+
+  static async getVipOffersFromServer(bakeryCode: string): Promise<VipOffer[]> {
+    try {
+      const q = query(
+        collection(db, 'vipOffers'),
+        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+      );
+      const snapshot = await getDocs(q);
+      const offers: VipOffer[] = [];
+      snapshot.forEach((d) => {
+        const o = d.data() as VipOffer;
+        if (o && o.id) {
+          offers.push({
+            ...o,
+            diasParaVencer: calculateDaysRemaining(o.dataValidade),
+          });
+        }
+      });
+      const isolatedKey = `padarias_vip_offers_${bakeryCode.trim().toUpperCase()}`;
+      setItem(isolatedKey, offers);
+      setItem(KEYS.VIP_OFFERS, offers); // backward compatibility
+      return offers;
+    } catch (e) {
+      console.error('Error fetching VIP offers:', e);
+      return StorageService.getVipOffers(bakeryCode);
+    }
+  }
+
+  static async getDailyClosingsFromServer(bakeryCode: string, limitCount = 90): Promise<DailyClosing[]> {
+    try {
+      const q = query(
+        collection(db, 'dailyClosings'),
+        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+      );
+      const snapshot = await getDocs(q);
+      const closings: DailyClosing[] = [];
+      snapshot.forEach((d) => {
+        const c = d.data() as DailyClosing;
+        if (c && c.id) {
+          closings.push(c);
+        }
+      });
+      closings.sort((a, b) => new Date(b.dataFechamento).getTime() - new Date(a.dataFechamento).getTime());
+      const isolatedKey = `padarias_fechamentos_${bakeryCode.trim().toUpperCase()}`;
+      setItem(isolatedKey, closings);
+      setItem(KEYS.DAILY_CLOSINGS, closings); // backward compatibility
+      return closings.slice(0, limitCount);
+    } catch (e) {
+      console.error('Error fetching daily closings:', e);
+      return StorageService.getDailyClosings(bakeryCode);
+    }
+  }
+
+  static async getTicketsFromServer(bakeryCode?: string): Promise<SupportTicket[]> {
+    try {
+      let q: any = collection(db, 'tickets');
+      if (bakeryCode) {
+        q = query(q, where('bakeryCode', '==', bakeryCode.trim().toUpperCase()));
+      }
+      const snapshot = await getDocs(q);
+      const tickets: SupportTicket[] = [];
+      snapshot.forEach((d) => {
+        const t = d.data() as SupportTicket;
+        if (t && t.id) {
+          if (!(t.bakeryCode && EXCLUDED_CODES.includes(t.bakeryCode.trim().toUpperCase()))) {
+            tickets.push(t);
+          }
+        }
+      });
+      if (bakeryCode) {
+        const isolatedKey = `padarias_tickets_${bakeryCode.trim().toUpperCase()}`;
+        setItem(isolatedKey, tickets);
+      }
+      setItem(KEYS.TICKETS, tickets); // backward compatibility
+      return tickets;
+    } catch (e) {
+      console.error('Error fetching tickets from server:', e);
+      return StorageService.getTickets(bakeryCode);
+    }
+  }
+
+  // Admin global fetches
+  static async getProductsFromServerAdmin(): Promise<Product[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'products'));
+      const products: Product[] = [];
+      snapshot.forEach((d) => {
+        const p = d.data() as Product;
+        if (p && p.id) {
+          if (
+            !(p.bakeryCode && EXCLUDED_CODES.includes(p.bakeryCode.trim().toUpperCase())) &&
+            !DEMO_PROD_IDS.includes(p.id)
+          ) {
+            const daysRemaining = calculateDaysRemaining(p.dataValidade);
+            const status = getProductStatus(daysRemaining);
+            products.push({
+              ...p,
+              diasParaVencer: daysRemaining,
+              status,
+            });
+          }
+        }
+      });
+      setItem(KEYS.PRODUCTS, products);
+      return products;
+    } catch (e) {
+      console.error('Error fetching admin products:', e);
+      return StorageService.getProducts();
+    }
+  }
+
+  static async getSalesHistoryFromServerAdmin(): Promise<SaleHistoryItem[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'sales'));
+      const sales: SaleHistoryItem[] = [];
+      snapshot.forEach((d) => {
+        const s = d.data() as SaleHistoryItem;
+        if (s && s.id) {
+          if (!(s.bakeryCode && EXCLUDED_CODES.includes(s.bakeryCode.trim().toUpperCase()))) {
+            sales.push(s);
+          }
+        }
+      });
+      setItem(KEYS.SALES_HISTORY, sales);
+      return sales;
+    } catch (e) {
+      console.error('Error fetching admin sales:', e);
+      return StorageService.getSalesHistory();
+    }
+  }
+
+  static async getVipOffersFromServerAdmin(): Promise<VipOffer[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'vipOffers'));
+      const offers: VipOffer[] = [];
+      snapshot.forEach((d) => {
+        const o = d.data() as VipOffer;
+        if (o && o.id) {
+          offers.push({
+            ...o,
+            diasParaVencer: calculateDaysRemaining(o.dataValidade),
+          });
+        }
+      });
+      setItem(KEYS.VIP_OFFERS, offers);
+      return offers;
+    } catch (e) {
+      console.error('Error fetching admin VIP offers:', e);
+      return StorageService.getVipOffers();
+    }
+  }
+
+  static async getDailyClosingsFromServerAdmin(): Promise<DailyClosing[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'dailyClosings'));
+      const closings: DailyClosing[] = [];
+      snapshot.forEach((d) => {
+        const c = d.data() as DailyClosing;
+        if (c && c.id) {
+          closings.push(c);
+        }
+      });
+      setItem(KEYS.DAILY_CLOSINGS, closings);
+      return closings;
+    } catch (e) {
+      console.error('Error fetching admin daily closings:', e);
+      return StorageService.getDailyClosings();
+    }
   }
 
   static resetAllData(): void {

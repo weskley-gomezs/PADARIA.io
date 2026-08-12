@@ -1,122 +1,65 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { AdminPanel } from './components/AdminPanel';
 import { BakeryApp } from './components/BakeryApp';
 import { LandingPage } from './components/LandingPage';
-import { StorageService } from './services/storageService';
-import { BakeryCompany, Product } from './types';
 import { NotificationsModal } from './components/NotificationsModal';
 import { PrivacyPolicyModal } from './components/PrivacyPolicyModal';
 import { InstallPwaPrompt } from './components/InstallPwaPrompt';
+import { useData } from './context/DataContext';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'landing' | 'app' | 'admin'>(() => {
-    if (window.location.pathname.startsWith('/admin')) {
-      return 'admin';
-    }
-    // Default to landing page for new visitors, or app if requested via path
-    if (window.location.pathname.startsWith('/app')) {
-      return 'app';
-    }
-    return 'landing';
-  });
+  const {
+    currentView,
+    activeCode,
+    activeCompany,
+    products,
+    isAdminLoggedIn,
+    isLoading,
+    setCurrentView,
+    setActiveCode,
+    logoutBakery,
+    logoutAdmin,
+    markAsSold
+  } = useData();
 
-  const [activeCode, setActiveCode] = useState<string | null>(null);
-  const [activeCompany, setActiveCompany] = useState<BakeryCompany | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState<boolean>(false);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
-
-  useEffect(() => {
-    let isMounted = true;
-    const initApp = async () => {
-      await StorageService.init();
-      if (isMounted) {
-        setIsAdminLoggedIn(StorageService.isAdminAuthenticated());
-        const code = StorageService.getActiveBakeryCode();
-        setActiveCode(code);
-      }
-    };
-    initApp();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Real-time synchronization for Navbar company & badge counters
-  useEffect(() => {
-    const unsubComp = StorageService.subscribeCompanies((companies) => {
-      const code = StorageService.getActiveBakeryCode();
-      if (code) {
-        const comp = companies.find(c => c.codigoAtivacao.toUpperCase() === code.trim().toUpperCase());
-        if (comp && comp.ativo) {
-          setActiveCompany(comp);
-        } else {
-          setActiveCompany(null);
-        }
-      } else {
-        setActiveCompany(null);
-      }
-    });
-
-    return () => unsubComp();
-  }, [activeCode]);
-
-  useEffect(() => {
-    const code = StorageService.getActiveBakeryCode();
-    if (!code) {
-      setProducts([]);
-      return;
-    }
-
-    const unsubProd = StorageService.subscribeProducts((prods) => {
-      setProducts(prods);
-    }, code);
-
-    return () => unsubProd();
-  }, [activeCode]);
 
   const handleNavigate = (view: 'landing' | 'app' | 'admin') => {
     setCurrentView(view);
-    try {
-      let targetPath = '/';
-      if (view === 'admin') targetPath = '/admin';
-      if (view === 'app') targetPath = '/app';
-      if (window.location.pathname !== targetPath) {
-        window.history.pushState({}, '', targetPath);
-      }
-    } catch (e) {
-      // Ignored in sandbox
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleLoginAsBakeryFromAdmin = (code: string) => {
-    StorageService.setActiveBakeryCode(code);
     setActiveCode(code);
     setCurrentView('app');
   };
 
   const handleLogoutBakery = () => {
-    StorageService.setActiveBakeryCode(null);
-    setActiveCode(null);
-    setActiveCompany(null);
-    setProducts([]);
+    logoutBakery();
   };
 
   const handleLogoutAdmin = () => {
-    StorageService.setAdminAuthenticated(false);
-    setIsAdminLoggedIn(false);
+    logoutAdmin();
   };
 
   const expiredProducts = products.filter((p) => p.status === 'vencido');
   const expiringProducts = products.filter((p) => p.status === 'vencendo');
 
   const handleMarkAsSold = async (id: string) => {
-    if (!activeCode) return;
-    await StorageService.markAsSold(id);
+    await markAsSold(id);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-10 h-10 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm font-semibold text-gray-500">Iniciando Padaria.io...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (currentView === 'landing') {
     return (
@@ -181,7 +124,7 @@ export default function App() {
 
       {/* Footer */}
       {currentView !== 'admin' && (
-        <footer className="bg-white border-t border-[#E0E0E0] py-6 text-center text-xs text-gray-500 mt-auto">
+        <footer className="hidden sm:block bg-white border-t border-[#E0E0E0] py-6 text-center text-xs text-gray-500 mt-auto">
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
             <div className="flex items-center space-x-2.5">
               <img 

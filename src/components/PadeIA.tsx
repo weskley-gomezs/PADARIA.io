@@ -28,7 +28,10 @@ import {
   Loader2,
   Volume2,
   Square,
-  Edit3
+  Edit3,
+  ArrowLeft,
+  Camera,
+  Plus
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { BakeryCompany, Product, SaleHistoryItem, VipOffer } from '../types';
@@ -41,6 +44,8 @@ interface PadeIAProps {
   salesHistory: SaleHistoryItem[];
   vipOffers: VipOffer[];
   onOpenVipOfferModal?: (product: Product) => void;
+  onOpenScanner?: () => void;
+  onNavigateBack?: () => void;
 }
 
 interface ChatMessage {
@@ -112,7 +117,9 @@ export const PadeIA: React.FC<PadeIAProps> = ({
   products,
   salesHistory,
   vipOffers,
-  onOpenVipOfferModal
+  onOpenVipOfferModal,
+  onOpenScanner,
+  onNavigateBack
 }) => {
   const [activeTab, setActiveTab] = useState<'chat' | 'resumo' | 'precificacao' | 'alertas'>('chat');
   
@@ -121,9 +128,9 @@ export const PadeIA: React.FC<PadeIAProps> = ({
     {
       id: 'welcome-1',
       role: 'model',
-      text: `Olá! Eu sou a **PadeIA™**, sua gerente inteligente especializada em panificação. 🥖✨
+      text: `Olá! Eu sou a **PadeIA™**.
 
-Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real. Como posso te ajudar a reduzir perdas e lucrar mais hoje?`,
+Posso analisar suas perdas, vencimentos, descartes e ajudar você a tomar decisões melhores na operação.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -458,12 +465,11 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
 
   // Quick Questions
   const quickQuestions = [
-    "📊 Qual foi meu prejuízo este mês?",
-    "⏰ Quais produtos vencem nos próximos 3 dias?",
-    "🛡️ Como reduzir o descarte de produtos vencidos?",
-    "🏷️ Qual categoria mais gera desperdício?",
-    "💰 Como reaproveitar sobras na produção de amanhã?",
-    "📋 Gere um resumo executivo completo da padaria"
+    "Quanto perdi este mês?",
+    "O que está vencendo?",
+    "Qual produto mais gera perdas?",
+    "📷 Analisar etiqueta",
+    "Como reduzir meus descartes?"
   ];
 
   // Calculations for KPI summaries
@@ -498,6 +504,12 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
   const handleSendMessage = async (textToSend?: string) => {
     const messageText = textToSend || inputMessage.trim();
     if (!messageText || isLoading) return;
+
+    if ((messageText.includes('Analisar etiqueta') || messageText.includes('📷')) && onOpenScanner) {
+      onOpenScanner();
+      if (!textToSend) setInputMessage('');
+      return;
+    }
 
     const userMsg: ChatMessage = {
       id: 'user_' + Date.now(),
@@ -631,11 +643,48 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
   else if (numDays === 3) recDiscountPercent = 25;
 
   const promoPrice = normalSellPrice * (1 - recDiscountPercent / 100);
+  const profitPerUnit = promoPrice - numCost;
+  const isBelowCost = promoPrice < numCost;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] sm:min-h-[750px] w-full max-w-full box-border">
-      {/* BRANDING HEADER */}
-      <div className="bg-gradient-to-r from-[#111111] via-[#1F2937] to-[#2C2C2C] text-white p-3.5 sm:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 border-b border-gray-800 w-full max-w-full overflow-hidden box-border">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col h-[calc(100dvh-130px)] sm:h-[750px] w-full max-w-full box-border">
+      {/* MOBILE APP HEADER */}
+      <div className="sm:hidden bg-[#111111] text-white p-3.5 flex items-center justify-between border-b border-gray-800 shrink-0">
+        <div className="flex items-center space-x-3 min-w-0">
+          {onNavigateBack && (
+            <button
+              type="button"
+              onClick={onNavigateBack}
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0 active:scale-95 transition-transform"
+              title="Voltar ao Dashboard"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <div className="min-w-0">
+            <div className="flex items-center space-x-1.5">
+              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse shrink-0" />
+              <h2 className="text-base font-black text-white tracking-tight truncate">PadeIA™</h2>
+            </div>
+            <p className="text-[11px] text-gray-300 truncate font-medium">Gerente inteligente da sua panificação</p>
+          </div>
+        </div>
+
+        {onOpenScanner && (
+          <button
+            type="button"
+            onClick={onOpenScanner}
+            className="px-3 py-1.5 rounded-xl bg-[#FF6B00] hover:bg-[#e05e00] text-white text-xs font-black flex items-center space-x-1.5 shrink-0 shadow-sm cursor-pointer"
+            title="Escanear Etiqueta do Produto"
+          >
+            <Camera className="w-4 h-4" />
+            <span>Foto</span>
+          </button>
+        )}
+      </div>
+
+      {/* DESKTOP BRANDING HEADER */}
+      <div className="hidden sm:flex bg-gradient-to-r from-[#111111] via-[#1F2937] to-[#2C2C2C] text-white p-6 md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-800 w-full max-w-full overflow-hidden box-border">
         <div className="flex items-center space-x-3.5">
           <div className="relative shrink-0">
             <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-[#FF6B00] to-[#E8571A] flex items-center justify-center text-white shadow-lg shadow-orange-500/20 ring-2 ring-white/20">
@@ -747,7 +796,7 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-3 sm:p-6 overflow-y-auto space-y-3.5 sm:space-y-4 max-h-[420px] sm:max-h-[500px] min-h-0 w-full max-w-full box-border">
+          <div className="flex-1 p-3 sm:p-6 overflow-y-auto space-y-3.5 sm:space-y-4 min-h-0 w-full max-w-full box-border">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -978,11 +1027,22 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
               }}
               className="flex items-center gap-1.5 sm:gap-2 w-full max-w-full"
             >
+              {onOpenScanner && (
+                <button
+                  type="button"
+                  onClick={onOpenScanner}
+                  className="p-2.5 sm:p-3 rounded-xl bg-orange-50 hover:bg-orange-100 text-[#E8571A] border border-orange-200 font-bold transition-all flex items-center justify-center shrink-0 cursor-pointer min-w-[40px] min-h-[40px]"
+                  title="Fotografar etiqueta do produto"
+                >
+                  <Camera className="w-4 h-4 text-[#E8571A]" />
+                </button>
+              )}
+
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Pergunte sobre perdas, validade ou precificação..."
+                placeholder="Pergunte à PadeIA..."
                 disabled={isLoading || voiceStatus === 'listening'}
                 className="flex-1 min-w-0 px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-gray-800 bg-gray-50 focus:bg-white font-medium box-border"
               />

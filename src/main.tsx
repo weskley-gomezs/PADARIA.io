@@ -1,6 +1,7 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
+import { DataProvider } from './context/DataContext.tsx';
 import './index.css';
 
 // Prevent expected/benign WebSocket (HMR disabled in container), BloomFilter, and Quota errors from bubbling up
@@ -28,6 +29,8 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <DataProvider>
+      <App />
+    </DataProvider>
   </StrictMode>,
 );

@@ -137,47 +137,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
     const authStatus = StorageService.isAdminAuthenticated();
     setIsAuthenticated(authStatus);
     loadAdminData();
-    
-    const unsubCompanies = StorageService.subscribeCompanies((comps) => {
-      setCompanies(comps);
-      setStats(StorageService.getAdminStats());
-      setFinancialStats(StorageService.getFinancialStats());
-    });
-
-    const unsubProducts = StorageService.subscribeProducts((prods) => {
-      setProducts(prods);
-    });
-
-    const unsubSales = StorageService.subscribeSalesHistory((sls) => {
-      setSales(sls);
-    });
-
-    const unsubTickets = StorageService.subscribeTickets((tiks) => {
-      setTickets(tiks);
-    });
-
-    const unsubVip = StorageService.subscribeVipOffers((vip) => {
-      setVipOffers(vip);
-    });
-
-    return () => {
-      unsubCompanies();
-      unsubProducts();
-      unsubSales();
-      unsubTickets();
-      unsubVip();
-    };
   }, []);
 
-  const loadAdminData = () => {
-    setCompanies(StorageService.getCompanies());
-    setProducts(StorageService.getProducts());
-    setSales(StorageService.getSalesHistory());
-    setTickets(StorageService.getTickets());
-    setVipOffers(StorageService.getVipOffers());
-    setDailyClosings(StorageService.getDailyClosings());
-    setStats(StorageService.getAdminStats());
-    setFinancialStats(StorageService.getFinancialStats());
+  const loadAdminData = async () => {
+    try {
+      const [comps, prods, sls, tiks, vips, closings] = await Promise.all([
+        StorageService.getCompaniesFromServer(),
+        StorageService.getProductsFromServerAdmin(),
+        StorageService.getSalesHistoryFromServerAdmin(),
+        StorageService.getTicketsFromServer(),
+        StorageService.getVipOffersFromServerAdmin(),
+        StorageService.getDailyClosingsFromServerAdmin()
+      ]);
+      setCompanies(comps);
+      setProducts(prods);
+      setSales(sls);
+      setTickets(tiks);
+      setVipOffers(vips);
+      setDailyClosings(closings);
+      setStats(StorageService.getAdminStats());
+      setFinancialStats(StorageService.getFinancialStats());
+    } catch (err) {
+      console.error("Error loading admin data on-demand:", err);
+      // Fallback to local storage cache if server request fails
+      setCompanies(StorageService.getCompanies());
+      setProducts(StorageService.getProducts());
+      setSales(StorageService.getSalesHistory());
+      setTickets(StorageService.getTickets());
+      setVipOffers(StorageService.getVipOffers());
+      setDailyClosings(StorageService.getDailyClosings());
+      setStats(StorageService.getAdminStats());
+      setFinancialStats(StorageService.getFinancialStats());
+    }
   };
 
   const handleAdminLogin = (e: React.FormEvent) => {

@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Edit2,
+  Camera,
   Trash2,
   History,
   RotateCcw,
@@ -39,6 +40,7 @@ import {
 import confetti from 'canvas-confetti';
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, VipOffer } from '../types';
 import { StorageService } from '../services/storageService';
+import { useData } from '../context/DataContext';
 import { formatDateToBR, getRelativeExpirationText, generateActivationCode, calculateDaysRemaining, formatDateToISO } from '../utils/dateUtils';
 import { generateContractPDF, generateSystemManualPDF, generateExecutiveReportPDF } from '../utils/pdfGenerator';
 import { ProductModal } from './ProductModal';
@@ -58,18 +60,29 @@ interface BakeryAppProps {
 }
 
 export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) => {
-  // Session State
-  const [activeCode, setActiveCode] = useState<string | null>(presetCode || null);
-  const [company, setCompany] = useState<BakeryCompany | null>(null);
+  const {
+    activeCode,
+    activeCompany: company,
+    products,
+    salesHistory,
+    vipOffers,
+    setActiveCode,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    markAsSold,
+    restoreSoldProduct,
+    clearSalesHistory,
+    addVipOffer,
+    updateVipOfferStatus,
+    updateVipOffer,
+    deleteVipOffer
+  } = useData();
+
   const [emailInput, setEmailInput] = useState<string>('');
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string>('');
-
-  // Data States
-  const [products, setProducts] = useState<Product[]>([]);
-  const [salesHistory, setSalesHistory] = useState<SaleHistoryItem[]>([]);
-  const [vipOffers, setVipOffers] = useState<VipOffer[]>([]);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -125,73 +138,6 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   // Toast / Feedback State
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (presetCode) {
-      setActiveCode(presetCode);
-    } else {
-      const savedCode = StorageService.getActiveBakeryCode();
-      if (savedCode) {
-        setActiveCode(savedCode);
-      } else {
-        setActiveCode(null);
-        setCompany(null);
-      }
-    }
-  }, [presetCode]);
-
-  // Real-time subscription to companies and active bakery products/sales
-  useEffect(() => {
-    const unsubCompanies = StorageService.subscribeCompanies((companies) => {
-      if (activeCode) {
-        const comp = companies.find(c => c.codigoAtivacao.toUpperCase() === activeCode.trim().toUpperCase());
-        if (comp && comp.ativo) {
-          setCompany(comp);
-          setLoginError('');
-        } else if (comp && !comp.ativo) {
-          setLoginError('Empresa inativa. Entre em contato com o suporte/administrador.');
-          setCompany(null);
-        } else {
-          setCompany(null);
-          StorageService.setActiveBakeryCode('');
-          setActiveCode(null);
-        }
-      } else {
-        setCompany(null);
-      }
-    });
-
-    return () => {
-      unsubCompanies();
-    };
-  }, [activeCode]);
-
-  useEffect(() => {
-    if (!activeCode) {
-      setProducts([]);
-      setSalesHistory([]);
-      setVipOffers([]);
-      return;
-    }
-
-    const unsubProducts = StorageService.subscribeProducts((prods) => {
-      setProducts(prods);
-    }, activeCode);
-
-    const unsubSales = StorageService.subscribeSalesHistory((sales) => {
-      setSalesHistory(sales);
-    }, activeCode);
-
-    const unsubVip = StorageService.subscribeVipOffers((offers) => {
-      setVipOffers(offers);
-    }, activeCode);
-
-    return () => {
-      unsubProducts();
-      unsubSales();
-      unsubVip();
-    };
-  }, [activeCode]);
-
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 3000);
@@ -226,9 +172,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   };
 
   const handleLogout = () => {
-    StorageService.setActiveBakeryCode(null);
     setActiveCode(null);
-    setCompany(null);
     if (onLogout) {
       onLogout();
     }
@@ -258,7 +202,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
 
     try {
       if (productToEdit) {
-        await StorageService.updateProduct(
+        await updateProduct(
           productToEdit.id,
           nome,
           quantidade,
@@ -274,8 +218,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         );
         showToast('Descarte atualizado com sucesso!');
       } else {
-        const newProduct = await StorageService.addProduct(
-          company.codigoAtivacao,
+        const newProduct = await addProduct(
           nome,
           quantidade,
           dataValidade,
@@ -676,7 +619,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
       )}
 
       {/* Top Banner Header */}
-      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="hidden sm:flex bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-[#2C2C2C]">{company.empresa}</h1>
@@ -708,7 +651,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
       </div>
 
       {/* Navigation Tabs Bar (Scrollable on Mobile) */}
-      <div className="flex items-center space-x-2 border-b border-gray-200 pb-2 overflow-x-auto no-scrollbar">
+      <div className="hidden sm:flex items-center space-x-2 border-b border-gray-200 pb-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('dashboard')}
           className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
@@ -757,6 +700,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           products={products}
           salesHistory={salesHistory}
           vipOffers={vipOffers}
+          onOpenScanner={() => setIsWasteScannerOpen(true)}
+          onNavigateBack={() => setActiveTab('dashboard')}
           onOpenVipOfferModal={(prod) => {
             setVipOfferProductInfo({
               productId: prod.id,
@@ -1374,7 +1319,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         <button
           type="button"
           onClick={() => setActiveTab('dashboard')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all cursor-pointer ${
             activeTab === 'dashboard' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -1382,7 +1327,18 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           <span className="text-[10px] mt-0.5 font-bold">Dashboard</span>
         </button>
 
-        {/* 2. PadeIA - Prominent Highlighted Button */}
+        {/* 2. Foto */}
+        <button
+          type="button"
+          onClick={() => setIsWasteScannerOpen(true)}
+          className="flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all cursor-pointer text-gray-500 hover:text-gray-800 active:scale-95"
+          title="Tirar foto de etiqueta de produto"
+        >
+          <Camera className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5 font-bold">Foto</span>
+        </button>
+
+        {/* 3. PadeIA - Prominent Highlighted Button */}
         <button
           type="button"
           onClick={() => setActiveTab('padeia')}
@@ -1398,11 +1354,11 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           </div>
         </button>
 
-        {/* 3. Relatórios */}
+        {/* 4. Relatórios */}
         <button
           type="button"
           onClick={() => setActiveTab('relatorio')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all cursor-pointer ${
             activeTab === 'relatorio' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -1410,11 +1366,11 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           <span className="text-[10px] mt-0.5 font-bold">Relatórios</span>
         </button>
 
-        {/* 4. Config */}
+        {/* 5. Config */}
         <button
           type="button"
           onClick={() => setActiveTab('config')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all cursor-pointer ${
             activeTab === 'config' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
