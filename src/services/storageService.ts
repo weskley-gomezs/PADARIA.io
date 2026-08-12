@@ -492,6 +492,24 @@ export class StorageService {
     return undefined;
   }
 
+  static async updateCompanyName(code: string, newName: string): Promise<BakeryCompany | undefined> {
+    const companies = StorageService.getCompanies();
+    const company = companies.find((c) => c.codigoAtivacao.toUpperCase() === code.trim().toUpperCase());
+    if (company) {
+      company.empresa = newName.trim();
+      if (company.contrato) {
+        company.contrato.clienteNome = newName.trim();
+      }
+      setItem(KEYS.COMPANIES, companies);
+
+      await setDoc(doc(db, 'companies', company.codigoAtivacao), removeUndefined(company)).catch((e) => {
+        handleFirestoreError(e, OperationType.WRITE, `companies/${company.codigoAtivacao}`);
+      });
+      return company;
+    }
+    return undefined;
+  }
+
   static async addCompany(
     empresa: string,
     email: string,

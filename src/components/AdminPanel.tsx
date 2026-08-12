@@ -79,6 +79,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
   const [newPasswordInput, setNewPasswordInput] = useState<string>('');
   const [pwdError, setPwdError] = useState<string>('');
 
+  // Edit Name Modal State
+  const [editingCompanyName, setEditingCompanyName] = useState<BakeryCompany | null>(null);
+  const [newNameInput, setNewNameInput] = useState<string>('');
+  const [nameError, setNameError] = useState<string>('');
+
   // Custom Confirmation Modal & Toast state
   const [confirmModal, setConfirmModal] = useState<{
     type: 'clear_all' | 'delete_no_cnpj' | 'delete_single';
@@ -318,6 +323,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
       loadAdminData();
     } catch (err: any) {
       setPwdError(err.message || 'Erro ao alterar senha.');
+    }
+  };
+
+  const handleOpenEditName = (company: BakeryCompany) => {
+    setEditingCompanyName(company);
+    setNewNameInput(company.empresa);
+    setNameError('');
+  };
+
+  const handleSaveCompanyName = async () => {
+    if (!editingCompanyName || !newNameInput.trim()) return;
+    setNameError('');
+    try {
+      await StorageService.updateCompanyName(editingCompanyName.codigoAtivacao, newNameInput);
+      setEditingCompanyName(null);
+      showToast(`Nome da padaria alterado para "${newNameInput}" com sucesso!`, 'success');
+      loadAdminData();
+    } catch (err: any) {
+      setNameError(err.message || 'Erro ao alterar o nome da padaria.');
     }
   };
 
@@ -669,6 +693,68 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
           </div>
         )}
 
+        {/* EDIT NAME MODAL */}
+        {editingCompanyName && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-gray-200 space-y-4">
+              <div className="flex items-center justify-between border-b pb-3">
+                <div className="flex items-center space-x-2">
+                  <Building2 className="w-5 h-5 text-[#E8571A]" />
+                  <h3 className="font-extrabold text-base text-[#2C2C2C]">Alterar Nome da Padaria</h3>
+                </div>
+                <button
+                  onClick={() => setEditingCompanyName(null)}
+                  className="p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <p className="text-gray-600">
+                  Nome Atual: <span className="font-extrabold text-[#2C2C2C]">{editingCompanyName.empresa}</span>
+                </p>
+                <p className="text-gray-500 text-[11px]">
+                  ID Interno: <span className="font-bold text-[#2C2C2C]">{editingCompanyName.codigoAtivacao}</span>
+                </p>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Novo Nome Comercial:
+                  </label>
+                  <input
+                    type="text"
+                    value={newNameInput}
+                    onChange={(e) => setNewNameInput(e.target.value)}
+                    placeholder="Ex: Padaria Central de Moema"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 font-bold text-sm focus:ring-2 focus:ring-[#D4A574]"
+                  />
+                </div>
+
+                {nameError && (
+                  <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-xl font-medium">{nameError}</p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t">
+                <button
+                  onClick={() => setEditingCompanyName(null)}
+                  className="px-4 py-2 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveCompanyName}
+                  className="px-4 py-2 rounded-xl bg-[#2C2C2C] hover:bg-[#1a1a1a] text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-md cursor-pointer"
+                >
+                  <Save className="w-4 h-4 text-[#D4A574]" />
+                  <span>Salvar Nome</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* SECTION 1: CADASTRO E ATIVAÇÃO DE EMPRESAS */}
         {activeTab === 'empresas' && (
           <div className="space-y-6 animate-fade-in">
@@ -948,7 +1034,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
                             <tr key={c.codigoAtivacao} className="hover:bg-gray-50/80 transition-colors">
                               {/* Empresa & Details */}
                               <td className="py-3.5 px-4 font-bold">
-                                <div className="text-sm font-extrabold text-[#2C2C2C]">{c.empresa}</div>
+                                <div className="flex items-center space-x-1.5">
+                                  <div className="text-sm font-extrabold text-[#2C2C2C]">{c.empresa}</div>
+                                  <button
+                                    onClick={() => handleOpenEditName(c)}
+                                    className="p-1 text-gray-400 hover:text-[#E8571A] transition-colors cursor-pointer"
+                                    title="Alterar Nome da Padaria"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                  </button>
+                                </div>
                                 {c.cnpj && (
                                   <div className="text-[10px] text-gray-400 font-mono">CNPJ: {c.cnpj}</div>
                                 )}
