@@ -54,8 +54,10 @@ export async function testFirestoreConnection(): Promise<boolean> {
   try {
     await getDoc(doc(db, 'settings', 'connection_check'));
     return true;
-  } catch (error) {
-    console.warn('Firestore connection check status:', error);
+  } catch (error: any) {
+    if (error?.code !== 'permission-denied') {
+      console.warn('Firestore connection check status:', error);
+    }
     return false;
   }
 }

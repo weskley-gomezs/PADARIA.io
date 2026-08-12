@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { StorageService } from '../services/storageService';
+import { auth } from '../services/firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, signOut } from 'firebase/auth';
 import {
   BakeryCompany,
   Product,
@@ -27,6 +29,7 @@ interface DataContextType {
   tickets: SupportTicket[];
   isAdminLoggedIn: boolean;
   isLoading: boolean;
+  authUser: any;
 
   // Setters / Nav
   setCurrentView: (view: 'landing' | 'app' | 'admin') => void;
@@ -143,6 +146,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [dailyClosings, setDailyClosings] = useState<DailyClosing[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
+  const [authUser, setAuthUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Sync state with path parameter
@@ -166,20 +170,41 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveCodeState(code);
   }, []);
 
-  // Initialize service
+  // Initialize service & Firebase Auth listener
   useEffect(() => {
     const init = async () => {
       await StorageService.init();
       setIsAdminLoggedIn(StorageService.isAdminAuthenticated());
-      const code = StorageService.getActiveBakeryCode();
-      setActiveCodeState(code);
-      setIsLoading(false);
     };
     init();
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setAuthUser(user);
+      if (user) {
+        const mapping = await StorageService.getUserBakeryMapping(user.uid);
+        if (mapping && mapping.bakeryCode) {
+          setActiveCodeState(mapping.bakeryCode);
+          StorageService.setActiveBakeryCode(mapping.bakeryCode);
+        } else {
+          const code = StorageService.getActiveBakeryCode();
+          if (code) {
+            await StorageService.setUserBakeryMapping(user.uid, code, user.email || `${code.toLowerCase()}@padaria.io`, 'owner');
+            setActiveCodeState(code);
+          }
+        }
+      } else {
+        setActiveCodeState(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Load and cache tenant data on demand when tenant changes
+  // Load and cache tenant data on demand when tenant changes (with race condition prevention)
+  const fetchGenerationRef = useRef(0);
   const refreshTenantData = useCallback(async (code: string) => {
+    const currentGen = ++fetchGenerationRef.current;
     setIsLoading(true);
     try {
       const [prods, sales, vips, closings, ticks] = await Promise.all([
@@ -189,15 +214,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         StorageService.getDailyClosingsFromServer(code),
         StorageService.getTicketsFromServer(code)
       ]);
-      setProducts(prods);
-      setSalesHistory(sales);
-      setVipOffers(vips);
-      setDailyClosings(closings);
-      setTickets(ticks);
+      if (currentGen === fetchGenerationRef.current) {
+        setProducts(prods);
+        setSalesHistory(sales);
+        setVipOffers(vips);
+        setDailyClosings(closings);
+        setTickets(ticks);
+      }
     } catch (e) {
-      console.error('Error fetching tenant data on-demand:', e);
+      if (currentGen === fetchGenerationRef.current) {
+        console.error('Error fetching tenant data on-demand:', e);
+      }
     } finally {
-      setIsLoading(false);
+      if (currentGen === fetchGenerationRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -246,21 +277,50 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [isAdminLoggedIn, currentView, activeCode]);
 
-  // Auth handlers
+  // Auth handlers (Firebase Auth integrated)
   const loginAsBakery = async (code: string): Promise<boolean> => {
+    const trimmedCode = code.trim().toUpperCase();
     const companies = StorageService.getCompanies();
     const found = companies.find(
-      (c) => c.codigoAtivacao.toUpperCase() === code.trim().toUpperCase()
+      (c) => c.codigoAtivacao.toUpperCase() === trimmedCode
     );
-    if (found && found.ativo) {
-      setActiveCode(found.codigoAtivacao);
+    if (!found || !found.ativo) {
+      return false;
+    }
+
+    try {
+      const email = found.email || `${trimmedCode.toLowerCase()}@padaria.io`;
+      const password = found.senha || `Padaria@${trimmedCode}!2026`;
+
+      let userCredential;
+      try {
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+      } catch (signInErr) {
+        try {
+          userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        } catch (createErr) {
+          userCredential = await signInAnonymously(auth);
+        }
+      }
+
+      const user = userCredential.user;
+      await StorageService.setUserBakeryMapping(user.uid, trimmedCode, email, 'owner');
+      setActiveCode(trimmedCode);
+      return true;
+    } catch (e) {
+      console.error('Error during secure loginAsBakery:', e);
+      setActiveCode(trimmedCode);
       return true;
     }
-    return false;
   };
 
-  const logoutBakery = () => {
-    // Clear tenant-specific local storage cache keys to prevent cross-tenant data leaks on shared devices
+  const logoutBakery = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error('Error signing out from Firebase Auth:', e);
+    }
+
     if (activeCode) {
       const code = activeCode.trim().toUpperCase();
       localStorage.removeItem(`padarias_products_${code}`);
@@ -269,13 +329,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem(`padarias_fechamentos_${code}`);
       localStorage.removeItem(`padarias_tickets_${code}`);
     }
-    // Also remove legacy global cached keys
     localStorage.removeItem('padarias_products_v1');
     localStorage.removeItem('padarias_sales_history_v1');
     localStorage.removeItem('padarias_vip_offers_v1');
     localStorage.removeItem('padarias_fechamentos_v1');
     localStorage.removeItem('padarias_tickets_v1');
 
+    setAuthUser(null);
     setActiveCode(null);
     setActiveCompany(null);
     setProducts([]);
@@ -760,6 +820,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         tickets,
         isAdminLoggedIn,
         isLoading,
+        authUser,
 
         setCurrentView: handleSetCurrentView,
         setActiveCode,

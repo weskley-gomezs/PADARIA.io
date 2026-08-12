@@ -1,33 +1,88 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getUserBakeryCode() {
+      return getUserData().bakeryCode;
+    }
+
+    function belongsToTenant(tenantCode) {
+      return isAuthenticated() && getUserBakeryCode() == tenantCode;
+    }
+
+    match /users/{uid} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow create: if isAuthenticated() && request.auth.uid == uid;
+      allow update: if isAuthenticated() && 
+                     request.auth.uid == uid &&
+                     request.resource.data.bakeryCode == resource.data.bakeryCode &&
+                     request.resource.data.role == resource.data.role;
+      allow delete: if false;
+    }
+
     match /companies/{companyCode} {
-      allow read, create, update, delete: if true;
+      allow read: if isAuthenticated() && belongsToTenant(companyCode);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && belongsToTenant(companyCode);
+      allow delete: if false;
     }
 
     match /products/{productId} {
-      allow read, create, update, delete: if true;
+      allow read: if isAuthenticated() && resource.data.bakeryCode == getUserBakeryCode();
+      allow create: if isAuthenticated() && request.resource.data.bakeryCode == getUserBakeryCode();
+      allow update: if isAuthenticated() && 
+                     resource.data.bakeryCode == getUserBakeryCode() && 
+                     request.resource.data.bakeryCode == resource.data.bakeryCode;
+      allow delete: if isAuthenticated() && resource.data.bakeryCode == getUserBakeryCode();
     }
 
     match /sales/{saleId} {
-      allow read, create, update, delete: if true;
-    }
-
-    match /tickets/{ticketId} {
-      allow read, create, update, delete: if true;
+      allow read: if isAuthenticated() && resource.data.bakeryCode == getUserBakeryCode();
+      allow create: if isAuthenticated() && request.resource.data.bakeryCode == getUserBakeryCode();
+      allow update: if isAuthenticated() && 
+                     resource.data.bakeryCode == getUserBakeryCode() && 
+                     request.resource.data.bakeryCode == resource.data.bakeryCode;
+      allow delete: if isAuthenticated() && resource.data.bakeryCode == getUserBakeryCode();
     }
 
     match /vipOffers/{offerId} {
-      allow read, create, update, delete: if true;
+      allow read: if isAuthenticated() && resource.data.bakeryCode == getUserBakeryCode();
+      allow create: if isAuthenticated() && request.resource.data.bakeryCode == getUserBakeryCode();
+      allow update: if isAuthenticated() && 
+                     resource.data.bakeryCode == getUserBakeryCode() && 
+                     request.resource.data.bakeryCode == resource.data.bakeryCode;
+      allow delete: if isAuthenticated() && resource.data.bakeryCode == getUserBakeryCode();
     }
 
     match /dailyClosings/{closingId} {
-      allow read, create, update, delete: if true;
+      allow read: if isAuthenticated() && resource.data.bakeryCode == getUserBakeryCode();
+      allow create: if isAuthenticated() && request.resource.data.bakeryCode == getUserBakeryCode();
+      allow update: if isAuthenticated() && 
+                     resource.data.bakeryCode == getUserBakeryCode() && 
+                     request.resource.data.bakeryCode == resource.data.bakeryCode;
+      allow delete: if isAuthenticated() && resource.data.bakeryCode == getUserBakeryCode();
+    }
+
+    match /tickets/{ticketId} {
+      allow read: if isAuthenticated() && resource.data.bakeryCode == getUserBakeryCode();
+      allow create: if isAuthenticated() && request.resource.data.bakeryCode == getUserBakeryCode();
+      allow update: if isAuthenticated() && 
+                     resource.data.bakeryCode == getUserBakeryCode() && 
+                     request.resource.data.bakeryCode == resource.data.bakeryCode;
+      allow delete: if isAuthenticated() && resource.data.bakeryCode == getUserBakeryCode();
     }
 
     match /settings/{settingId} {
-      allow read, create, update, delete: if true;
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
     }
   }
 }

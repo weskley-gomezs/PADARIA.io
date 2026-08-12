@@ -1773,4 +1773,33 @@ export class StorageService {
     setItem(KEYS.ADMIN_AUTH, false);
     setItem(KEYS.BAKERY_SESSION, null);
   }
+
+  static async getUserBakeryMapping(uid: string): Promise<{ bakeryCode: string; role: string } | null> {
+    try {
+      const docRef = doc(db, 'users', uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        return snap.data() as { bakeryCode: string; role: string };
+      }
+      return null;
+    } catch (e) {
+      console.error('Error fetching user bakery mapping:', e);
+      return null;
+    }
+  }
+
+  static async setUserBakeryMapping(uid: string, bakeryCode: string, email: string, role: string = 'owner'): Promise<void> {
+    try {
+      const docRef = doc(db, 'users', uid);
+      await setDoc(docRef, removeUndefined({
+        uid,
+        bakeryCode: bakeryCode.toUpperCase(),
+        email,
+        role,
+        updatedAt: new Date().toISOString()
+      }), { merge: true });
+    } catch (e) {
+      console.error('Error setting user bakery mapping:', e);
+    }
+  }
 }

@@ -1,6 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, X, Loader2, Upload, RefreshCw, AlertTriangle, CheckCircle2, RotateCcw } from 'lucide-react';
 import { calculateDaysRemaining, formatDateToBR } from '../utils/dateUtils';
+import { auth } from '../services/firebase';
+
+async function getAuthHeaders() {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  try {
+    if (auth.currentUser) {
+      const token = await auth.currentUser.getIdToken();
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+    }
+  } catch (err) {
+    console.warn('Erro ao obter token auth:', err);
+  }
+  return headers;
+}
 
 interface ImageScannerProps {
   bakeryCode?: string;
@@ -90,10 +104,11 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
     setScanAnalysis(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/analyze-product-image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64, bakeryCode }),
+        headers,
+        body: JSON.stringify({ imageBase64 }),
       });
 
       const data = await response.json();

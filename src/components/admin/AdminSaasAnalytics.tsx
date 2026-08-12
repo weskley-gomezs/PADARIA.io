@@ -51,6 +51,20 @@ import jsPDF from 'jspdf';
 import { BakeryCompany, Product, SaleHistoryItem, SupportTicket, VipOffer, DailyClosing, SaasClientMetrics } from '../../types';
 import { computeSaasClientMetrics, generateSaasAlerts, SaasAlert } from '../../utils/saasAnalytics';
 import { formatDateToBR } from '../../utils/dateUtils';
+import { auth } from '../../services/firebase';
+
+async function getAuthHeaders() {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  try {
+    if (auth.currentUser) {
+      const token = await auth.currentUser.getIdToken();
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+    }
+  } catch (err) {
+    console.warn('Erro ao obter token auth:', err);
+  }
+  return headers;
+}
 
 interface AdminSaasAnalyticsProps {
   companies: BakeryCompany[];
@@ -354,9 +368,10 @@ PERGUNTA DO ADMINISTRADOR MASTER:
 "${query}"
 `;
 
+      const headers = await getAuthHeaders();
       const res = await fetch('/api/gemini', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           prompt: promptContext,
           systemInstruction: 'Você é PadeIA Admin. Responda em português brasileiro com foco em inteligência de negócios SaaS, métricas de crescimento e saúde financeira.',
