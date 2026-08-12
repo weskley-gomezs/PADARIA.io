@@ -773,107 +773,132 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
 
       {activeTab === 'dashboard' && (
         <>
-          {/* PadeIA Quick Banner */}
-          <div className="bg-gradient-to-r from-[#111111] via-[#1F2937] to-[#2C2C2C] text-white p-4 rounded-2xl border border-gray-800 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FF6B00] to-[#E8571A] flex items-center justify-center text-white shrink-0 shadow-sm">
+          {/* PadeIA Prominent Highlight Banner (Mobile Optimized) */}
+          <div className="bg-gradient-to-r from-[#111111] via-[#1F2937] to-[#2C2C2C] text-white p-3.5 sm:p-5 rounded-2xl border border-gray-800 shadow-md">
+            <div className="flex items-center space-x-3 mb-2.5 sm:mb-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-[#FF6B00] to-[#E8571A] flex items-center justify-center text-white shrink-0 shadow-sm">
                 <Sparkles className="w-5 h-5 text-amber-200 animate-pulse" />
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2">
-                  <span className="font-black text-sm text-white">PadeIA™ - Gerente Inteligente</span>
+                  <span className="font-black text-sm sm:text-base text-white">🤖 PadeIA™</span>
                   <span className="text-[10px] bg-orange-500/20 text-[#FF6B00] border border-orange-500/30 px-2 py-0.2 rounded-full font-bold">Ativa</span>
                 </div>
-                <p className="text-xs text-gray-300 mt-0.5">
-                  Análise inteligente ativada para <strong>{company.empresa}</strong>. Tire dúvidas, veja relatórios e calcule preços.
+                <p className="text-xs text-gray-300 mt-0.5 truncate sm:whitespace-normal">
+                  Pergunte sobre suas perdas, vencimentos e desperdícios.
                 </p>
               </div>
             </div>
 
-            <button
-              onClick={() => setActiveTab('padeia')}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#E8571A] hover:from-[#e05e00] hover:to-[#d44e15] text-white font-extrabold text-xs transition-all shadow-sm flex items-center justify-center space-x-1.5 shrink-0 cursor-pointer"
-            >
-              <span>Abrir PadeIA™</span>
-              <Sparkles className="w-3.5 h-3.5" />
-            </button>
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800/80">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('padeia');
+                  setTimeout(() => window.dispatchEvent(new Event('start-padeia-voice')), 100);
+                }}
+                className="w-full px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#E8571A] hover:from-[#e05e00] hover:to-[#d44e15] text-white font-black text-xs transition-all shadow-sm flex items-center justify-center space-x-1 cursor-pointer active:scale-95 min-h-[42px]"
+              >
+                <span>🎙️ Falar com a PadeIA</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('padeia')}
+                className="w-full px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all flex items-center justify-center space-x-1 cursor-pointer active:scale-95 min-h-[42px]"
+              >
+                <span>Abrir PadeIA</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              </button>
+            </div>
           </div>
 
-          {/* 1. RESUMO RÁPIDO CARDS (Responsive 3 columns) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
-            {/* Card 1: Perdas do Mês */}
-            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-xs">
+          {/* 1. RESUMO RÁPIDO CARDS (Compact Grid: Row 1 has 2 cards, Row 2 has Principal Perda on Mobile) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-6">
+            {/* Card 1: PERDAS DO PERÍODO */}
+            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-3 sm:p-6 flex flex-col justify-between shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-[11px] font-extrabold text-red-600 uppercase tracking-wider">Perdas Mês</span>
-                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center font-bold text-xs">R$</span>
+                <span className="text-[10px] sm:text-[11px] font-extrabold text-red-600 uppercase tracking-wider">Perdas Período</span>
+                <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center font-bold text-xs">R$</span>
               </div>
-              <div className="mt-3 sm:mt-4">
-                <div className="text-xl sm:text-2xl font-black text-[#1F2937]">R$ {expiredMonthValue.toFixed(2)}</div>
-                <div className="text-[10px] sm:text-xs text-gray-500 mt-1 flex items-center space-x-1">
+              <div className="mt-2 sm:mt-4">
+                <div className="text-base sm:text-2xl font-black text-[#1F2937]">R$ {expiredMonthValue.toFixed(2)}</div>
+                <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 flex items-center space-x-1">
                   <span className="text-red-600 font-bold">↑ 12%</span>
                   <span className="hidden sm:inline">vs. mês anterior</span>
                 </div>
               </div>
             </div>
 
-            {/* Card 2: Quantidade Descartada */}
-            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-xs">
+            {/* Card 2: DESCARTES */}
+            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-3 sm:p-6 flex flex-col justify-between shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-[11px] font-extrabold text-amber-600 uppercase tracking-wider">Qtd Descarte</span>
-                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs">📦</span>
+                <span className="text-[10px] sm:text-[11px] font-extrabold text-amber-600 uppercase tracking-wider">Descartes</span>
+                <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs">📦</span>
               </div>
-              <div className="mt-3 sm:mt-4">
-                <div className="text-xl sm:text-2xl font-black text-[#1F2937]">{expiredMonthCount} un</div>
-                <div className="text-[10px] sm:text-xs text-gray-500 mt-1 flex items-center space-x-1">
-                  <span className="text-orange-600 font-bold">↓ 5%</span>
+              <div className="mt-2 sm:mt-4">
+                <div className="text-base sm:text-2xl font-black text-[#1F2937]">{expiredMonthCount} un</div>
+                <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 flex items-center space-x-1">
+                  <span className="text-orange-600 font-bold">↑ 5%</span>
                   <span className="hidden sm:inline">estoque</span>
                 </div>
               </div>
             </div>
 
-            {/* Card 3: Categoria Top Perda */}
-            <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4 sm:p-6 flex flex-col justify-between shadow-xs">
+            {/* Card 3: PRINCIPAL PERDA (Full Width Row 2 on Mobile) */}
+            <div className="col-span-2 sm:col-span-1 bg-white border border-[#E0E0E0] rounded-2xl p-3 sm:p-6 flex flex-col justify-between shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-[11px] font-extrabold text-[#1F2937] uppercase tracking-wider">Top Perda</span>
-                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 text-[#1F2937] flex items-center justify-center font-bold text-xs">🏷️</span>
+                <span className="text-[10px] sm:text-[11px] font-extrabold text-[#1F2937] uppercase tracking-wider">Principal Perda</span>
+                <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-gray-100 text-[#1F2937] flex items-center justify-center font-bold text-xs">🏷️</span>
               </div>
-              <div className="mt-3 sm:mt-4">
-                <div className="text-base sm:text-lg font-black text-[#1F2937] truncate">
-                  {categoriesList[0] || 'Pães'}
+              <div className="mt-2 sm:mt-4 flex items-center justify-between sm:block">
+                <div className="text-sm sm:text-lg font-black text-[#1F2937] truncate">
+                  {categoriesList[0] || 'Salgados'}
                 </div>
-                <div className="text-[10px] sm:text-xs text-gray-500 mt-1 truncate">
+                <div className="text-[10px] sm:text-xs text-gray-500 truncate font-semibold">
                   Vencimento
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Evolution Chart */}
-          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs">
-            <h2 className="text-base sm:text-lg font-extrabold text-[#1F2937] mb-3">Evolução do Desperdício (Últimos 30 Dias)</h2>
-            <WasteChartSection products={products} />
-          </div>
+          {/* Evolution Chart Section */}
+          <WasteChartSection products={products} />
 
-          {/* 2. GERENCIAR PRODUTOS (TABELA INTERATIVA) */}
-          <div className="bg-white p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-4">
+          {/* 2. GERENCIAR PRODUTOS (REGISTRO DE DESCARTES) */}
+          <div className="bg-white p-3.5 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs space-y-3.5 sm:space-y-4">
             {/* Table Header & Controls */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-100">
-              <div>
-                <h2 className="text-lg font-extrabold text-[#2C2C2C]">2. Registro de Descartes</h2>
-                <p className="text-xs text-gray-500">Tabela em tempo real de validade e saldo</p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-3 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm sm:text-lg font-black text-[#2C2C2C]">Registro de Descartes</h2>
+                  <p className="text-[11px] sm:text-xs text-gray-500">Controle em tempo real de perdas e validade</p>
+                </div>
+
+                {/* Mobile Quick Add Button */}
+                <button
+                  onClick={() => {
+                    setProductToEdit(null);
+                    setIsProductModalOpen(true);
+                  }}
+                  className="md:hidden px-3 py-1.5 bg-[#E8571A] text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center space-x-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>+ Registrar</span>
+                </button>
               </div>
 
-              {/* Filters */}
+              {/* Filters & Actions */}
               <div className="flex flex-wrap items-center gap-2">
                 {/* Search */}
-                <div className="relative min-w-[200px]">
-                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                <div className="relative flex-1 min-w-[140px] sm:min-w-[200px]">
+                  <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     placeholder="Buscar produto..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
                   />
                 </div>
 
@@ -881,30 +906,42 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="px-3 py-1.5 text-xs rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
+                  className="px-2.5 py-1.5 text-xs rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#D4A574]"
                 >
-                  <option value="all">Todas as Categorias</option>
+                  <option value="all">Todas Categorias</option>
                   {categoriesList.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
                     </option>
                   ))}
                 </select>
+
+                {/* Desktop Action Button */}
+                <button
+                  onClick={() => {
+                    setProductToEdit(null);
+                    setIsProductModalOpen(true);
+                  }}
+                  className="hidden md:flex px-4 py-2 bg-[#E8571A] hover:bg-[#d44e15] text-white font-extrabold text-xs rounded-xl transition-all shadow-xs items-center space-x-1.5 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>+ Registrar Perda</span>
+                </button>
               </div>
             </div>
 
-            {/* Mobile Product Card View (Visible on small screens) */}
-            <div className="md:hidden space-y-3">
+            {/* Mobile Product Card View (Compact Cards) */}
+            <div className="md:hidden space-y-2.5">
               {filteredProducts.length === 0 ? (
-                <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                  <p className="font-bold text-sm text-gray-700">Nenhum registro encontrado.</p>
-                  <p className="text-xs text-gray-500 mt-1">Toque em "+ Registrar" para adicionar um descarte.</p>
+                <div className="text-center py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                  <p className="font-bold text-xs text-gray-700">Nenhum registro encontrado.</p>
+                  <p className="text-[11px] text-gray-500 mt-1">Toque em "+ Registrar" para adicionar um descarte.</p>
                 </div>
               ) : (
                 filteredProducts.map((p) => (
                   <div
                     key={p.id}
-                    className={`p-4 rounded-2xl border transition-all space-y-3 ${
+                    className={`p-3 rounded-xl border transition-all space-y-2 ${
                       p.status === 'vencido'
                         ? 'bg-red-50/40 border-red-200'
                         : p.status === 'vencendo'
@@ -912,92 +949,69 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
                         : 'bg-white border-gray-200 shadow-xs'
                     }`}
                   >
-                    {/* Header: Title, Category & Status Pill */}
+                    {/* Line 1: Title & Category */}
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h3 className="font-extrabold text-sm text-[#2C2C2C]">{p.nome}</h3>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                          <span className="text-[10px] font-semibold bg-[#F5E6D3] text-[#2C2C2C] px-2 py-0.5 rounded-full">
-                            {p.categoria || 'Geral'}
-                          </span>
-                          {p.barcode && (
-                            <span className="text-[10px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.5 rounded">
-                              EAN: {p.barcode}
-                            </span>
-                          )}
-                          {p.peso !== undefined && p.peso !== null && (
-                            <span className="text-[10px] font-semibold bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
-                              {p.peso} kg
-                            </span>
-                          )}
-                        </div>
+                        <h3 className="font-black text-xs sm:text-sm text-[#2C2C2C] uppercase tracking-tight">{p.nome}</h3>
+                        <span className="text-[10px] font-extrabold bg-[#F5E6D3] text-[#2C2C2C] px-2 py-0.5 rounded-full inline-block mt-0.5">
+                          {p.categoria || 'Geral'}
+                        </span>
                       </div>
+                      {p.barcode && (
+                        <span className="text-[9px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.5 rounded">
+                          EAN: {p.barcode}
+                        </span>
+                      )}
+                    </div>
 
+                    {/* Line 2: Quantity & Value */}
+                    <div className="flex items-center justify-between text-xs py-1 border-y border-gray-100">
+                      <div>
+                        <span className="text-gray-500 font-bold text-[10px] uppercase">Qtd: </span>
+                        <span className="font-black text-xs sm:text-sm text-[#2C2C2C]">{p.quantidade} un</span>
+                      </div>
+                      <div className="font-black text-xs sm:text-sm text-[#2C2C2C]">
+                        {p.valorTotal ? `R$ ${p.valorTotal.toFixed(2)}` : (p.valorKg ? `R$ ${(p.quantidade * p.valorKg).toFixed(2)}` : 'R$ 0,00')}
+                      </div>
+                    </div>
+
+                    {/* Line 3: Expiry Status & Date */}
+                    <div className="flex items-center justify-between text-[11px]">
                       <span
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                        className={`font-black flex items-center space-x-1 ${
                           p.status === 'vencido'
-                            ? 'bg-red-100 text-red-700'
+                            ? 'text-red-600'
                             : p.status === 'vencendo'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-orange-100 text-orange-800'
+                            ? 'text-amber-600'
+                            : 'text-gray-600'
                         }`}
                       >
-                        {p.status === 'vencido'
-                          ? 'Vencido'
-                          : p.status === 'vencendo'
-                          ? 'Vencendo'
-                          : 'Em dia'}
+                        <span>{p.status === 'vencido' ? '🔴' : p.status === 'vencendo' ? '⚠️' : '🟢'}</span>
+                        <span>{getRelativeExpirationText(p.diasParaVencer)}</span>
+                      </span>
+                      <span className="text-gray-500 text-[10px]">
+                        Val: {formatDateToBR(p.dataValidade)}
                       </span>
                     </div>
 
-                    {/* Details Grid */}
-                    <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-gray-100/80">
-                      <div className="bg-white/80 p-2 rounded-xl border border-gray-100">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase block">Quantidade</span>
-                        <span className="font-black text-[#2C2C2C] text-sm">{p.quantidade} un</span>
-                      </div>
-
-                      <div className="bg-white/80 p-2 rounded-xl border border-gray-100">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase block">Valor Total</span>
-                        <span className="font-black text-[#2C2C2C] text-sm">
-                          {p.valorTotal ? `R$ ${p.valorTotal.toFixed(2)}` : 'Não inf.'}
-                        </span>
-                      </div>
-
-                      <div className="col-span-2 flex items-center justify-between text-[11px] pt-1">
-                        <div className="text-gray-500">
-                          Validade: <strong className="text-[#2C2C2C]">{formatDateToBR(p.dataValidade)}</strong>
-                        </div>
-                        <div
-                          className={`font-bold ${
-                            p.status === 'vencido'
-                              ? 'text-red-600'
-                              : p.status === 'vencendo'
-                              ? 'text-amber-600'
-                              : 'text-gray-500'
-                          }`}
-                        >
-                          {getRelativeExpirationText(p.diasParaVencer)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Mobile Action Buttons */}
-                    <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
+                    {/* Line 4: Action Buttons */}
+                    <div className="flex items-center space-x-2 pt-1">
                       <button
+                        type="button"
                         onClick={() => {
                           setProductToEdit(p);
                           setIsProductModalOpen(true);
                         }}
-                        className="flex-1 py-2 rounded-xl bg-[#F5E6D3] hover:bg-[#D4A574] text-[#2C2C2C] font-bold text-xs transition-colors flex items-center justify-center space-x-1"
+                        className="flex-1 py-1.5 rounded-lg bg-[#F5E6D3] hover:bg-[#D4A574] text-[#2C2C2C] font-extrabold text-xs transition-colors flex items-center justify-center space-x-1 cursor-pointer active:scale-95 min-h-[36px]"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                         <span>Editar</span>
                       </button>
 
                       <button
+                        type="button"
                         onClick={() => handleDeleteProduct(p.id, p.nome)}
-                        className="py-2 px-3 rounded-xl bg-red-100 hover:bg-red-200 text-red-600 font-bold text-xs transition-colors flex items-center justify-center space-x-1"
+                        className="flex-1 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 font-extrabold text-xs transition-colors flex items-center justify-center space-x-1 cursor-pointer active:scale-95 min-h-[36px]"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Excluir</span>
@@ -1355,43 +1369,57 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
       </button>
 
       {/* FIXED MOBILE BOTTOM APP TAB BAR (DOCK) */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 px-3 py-1.5 flex justify-around items-center shadow-lg">
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 px-2 py-1.5 flex justify-around items-center shadow-xl">
+        {/* 1. Dashboard */}
         <button
+          type="button"
           onClick={() => setActiveTab('dashboard')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
             activeTab === 'dashboard' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
           <BarChart3 className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">Início</span>
+          <span className="text-[10px] mt-0.5 font-bold">Dashboard</span>
         </button>
 
-        {/* Center Accent IA Scanner Button */}
+        {/* 2. PadeIA - Prominent Highlighted Button */}
         <button
-          onClick={() => setIsWasteScannerOpen(true)}
-          className="flex flex-col items-center justify-center -mt-5 bg-gradient-to-tr from-[#E8571A] to-[#D4A574] text-white p-3 rounded-full shadow-lg shadow-[#E8571A]/40 border-2 border-white active:scale-95 transition-transform"
+          type="button"
+          onClick={() => setActiveTab('padeia')}
+          className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'padeia'
+              ? 'bg-gradient-to-r from-[#FF6B00] to-[#E8571A] text-white font-black shadow-md ring-2 ring-orange-300'
+              : 'bg-orange-50 text-[#E8571A] font-extrabold border border-orange-200'
+          }`}
         >
-          <Sparkles className="w-5 h-5 text-amber-200" />
+          <div className="flex items-center space-x-1">
+            <Sparkles className={`w-4 h-4 ${activeTab === 'padeia' ? 'text-amber-200 animate-pulse' : 'text-[#E8571A]'}`} />
+            <span className="text-[11px] font-black">PadeIA</span>
+          </div>
         </button>
 
+        {/* 3. Relatórios */}
         <button
+          type="button"
           onClick={() => setActiveTab('relatorio')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
             activeTab === 'relatorio' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
           <Printer className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">Relatórios</span>
+          <span className="text-[10px] mt-0.5 font-bold">Relatórios</span>
         </button>
 
+        {/* 4. Config */}
         <button
+          type="button"
           onClick={() => setActiveTab('config')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
             activeTab === 'config' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
           <Settings className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">Config</span>
+          <span className="text-[10px] mt-0.5 font-bold">Config</span>
         </button>
       </nav>
     </div>

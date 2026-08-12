@@ -143,9 +143,16 @@ Estou conectada ao estoque e histórico de **${company.empresa}** em tempo real.
   const isListeningRef = useRef<boolean>(false);
   const speechCapturedTextRef = useRef<string>('');
 
-  // Cleanup audio stream on unmount
   useEffect(() => {
+    const handleVoiceTrigger = () => {
+      setActiveTab('chat');
+      setTimeout(() => {
+        handleStartVoice();
+      }, 150);
+    };
+    window.addEventListener('start-padeia-voice', handleVoiceTrigger);
     return () => {
+      window.removeEventListener('start-padeia-voice', handleVoiceTrigger);
       stopVoiceRecording();
     };
   }, []);

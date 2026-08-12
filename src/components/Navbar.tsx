@@ -31,13 +31,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-[#E0E0E0] sticky top-0 z-40 shadow-xs">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 sm:h-24">
+        <div className="flex items-center justify-between h-14 sm:h-20">
           {/* Brand Logo */}
           <div className="flex items-center cursor-pointer shrink-0" onClick={() => onNavigate('landing')}>
             <img 
               src="https://i.imgur.com/ZGsjvWy.png" 
               alt="PADARIA.io Logo" 
-              className="h-14 sm:h-18 object-contain transition-transform active:scale-95 sm:hover:scale-105"
+              className="h-8 sm:h-14 object-contain transition-transform active:scale-95 sm:hover:scale-105"
               referrerPolicy="no-referrer"
             />
           </div>
