@@ -98,6 +98,64 @@
         "valorVenda": { "type": "number" }
       },
       "required": ["id", "bakeryCode", "productId", "nomeProduto", "valorOriginal", "valorPromocional", "status"]
+    },
+    "InventoryMovement": {
+      "title": "InventoryMovement",
+      "description": "Stock movements like entry, sale, waste, internal use or adjustment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "bakeryCode": { "type": "string" },
+        "type": { "type": "string", "enum": ["ENTRY", "SALE", "WASTE", "ADJUSTMENT", "INTERNAL_USE"] },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string" },
+        "costAtMovement": { "type": "number" },
+        "reason": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["id", "productId", "bakeryCode", "type", "quantity"]
+    },
+    "StockCount": {
+      "title": "StockCount",
+      "description": "Physical inventory count and stock variance record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "bakeryCode": { "type": "string" },
+        "expectedQuantity": { "type": "number" },
+        "physicalQuantity": { "type": "number" },
+        "varianceQuantity": { "type": "number" },
+        "varianceValue": { "type": "number" },
+        "unit": { "type": "string" },
+        "unitCost": { "type": "number" },
+        "notes": { "type": "string" },
+        "countedAt": { "type": "string" },
+        "countedBy": { "type": "string" }
+      },
+      "required": ["id", "productId", "bakeryCode", "expectedQuantity", "physicalQuantity", "varianceQuantity"]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Standard inventory ingredients catalog independent of expiration date module",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bakeryCode": { "type": "string" },
+        "name": { "type": "string" },
+        "unit": { "type": "string" },
+        "currentQuantity": { "type": "number" },
+        "initialQuantity": { "type": "number" },
+        "unitCost": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["id", "bakeryCode", "name", "currentQuantity", "unitCost"]
     }
   },
   "firestore": {
@@ -120,6 +178,18 @@
     "/vipOffers/{offerId}": {
       "schema": "VipOffer",
       "description": "Collection storing VIP Club promotions and history"
+    },
+    "/inventoryMovements/{movementId}": {
+      "schema": "InventoryMovement",
+      "description": "Collection storing inventory movements"
+    },
+    "/stockCounts/{countId}": {
+      "schema": "StockCount",
+      "description": "Collection storing physical stock count audits and variances"
+    },
+    "/inventoryItems/{itemId}": {
+      "schema": "InventoryItem",
+      "description": "Collection storing standard raw inventory items and ingredients"
     },
     "/settings/{settingId}": {
       "schema": "AdminSettings",

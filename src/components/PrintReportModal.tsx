@@ -56,7 +56,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
   });
 
   const totalExpiredValue = filteredExpiredList.reduce(
-    (acc, p) => acc + (p.valorTotal || p.quantidade * (p.valorKg || 12)),
+    (acc, p) => acc + (p.valorTotal || (p.peso && p.valorKg ? p.peso * p.valorKg : p.quantidade * (p.valorKg || 12))),
     0
   );
 

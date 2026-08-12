@@ -13,11 +13,49 @@ export interface Product {
   barcode?: string;
   peso?: number;
   valorKg?: number;
+  unidade?: string; // kg, g, unidade, L, ml, caixa, pacote
+  estoqueInicial?: number;
   dataFabricacao?: string;
   valorTotal?: number;
   motivo?: string;
   notas?: string;
   fotos?: string[];
+}
+
+export type MovementType = 'ENTRY' | 'SALE' | 'WASTE' | 'ADJUSTMENT' | 'INTERNAL_USE';
+
+export interface InventoryMovement {
+  id: string;
+  productId: string;
+  productName: string;
+  bakeryCode: string;
+  type: MovementType;
+  quantity: number;
+  unit: string;
+  costAtMovement: number;
+  reason?: string;
+  createdAt: string; // ISO string
+  createdBy?: string;
+}
+
+export interface StockCount {
+  id: string;
+  productId: string;
+  productName: string;
+  bakeryCode: string;
+  initialQuantity: number;
+  entriesQuantity: number;
+  productionQuantity: number;
+  wasteQuantity: number;
+  expectedQuantity: number;
+  physicalQuantity: number;
+  varianceQuantity: number; // physicalQuantity - expectedQuantity
+  varianceValue: number; // Math.abs(varianceQuantity) * unitCost
+  unit: string;
+  unitCost: number;
+  notes?: string;
+  countedAt: string; // ISO string
+  countedBy?: string;
 }
 
 export interface SaleHistoryItem {
@@ -234,5 +272,20 @@ export interface SaasClientMetrics {
   lucroLiquidoLtv: number;
   saudeLtv: 'excelente' | 'atencao' | 'revisar_plano';
 }
+
+export interface InventoryItem {
+  id: string;
+  bakeryCode: string;
+  name: string;
+  unit: string; // kg, g, unidade, litro, ml, caixa, pacote
+  currentQuantity: number;
+  initialQuantity: number;
+  unitCost: number;
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+  createdBy: string;
+}
+
+
 
 

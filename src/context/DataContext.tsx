@@ -13,7 +13,11 @@ import {
   TicketStatus,
   VipOfferStatus,
   BillingInfo,
-  ContractInfo
+  ContractInfo,
+  InventoryMovement,
+  StockCount,
+  MovementType,
+  InventoryItem
 } from '../types';
 import { Unsubscribe } from 'firebase/firestore';
 
@@ -27,6 +31,9 @@ interface DataContextType {
   vipOffers: VipOffer[];
   dailyClosings: DailyClosing[];
   tickets: SupportTicket[];
+  inventoryMovements: InventoryMovement[];
+  stockCounts: StockCount[];
+  inventoryItems: InventoryItem[];
   isAdminLoggedIn: boolean;
   isLoading: boolean;
   authUser: any;
@@ -109,6 +116,46 @@ interface DataContextType {
   // Daily Closings
   saveDailyClosing: (closing: Omit<DailyClosing, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => Promise<DailyClosing>;
 
+  // Inventory & Physical Stock Control
+  addMovement: (
+    productId: string,
+    productName: string,
+    type: MovementType,
+    quantity: number,
+    unit?: string,
+    costAtMovement?: number,
+    reason?: string
+  ) => Promise<InventoryMovement>;
+  addStockCount: (
+    productId: string,
+    productName: string,
+    initialQuantity: number,
+    entriesQuantity: number,
+    productionQuantity: number,
+    wasteQuantity: number,
+    expectedQuantity: number,
+    physicalQuantity: number,
+    unit?: string,
+    unitCost?: number,
+    notes?: string
+  ) => Promise<StockCount>;
+  addInventoryItem: (
+    name: string,
+    unit: string,
+    initialQuantity: number,
+    unitCost: number
+  ) => Promise<InventoryItem>;
+  calculateExpectedStock: (productId: string) => {
+    expected: number;
+    initial: number;
+    entries: number;
+    sales: number;
+    waste: number;
+    adjustments: number;
+    unit: string;
+    cost: number;
+  };
+
   // Admin company actions
   addCompany: (
     empresa: string,
@@ -145,6 +192,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [vipOffers, setVipOffers] = useState<VipOffer[]>([]);
   const [dailyClosings, setDailyClosings] = useState<DailyClosing[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [inventoryMovements, setInventoryMovements] = useState<InventoryMovement[]>([]);
+  const [stockCounts, setStockCounts] = useState<StockCount[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
   const [authUser, setAuthUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -174,25 +224,48 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const init = async () => {
       await StorageService.init();
-      setIsAdminLoggedIn(StorageService.isAdminAuthenticated());
+      const isAdminAuth = StorageService.isAdminAuthenticated();
+      setIsAdminLoggedIn(isAdminAuth);
+      if (isAdminAuth) {
+        try {
+          try {
+            await signInWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
+          } catch (e) {
+            try {
+              await createUserWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
+            } catch (createErr) {
+              await signInAnonymously(auth);
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to auto-sign in admin:', err);
+        }
+      }
     };
     init();
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setAuthUser(user);
       if (user) {
-        const mapping = await StorageService.getUserBakeryMapping(user.uid);
-        if (mapping && mapping.bakeryCode) {
-          setActiveCodeState(mapping.bakeryCode);
-          StorageService.setActiveBakeryCode(mapping.bakeryCode);
+        if (user.email === 'admin@padaria.io') {
+          setActiveCodeState(null);
+          setAuthUser(user);
         } else {
-          const code = StorageService.getActiveBakeryCode();
-          if (code) {
-            await StorageService.setUserBakeryMapping(user.uid, code, user.email || `${code.toLowerCase()}@padaria.io`, 'owner');
-            setActiveCodeState(code);
+          let mapping = await StorageService.getUserBakeryMapping(user.uid);
+          if (!mapping || !mapping.bakeryCode) {
+            const code = StorageService.getActiveBakeryCode();
+            if (code) {
+              await StorageService.setUserBakeryMapping(user.uid, code, user.email || `${code.toLowerCase()}@padaria.io`, 'owner');
+              mapping = { bakeryCode: code, role: 'owner' };
+            }
           }
+          if (mapping && mapping.bakeryCode) {
+            setActiveCodeState(mapping.bakeryCode);
+            StorageService.setActiveBakeryCode(mapping.bakeryCode);
+          }
+          setAuthUser(user);
         }
       } else {
+        setAuthUser(null);
         setActiveCodeState(null);
       }
       setIsLoading(false);
@@ -203,16 +276,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Load and cache tenant data on demand when tenant changes (with race condition prevention)
   const fetchGenerationRef = useRef(0);
-  const refreshTenantData = useCallback(async (code: string) => {
+  const refreshTenantData = useCallback(async (code: string, showLoading = false) => {
     const currentGen = ++fetchGenerationRef.current;
-    setIsLoading(true);
+    if (showLoading) {
+      setIsLoading(true);
+    }
     try {
-      const [prods, sales, vips, closings, ticks] = await Promise.all([
+      const [prods, sales, vips, closings, ticks, movs, counts, invItems] = await Promise.all([
         StorageService.getProductsFromServer(code),
         StorageService.getSalesHistoryFromServer(code),
         StorageService.getVipOffersFromServer(code),
         StorageService.getDailyClosingsFromServer(code),
-        StorageService.getTicketsFromServer(code)
+        StorageService.getTicketsFromServer(code),
+        StorageService.getInventoryMovementsFromServer(code),
+        StorageService.getStockCountsFromServer(code),
+        StorageService.getInventoryItemsFromServer(code)
       ]);
       if (currentGen === fetchGenerationRef.current) {
         setProducts(prods);
@@ -220,13 +298,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setVipOffers(vips);
         setDailyClosings(closings);
         setTickets(ticks);
+        setInventoryMovements(movs);
+        setStockCounts(counts);
+        setInventoryItems(invItems);
       }
     } catch (e) {
       if (currentGen === fetchGenerationRef.current) {
         console.error('Error fetching tenant data on-demand:', e);
       }
     } finally {
-      if (currentGen === fetchGenerationRef.current) {
+      if (showLoading && currentGen === fetchGenerationRef.current) {
         setIsLoading(false);
       }
     }
@@ -236,46 +317,53 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let unsubs: Unsubscribe[] = [];
 
-    if (activeCode) {
+    if (activeCode && authUser) {
       // 1. Single Company Listener (High-end real-time security & status monitoring)
-      const unsubComp = StorageService.subscribeCompany(activeCode, (comp) => {
-        if (comp && comp.ativo) {
-          setActiveCompany(comp);
-        } else {
-          setActiveCompany(null);
-          if (comp && !comp.ativo) {
-            setActiveCode(null);
+      try {
+        const unsubComp = StorageService.subscribeCompany(activeCode, (comp) => {
+          if (comp && comp.ativo) {
+            setActiveCompany(comp);
+          } else {
+            setActiveCompany(null);
+            if (comp && !comp.ativo) {
+              setActiveCode(null);
+            }
           }
-        }
-      });
-      unsubs.push(unsubComp);
+        });
+        unsubs.push(unsubComp);
+      } catch (err) {
+        console.warn('Error subscribing to company:', err);
+      }
 
       // Trigger server-side pull for other items immediately upon change (on-demand)
-      refreshTenantData(activeCode);
-    } else {
+      refreshTenantData(activeCode, true);
+    } else if (!activeCode) {
       setActiveCompany(null);
       setProducts([]);
       setSalesHistory([]);
       setVipOffers([]);
       setDailyClosings([]);
       setTickets([]);
+      setInventoryMovements([]);
+      setStockCounts([]);
+      setInventoryItems([]);
     }
 
     return () => {
       unsubs.forEach((unsub) => unsub());
     };
-  }, [activeCode, refreshTenantData]);
+  }, [activeCode, authUser, refreshTenantData]);
 
   // Load Admin Support Tickets on demand when viewing Admin or LoggedIn
   useEffect(() => {
-    if ((isAdminLoggedIn || currentView === 'admin') && !activeCode) {
+    if (isAdminLoggedIn && !activeCode && authUser && authUser.email === 'admin@padaria.io') {
       StorageService.getTicketsFromServer().then((allTickets) => {
         setTickets(allTickets);
       }).catch(err => {
         console.error('Error fetching admin tickets:', err);
       });
     }
-  }, [isAdminLoggedIn, currentView, activeCode]);
+  }, [isAdminLoggedIn, activeCode, authUser]);
 
   // Auth handlers (Firebase Auth integrated)
   const loginAsBakery = async (code: string): Promise<boolean> => {
@@ -347,6 +435,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginAsAdmin = async (password: string): Promise<boolean> => {
     if (password === 'admin123') { // standard simple check
+      try {
+        try {
+          await signInWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
+        } catch (authErr) {
+          try {
+            await createUserWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
+          } catch (createErr) {
+            await signInAnonymously(auth);
+          }
+        }
+        const user = auth.currentUser;
+        if (user) {
+          await StorageService.setUserBakeryMapping(user.uid, 'ADMIN', 'admin@padaria.io', 'admin');
+        }
+      } catch (err) {
+        console.warn('Admin Firebase Auth login failed:', err);
+      }
       StorageService.setAdminAuthenticated(true);
       setIsAdminLoggedIn(true);
       return true;
@@ -354,7 +459,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return false;
   };
 
-  const logoutAdmin = () => {
+  const logoutAdmin = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error('Error signing out admin from Firebase Auth:', e);
+    }
     StorageService.setAdminAuthenticated(false);
     setIsAdminLoggedIn(false);
   };
@@ -521,8 +631,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const sale = await StorageService.markAsSold(id);
-      if (sale) {
+      if (sale && activeCode) {
         setSalesHistory((prev) => prev.map((s) => (s.id === tempSale.id ? sale : s)));
+        // Record automatic SALE movement
+        StorageService.addInventoryMovement(
+          activeCode,
+          product.id,
+          product.nome,
+          'SALE',
+          product.quantidade,
+          product.unidade || (product.peso ? 'kg' : 'unidade'),
+          product.valorKg || (product.valorTotal && product.quantidade ? product.valorTotal / product.quantidade : 0) || 0,
+          'Venda registrada no sistema',
+          authUser?.email
+        ).catch(() => {});
       }
       return sale;
     } catch (err) {
@@ -532,6 +654,230 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw err;
     }
   };
+
+  // Stock Control Methods
+  const addMovement = async (
+    productId: string,
+    productName: string,
+    type: MovementType,
+    quantity: number,
+    unit: string = 'kg',
+    costAtMovement: number = 0,
+    reason?: string
+  ): Promise<InventoryMovement> => {
+    if (!activeCode) throw new Error('Bakery code required');
+
+    const tempMovement: InventoryMovement = {
+      id: 'temp_mov_' + Date.now(),
+      bakeryCode: activeCode,
+      productId,
+      productName,
+      type,
+      quantity,
+      unit,
+      costAtMovement,
+      reason,
+      createdAt: new Date().toISOString(),
+      createdBy: authUser?.email || 'sistema'
+    };
+
+    setInventoryMovements((prev) => [tempMovement, ...prev]);
+
+    try {
+      const realMov = await StorageService.addInventoryMovement(
+        activeCode,
+        productId,
+        productName,
+        type,
+        quantity,
+        unit,
+        costAtMovement,
+        reason,
+        authUser?.email
+      );
+      setInventoryMovements((prev) => prev.map((m) => (m.id === tempMovement.id ? realMov : m)));
+      return realMov;
+    } catch (err) {
+      setInventoryMovements((prev) => prev.filter((m) => m.id !== tempMovement.id));
+      throw err;
+    }
+  };
+
+  const addStockCount = async (
+    productId: string,
+    productName: string,
+    initialQuantity: number,
+    entriesQuantity: number,
+    productionQuantity: number,
+    wasteQuantity: number,
+    expectedQuantity: number,
+    physicalQuantity: number,
+    unit: string = 'kg',
+    unitCost: number = 0,
+    notes?: string
+  ): Promise<StockCount> => {
+    if (!activeCode) throw new Error('Bakery code required');
+
+    const initial = Number(initialQuantity) || 0;
+    const entries = Number(entriesQuantity) || 0;
+    const production = Number(productionQuantity) || 0;
+    const waste = Number(wasteQuantity) || 0;
+    const expected = Number(expectedQuantity) || (initial + entries - production - waste);
+    const physical = Number(physicalQuantity) || 0;
+    const varianceQty = Number((physical - expected).toFixed(3));
+    const varianceVal = Number((Math.abs(varianceQty) * unitCost).toFixed(2));
+
+    const tempCount: StockCount = {
+      id: 'temp_count_' + Date.now(),
+      bakeryCode: activeCode,
+      productId,
+      productName,
+      initialQuantity: initial,
+      entriesQuantity: entries,
+      productionQuantity: production,
+      wasteQuantity: waste,
+      expectedQuantity: expected,
+      physicalQuantity: physical,
+      varianceQuantity: varianceQty,
+      varianceValue: varianceVal,
+      unit,
+      unitCost,
+      notes,
+      countedAt: new Date().toISOString(),
+      countedBy: authUser?.email || 'sistema'
+    };
+
+    setStockCounts((prev) => [tempCount, ...prev]);
+
+    // Optimistically update inventory items state so currentQuantity = physical (for next cycle reference!)
+    setInventoryItems((prev) =>
+      prev.map((i) => (i.id === productId ? { ...i, currentQuantity: physical } : i))
+    );
+
+    // Optimistically update products state so quantidade = physical
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, quantidade: physical } : p))
+    );
+
+    try {
+      const realCount = await StorageService.addStockCount(
+        activeCode,
+        productId,
+        productName,
+        initialQuantity,
+        entriesQuantity,
+        productionQuantity,
+        wasteQuantity,
+        expectedQuantity,
+        physicalQuantity,
+        unit,
+        unitCost,
+        notes,
+        authUser?.email
+      );
+      setStockCounts((prev) => prev.map((c) => (c.id === tempCount.id ? realCount : c)));
+      refreshTenantData(activeCode);
+      return realCount;
+    } catch (err) {
+      setStockCounts((prev) => prev.filter((c) => c.id !== tempCount.id));
+      throw err;
+    }
+  };
+
+  const addInventoryItem = async (
+    name: string,
+    unit: string,
+    initialQuantity: number,
+    unitCost: number
+  ): Promise<InventoryItem> => {
+    if (!activeCode) throw new Error('Bakery code required');
+
+    const tempItem: InventoryItem = {
+      id: 'temp_inv_' + Date.now(),
+      bakeryCode: activeCode,
+      name: name.trim(),
+      unit,
+      currentQuantity: Number(initialQuantity) || 0,
+      initialQuantity: Number(initialQuantity) || 0,
+      unitCost: Number(unitCost) || 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: authUser?.email || 'sistema'
+    };
+
+    setInventoryItems((prev) => [tempItem, ...prev]);
+
+    try {
+      const realItem = await StorageService.addInventoryItem(
+        activeCode,
+        name,
+        unit,
+        initialQuantity,
+        unitCost,
+        authUser?.email
+      );
+      setInventoryItems((prev) => prev.map((i) => (i.id === tempItem.id ? realItem : i)));
+      const freshMovs = await StorageService.getInventoryMovementsFromServer(activeCode);
+      setInventoryMovements(freshMovs);
+      return realItem;
+    } catch (err) {
+      setInventoryItems((prev) => prev.filter((i) => i.id !== tempItem.id));
+      throw err;
+    }
+  };
+
+  const calculateExpectedStock = useCallback(
+    (productId: string) => {
+      // 1. Try to find in inventoryItems first
+      const item = inventoryItems.find((i) => i.id === productId);
+      if (item) {
+        const unit = item.unit || 'kg';
+        const cost = item.unitCost || 0;
+        const initial = Number(item.currentQuantity) || 0;
+        return {
+          expected: initial,
+          initial,
+          entries: 0,
+          sales: 0,
+          waste: 0,
+          adjustments: 0,
+          unit,
+          cost
+        };
+      }
+
+      // 2. Fallback to products from expiration module
+      const prod = products.find((p) => p.id === productId);
+      if (prod) {
+        const unit = prod.unidade || (prod.peso ? 'kg' : 'unidade');
+        const cost =
+          prod.valorKg || (prod.valorTotal && prod.quantidade ? prod.valorTotal / prod.quantidade : 0) || 0;
+        const initial = Number(prod.quantidade) || 0;
+        return {
+          expected: initial,
+          initial,
+          entries: 0,
+          sales: 0,
+          waste: 0,
+          adjustments: 0,
+          unit,
+          cost
+        };
+      }
+
+      return {
+        expected: 0,
+        initial: 0,
+        entries: 0,
+        sales: 0,
+        waste: 0,
+        adjustments: 0,
+        unit: 'kg',
+        cost: 0
+      };
+    },
+    [products, inventoryItems]
+  );
 
   const restoreSoldProduct = async (historyId: string): Promise<Product | null> => {
     const saleItem = salesHistory.find((s) => s.id === historyId);
@@ -818,6 +1164,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         vipOffers,
         dailyClosings,
         tickets,
+        inventoryMovements,
+        stockCounts,
         isAdminLoggedIn,
         isLoading,
         authUser,
@@ -847,6 +1195,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateTicketStatus,
 
         saveDailyClosing,
+
+        addMovement,
+        addStockCount,
+        addInventoryItem,
+        calculateExpectedStock,
+        inventoryItems,
 
         addCompany,
         toggleCompanyStatus,

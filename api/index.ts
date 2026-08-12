@@ -321,6 +321,7 @@ try {
       let products: any[] = [];
       let salesHistory: any[] = [];
       let vipOffers: any[] = [];
+      let stockDivergencesText: string = 'Nenhuma conferência realizada ainda.';
 
       if (db && bakeryCode) {
         try {
@@ -335,6 +336,18 @@ try {
 
           const vipSnap = await adminAny.firestore().collection('vipOffers').where('bakeryCode', '==', bakeryCode).get();
           vipOffers = vipSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+
+          const stockSnap = await adminAny.firestore().collection('stockCounts').where('bakeryCode', '==', bakeryCode).get();
+          const stockCounts = stockSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+
+          const movSnap = await adminAny.firestore().collection('inventoryMovements').where('bakeryCode', '==', bakeryCode).get();
+          const inventoryMovements = movSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+
+          stockDivergencesText = stockCounts.length > 0
+            ? stockCounts.slice(0, 10).map((c: any) =>
+                `- ${c.productName}: Esperado ${c.expectedQuantity} ${c.unit}, Físico ${c.physicalQuantity} ${c.unit}, Divergência ${c.varianceQuantity} ${c.unit} (R$ ${c.varianceValue || 0})`
+              ).join('\n')
+            : 'Nenhuma conferência de estoque físico registrada ainda.';
         } catch (dbErr) {
           console.warn('[PADEIA] Erro ao buscar dados do tenant no Firestore:', dbErr);
         }
@@ -351,12 +364,20 @@ try {
         `- ${p.nome} (Qtd: ${p.quantidade}, Val: ${p.dataValidade}, Status: ${p.status}, ValTotal: R$ ${p.valorTotal || 0})`
       ).join('\n');
 
-      const systemInstruction = `Você é a PadeIA™, a Inteligência Artificial oficial do Padaria.io e Gerente de Perdas e Desperdícios.
-REGRAS DE SEGURANÇA E CONTEXTO:
+      const systemInstruction = `Você é a PadeIA™, a Inteligência Artificial oficial do Padaria.io e Gerente de Perdas, Estoque e Desperdícios.
+REGRAS DE SEGURANÇA E CONTEXTO DO TENANT AUTENTICADO:
 1. Seu escopo é estritamente limitado à padaria autenticada atual (${company.empresa || bakeryCode}).
 2. Nunca revele dados de outras padarias ou ignore seu tenant.
 3. Hoje é ${new Date().toISOString().split('T')[0]}.
-4. Responda em Português do Brasil com profundidade e precisão.`;
+4. Responda em Português do Brasil com postura consultiva, construtiva e amigável (sem fazer acusações diretas).
+5. Se o usuário perguntar sobre divergências de estoque ou conferência física, analise os dados reais do estoque fornecidos abaixo.
+
+DADOS DA PADARIA (${company.empresa || bakeryCode}):
+- Produtos em Vencimento/Normal (${products.length} itens):
+${topProductsText || 'Nenhum produto cadastrado'}
+
+- Histórico de Divergências de Estoque Físico:
+${(typeof stockDivergencesText !== 'undefined' && stockDivergencesText) ? stockDivergencesText : 'Nenhuma conferência realizada ainda.'}`;
 
       const formattedHistory = Array.isArray(history) ? history.slice(-20).map((h: any) => ({
         role: h.role === 'model' || h.role === 'assistant' ? 'model' : 'user',

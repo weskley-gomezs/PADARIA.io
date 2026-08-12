@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { auth } from '../services/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import {
   ShieldCheck,
   Building2,
@@ -139,13 +141,47 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
   }, [isAdminLoggedIn]);
 
   useEffect(() => {
-    const authStatus = StorageService.isAdminAuthenticated();
-    setIsAuthenticated(authStatus);
-    loadAdminData();
-  }, []);
+    let unsubscribe: (() => void) | null = null;
+
+    const checkAndLoad = () => {
+      const authStatus = StorageService.isAdminAuthenticated();
+      const currentUser = auth.currentUser;
+
+      if (authStatus && currentUser && currentUser.email === 'admin@padaria.io') {
+        loadAdminData();
+      } else {
+        // Fallback to local storage cache for instant UI and safe pre-login state
+        setCompanies(StorageService.getCompanies());
+        setProducts(StorageService.getProducts());
+        setSales(StorageService.getSalesHistory());
+        setTickets(StorageService.getTickets());
+        setVipOffers(StorageService.getVipOffers());
+        setDailyClosings(StorageService.getDailyClosings());
+        setStats(StorageService.getAdminStats());
+        setFinancialStats(StorageService.getFinancialStats());
+      }
+    };
+
+    // Initial check
+    checkAndLoad();
+
+    // Listen to Firebase Auth state transitions to fetch fresh data once admin@padaria.io is logged in
+    unsubscribe = auth.onAuthStateChanged((user) => {
+      checkAndLoad();
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [isAdminLoggedIn]);
 
   const loadAdminData = async () => {
     try {
+      const currentUser = auth.currentUser;
+      if (!currentUser || currentUser.email !== 'admin@padaria.io') {
+        return;
+      }
+
       const [comps, prods, sls, tiks, vips, closings] = await Promise.all([
         StorageService.getCompaniesFromServer(),
         StorageService.getProductsFromServerAdmin(),
@@ -176,13 +212,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
     }
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
     if (StorageService.verifyAdminPassword(passwordInput)) {
+      try {
+        try {
+          await signInWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
+        } catch (signInErr) {
+          try {
+            await createUserWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
+          } catch (createErr) {
+            await signInAnonymously(auth);
+          }
+        }
+        const user = auth.currentUser;
+        if (user) {
+          await StorageService.setUserBakeryMapping(user.uid, 'ADMIN', 'admin@padaria.io', 'admin');
+        }
+      } catch (err) {
+        console.warn('Admin Firebase Auth login failed:', err);
+      }
+
       StorageService.setAdminAuthenticated(true);
       setIsAuthenticated(true);
-      loadAdminData();
+      await loadAdminData();
     } else {
       setPasswordError('Senha incorreta! Use "admin123".');
     }

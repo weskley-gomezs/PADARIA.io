@@ -36,11 +36,13 @@ import {
   EyeOff,
   Check,
   Download,
+  Boxes
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, VipOffer } from '../types';
 import { StorageService } from '../services/storageService';
 import { useData } from '../context/DataContext';
+import { StockControl } from './StockControl';
 import { formatDateToBR, getRelativeExpirationText, generateActivationCode, calculateDaysRemaining, formatDateToISO } from '../utils/dateUtils';
 import { generateContractPDF, generateSystemManualPDF, generateExecutiveReportPDF } from '../utils/pdfGenerator';
 import { ProductModal } from './ProductModal';
@@ -88,7 +90,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'padeia' | 'relatorio' | 'config'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'stock' | 'padeia' | 'relatorio' | 'config'>('dashboard');
 
   useEffect(() => {
     const handleOpenPadeia = () => setActiveTab('padeia');
@@ -464,13 +466,13 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
 
   const expiredTodayCount = expiredTodayProducts.reduce((acc, p) => acc + p.quantidade, 0);
   const expiredTodayValue = expiredTodayProducts.reduce(
-    (acc, p) => acc + (p.valorTotal || p.quantidade * (p.valorKg || 12.0)),
+    (acc, p) => acc + (p.valorTotal || (p.peso && p.valorKg ? p.peso * p.valorKg : p.quantidade * (p.valorKg || 12.0))),
     0
   );
 
   const expiredMonthCount = expiredMonthProducts.reduce((acc, p) => acc + p.quantidade, 0);
   const expiredMonthValue = expiredMonthProducts.reduce(
-    (acc, p) => acc + (p.valorTotal || p.quantidade * (p.valorKg || 12.0)),
+    (acc, p) => acc + (p.valorTotal || (p.peso && p.valorKg ? p.peso * p.valorKg : p.quantidade * (p.valorKg || 12.0))),
     0
   );
 
@@ -663,6 +665,16 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         </button>
 
         <button
+          onClick={() => setActiveTab('stock')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'stock' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+          }`}
+        >
+          <Boxes className="w-3.5 h-3.5 text-[#FF6B00]" />
+          <span>📦 Controle de Estoque</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('padeia')}
           className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
             activeTab === 'padeia'
@@ -693,6 +705,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           <span>⚙️ Config</span>
         </button>
       </div>
+
+      {activeTab === 'stock' && <StockControl />}
 
       {activeTab === 'padeia' && (
         <PadeIA
@@ -916,7 +930,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
                         <span className="font-black text-xs sm:text-sm text-[#2C2C2C]">{p.quantidade} un</span>
                       </div>
                       <div className="font-black text-xs sm:text-sm text-[#2C2C2C]">
-                        {p.valorTotal ? `R$ ${p.valorTotal.toFixed(2)}` : (p.valorKg ? `R$ ${(p.quantidade * p.valorKg).toFixed(2)}` : 'R$ 0,00')}
+                        {p.valorTotal ? `R$ ${p.valorTotal.toFixed(2)}` : (p.peso && p.valorKg ? `R$ ${(p.peso * p.valorKg).toFixed(2)}` : (p.valorKg ? `R$ ${(p.quantidade * p.valorKg).toFixed(2)}` : 'R$ 0,00'))}
                       </div>
                     </div>
 
@@ -1319,12 +1333,24 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         <button
           type="button"
           onClick={() => setActiveTab('dashboard')}
-          className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer ${
             activeTab === 'dashboard' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
           <BarChart3 className="w-5 h-5" />
           <span className="text-[10px] mt-0.5 font-bold">Dashboard</span>
+        </button>
+
+        {/* 2. Estoque */}
+        <button
+          type="button"
+          onClick={() => setActiveTab('stock')}
+          className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'stock' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Boxes className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5 font-bold">Estoque</span>
         </button>
 
         {/* 2. Foto */}

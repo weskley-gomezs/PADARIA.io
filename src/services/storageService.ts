@@ -1,4 +1,4 @@
-import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing } from '../types/index.js';
+import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing, InventoryMovement, StockCount, MovementType, InventoryItem } from '../types/index.js';
 import { calculateDaysRemaining, getProductStatus, formatDateToISO, generateActivationCode } from '../utils/dateUtils.js';
 import { db, testFirestoreConnection } from './firebase.js';
 import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe, query, where } from 'firebase/firestore';
@@ -31,6 +31,9 @@ const KEYS = {
   ASAAS_SETTINGS: 'padarias_asaas_settings',
   VIP_OFFERS: 'padarias_vip_offers_v1',
   DAILY_CLOSINGS: 'padarias_fechamentos_v1',
+  INVENTORY_MOVEMENTS: 'padarias_inventory_movements_v1',
+  STOCK_COUNTS: 'padarias_stock_counts_v1',
+  INVENTORY_ITEMS: 'padarias_inventory_items_v1',
 };
 
 const EXCLUDED_CODES = ['AB12CD34', 'PAD8X92M', 'DEMO9999', '6SSHQQTZ', '8FM8XCN6', 'CAVU5FKP'];
@@ -1105,6 +1108,10 @@ export class StorageService {
     }
 
     const daysRemaining = calculateDaysRemaining(dataValidade);
+    const calculatedValorTotal = valorTotal !== undefined && valorTotal > 0
+      ? valorTotal
+      : (peso && valorKg ? Number((peso * valorKg).toFixed(2)) : (valorKg ? Number((quantidade * valorKg).toFixed(2)) : undefined));
+
     const newProduct: Product = {
       id: 'prod_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       bakeryCode: bakeryCode.trim().toUpperCase(),
@@ -1119,7 +1126,7 @@ export class StorageService {
       peso: peso,
       valorKg: valorKg,
       dataFabricacao: dataFabricacao,
-      valorTotal: valorTotal,
+      valorTotal: calculatedValorTotal,
       motivo: motivo ? motivo.trim() : 'Vencimento',
       notas: notas ? notas.trim() : '',
     };
@@ -1156,19 +1163,26 @@ export class StorageService {
     }
 
     const daysRemaining = calculateDaysRemaining(dataValidade);
+    const newWeight = peso !== undefined ? peso : products[index].peso;
+    const newValorKg = valorKg !== undefined ? valorKg : products[index].valorKg;
+    const newQuantidade = Math.max(1, Number(quantidade));
+    const calculatedValorTotal = valorTotal !== undefined
+      ? valorTotal
+      : (newWeight && newValorKg ? Number((newWeight * newValorKg).toFixed(2)) : (newValorKg ? Number((newQuantidade * newValorKg).toFixed(2)) : products[index].valorTotal));
+
     const updated: Product = {
       ...products[index],
       nome: nome.trim(),
-      quantidade: Math.max(1, Number(quantidade)),
+      quantidade: newQuantidade,
       dataValidade,
       categoria: categoria ? categoria.trim() : products[index].categoria || 'Geral',
       diasParaVencer: daysRemaining,
       status: statusOverride !== undefined ? statusOverride : getProductStatus(daysRemaining),
       barcode: barcode !== undefined ? barcode.trim() : products[index].barcode,
-      peso: peso !== undefined ? peso : products[index].peso,
-      valorKg: valorKg !== undefined ? valorKg : products[index].valorKg,
+      peso: newWeight,
+      valorKg: newValorKg,
       dataFabricacao: dataFabricacao !== undefined ? dataFabricacao : products[index].dataFabricacao,
-      valorTotal: valorTotal !== undefined ? valorTotal : products[index].valorTotal,
+      valorTotal: calculatedValorTotal,
       motivo: motivo !== undefined ? motivo.trim() : products[index].motivo,
       notas: notas !== undefined ? notas.trim() : products[index].notas,
     };
@@ -1800,6 +1814,345 @@ export class StorageService {
       }), { merge: true });
     } catch (e) {
       console.error('Error setting user bakery mapping:', e);
+    }
+  }
+
+  // Inventory Movements CRUD & Server Sync
+  static getInventoryMovements(bakeryCode?: string): InventoryMovement[] {
+    const all = getItem<InventoryMovement[]>(KEYS.INVENTORY_MOVEMENTS, []);
+    if (!bakeryCode) return all;
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    return all.filter((m) => m.bakeryCode && m.bakeryCode.toUpperCase() === cleanCode);
+  }
+
+  static async addInventoryMovement(
+    bakeryCode: string,
+    productId: string,
+    productName: string,
+    type: MovementType,
+    quantity: number,
+    unit: string = 'kg',
+    costAtMovement: number = 0,
+    reason?: string,
+    createdBy?: string,
+    skipStockSync: boolean = false
+  ): Promise<InventoryMovement> {
+    const movements = StorageService.getInventoryMovements();
+    const id = 'mov_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const cleanCode = bakeryCode.trim().toUpperCase();
+
+    const movement: InventoryMovement = {
+      id,
+      bakeryCode: cleanCode,
+      productId,
+      productName,
+      type,
+      quantity: Number(quantity),
+      unit: unit || 'kg',
+      costAtMovement: Number(costAtMovement) || 0,
+      reason: reason || '',
+      createdAt: new Date().toISOString(),
+      createdBy: createdBy || 'sistema',
+    };
+
+    movements.unshift(movement);
+    setItem(KEYS.INVENTORY_MOVEMENTS, movements);
+
+    await setDoc(doc(db, 'inventoryMovements', id), removeUndefined(movement)).catch((e) => {
+      handleFirestoreError(e, OperationType.WRITE, `inventoryMovements/${id}`);
+    });
+
+    if (!skipStockSync) {
+      // Sync with InventoryItem currentQuantity if it is an inventory item
+      const items = StorageService.getInventoryItems();
+      const itemIdx = items.findIndex((i) => i.id === productId);
+      if (itemIdx >= 0) {
+        const item = items[itemIdx];
+        let qtyChange = Number(quantity);
+        if (type === 'SALE' || type === 'WASTE' || type === 'INTERNAL_USE') {
+          qtyChange = -Math.abs(qtyChange);
+        }
+        const newQty = Number((item.currentQuantity + qtyChange).toFixed(3));
+        item.currentQuantity = Math.max(0, newQty);
+        item.updatedAt = new Date().toISOString();
+        setItem(KEYS.INVENTORY_ITEMS, items);
+
+        await setDoc(doc(db, 'inventoryItems', productId), removeUndefined(item)).catch((e) => {
+          handleFirestoreError(e, OperationType.WRITE, `inventoryItems/${productId}`);
+        });
+      }
+
+      // Sync with Products list if productId matches a product
+      const products = StorageService.getProducts(cleanCode);
+      const prodIdx = products.findIndex((p) => p.id === productId);
+      if (prodIdx >= 0) {
+        const targetProd = products[prodIdx];
+        let qtyChange = Number(quantity);
+        if (type === 'SALE' || type === 'WASTE' || type === 'INTERNAL_USE') {
+          qtyChange = -Math.abs(qtyChange);
+        }
+        const newQty = Math.max(0, Number((targetProd.quantidade + qtyChange).toFixed(3)));
+        const newWeight = targetProd.peso && targetProd.quantidade > 0
+          ? Math.max(0, Number((targetProd.peso + (qtyChange * (targetProd.peso / targetProd.quantidade))).toFixed(3)))
+          : targetProd.peso;
+        const unitCost = costAtMovement || targetProd.valorKg;
+        const newValorTotal = unitCost && unitCost > 0
+          ? Number((newWeight ? newWeight * unitCost : newQty * unitCost).toFixed(2))
+          : targetProd.valorTotal;
+
+        await StorageService.updateProduct(
+          targetProd.id,
+          targetProd.nome,
+          newQty,
+          targetProd.dataValidade,
+          targetProd.categoria,
+          targetProd.barcode,
+          unitCost,
+          targetProd.dataFabricacao,
+          newValorTotal,
+          targetProd.motivo,
+          targetProd.notas,
+          newWeight
+        );
+      }
+    }
+
+    return movement;
+  }
+
+  static async getInventoryMovementsFromServer(bakeryCode: string): Promise<InventoryMovement[]> {
+    try {
+      const q = query(
+        collection(db, 'inventoryMovements'),
+        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+      );
+      const snapshot = await getDocs(q);
+      const list: InventoryMovement[] = [];
+      snapshot.forEach((d) => {
+        const item = d.data() as InventoryMovement;
+        if (item && item.id) list.push(item);
+      });
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setItem(`padarias_movements_${bakeryCode.trim().toUpperCase()}`, list);
+      setItem(KEYS.INVENTORY_MOVEMENTS, list);
+      return list;
+    } catch (e) {
+      console.error('Error fetching inventory movements from server:', e);
+      return StorageService.getInventoryMovements(bakeryCode);
+    }
+  }
+
+  // Stock Counts / Physical Inventory CRUD & Server Sync
+  static getStockCounts(bakeryCode?: string): StockCount[] {
+    const all = getItem<StockCount[]>(KEYS.STOCK_COUNTS, []);
+    if (!bakeryCode) return all;
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    return all.filter((c) => c.bakeryCode && c.bakeryCode.toUpperCase() === cleanCode);
+  }
+
+  static async addStockCount(
+    bakeryCode: string,
+    productId: string,
+    productName: string,
+    initialQuantity: number,
+    entriesQuantity: number,
+    productionQuantity: number,
+    wasteQuantity: number,
+    expectedQuantity: number,
+    physicalQuantity: number,
+    unit: string = 'kg',
+    unitCost: number = 0,
+    notes?: string,
+    countedBy?: string
+  ): Promise<StockCount> {
+    const counts = StorageService.getStockCounts();
+    const id = 'count_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const cleanCode = bakeryCode.trim().toUpperCase();
+
+    const initial = Number(initialQuantity) || 0;
+    const entries = Number(entriesQuantity) || 0;
+    const production = Number(productionQuantity) || 0;
+    const waste = Number(wasteQuantity) || 0;
+    const expected = Number(expectedQuantity) || (initial + entries - production - waste);
+    const physical = Number(physicalQuantity) || 0;
+    const varianceQty = Number((physical - expected).toFixed(3));
+    const cost = Number(unitCost) || 0;
+    const varianceVal = Number((Math.abs(varianceQty) * cost).toFixed(2));
+
+    const stockCount: StockCount = {
+      id,
+      bakeryCode: cleanCode,
+      productId,
+      productName,
+      initialQuantity: initial,
+      entriesQuantity: entries,
+      productionQuantity: production,
+      wasteQuantity: waste,
+      expectedQuantity: expected,
+      physicalQuantity: physical,
+      varianceQuantity: varianceQty,
+      varianceValue: varianceVal,
+      unit: unit || 'kg',
+      unitCost: cost,
+      notes: notes || '',
+      countedAt: new Date().toISOString(),
+      countedBy: countedBy || 'sistema',
+    };
+
+    counts.unshift(stockCount);
+    setItem(KEYS.STOCK_COUNTS, counts);
+
+    await setDoc(doc(db, 'stockCounts', id), removeUndefined(stockCount)).catch((e) => {
+      handleFirestoreError(e, OperationType.WRITE, `stockCounts/${id}`);
+    });
+
+    // Directly set physical quantity as the current reference quantity for the item (no double addition)
+    const items = StorageService.getInventoryItems();
+    const itemIdx = items.findIndex((i) => i.id === productId);
+    if (itemIdx >= 0) {
+      const item = items[itemIdx];
+      item.currentQuantity = physical;
+      item.updatedAt = new Date().toISOString();
+      setItem(KEYS.INVENTORY_ITEMS, items);
+
+      await setDoc(doc(db, 'inventoryItems', productId), removeUndefined(item)).catch((e) => {
+        handleFirestoreError(e, OperationType.WRITE, `inventoryItems/${productId}`);
+      });
+    }
+
+    // Update product quantity to match physical count if it matches a Product
+    const products = StorageService.getProducts(cleanCode);
+    const prodIdx = products.findIndex((p) => p.id === productId);
+    if (prodIdx >= 0) {
+      const targetProd = products[prodIdx];
+      const newWeight = targetProd.peso && targetProd.quantidade > 0
+        ? Number((physical * (targetProd.peso / targetProd.quantidade)).toFixed(3))
+        : targetProd.peso;
+      const unitCost = cost || targetProd.valorKg;
+      const newValorTotal = unitCost && unitCost > 0
+        ? Number((newWeight ? newWeight * unitCost : physical * unitCost).toFixed(2))
+        : targetProd.valorTotal;
+
+      await StorageService.updateProduct(
+        targetProd.id,
+        targetProd.nome,
+        physical,
+        targetProd.dataValidade,
+        targetProd.categoria,
+        targetProd.barcode,
+        unitCost,
+        targetProd.dataFabricacao,
+        newValorTotal,
+        targetProd.motivo,
+        targetProd.notas,
+        newWeight
+      );
+    }
+
+    return stockCount;
+  }
+
+  static async getStockCountsFromServer(bakeryCode: string): Promise<StockCount[]> {
+    try {
+      const q = query(
+        collection(db, 'stockCounts'),
+        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+      );
+      const snapshot = await getDocs(q);
+      const list: StockCount[] = [];
+      snapshot.forEach((d) => {
+        const item = d.data() as StockCount;
+        if (item && item.id) list.push(item);
+      });
+      list.sort((a, b) => new Date(b.countedAt).getTime() - new Date(a.countedAt).getTime());
+      setItem(`padarias_counts_${bakeryCode.trim().toUpperCase()}`, list);
+      setItem(KEYS.STOCK_COUNTS, list);
+      return list;
+    } catch (e) {
+      console.error('Error fetching stock counts from server:', e);
+      return StorageService.getStockCounts(bakeryCode);
+    }
+  }
+
+  // Inventory Items (Stock module items) CRUD & Server Sync
+  static getInventoryItems(bakeryCode?: string): InventoryItem[] {
+    const all = getItem<InventoryItem[]>(KEYS.INVENTORY_ITEMS, []);
+    if (!bakeryCode) return all;
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    return all.filter((i) => i.bakeryCode && i.bakeryCode.toUpperCase() === cleanCode);
+  }
+
+  static async addInventoryItem(
+    bakeryCode: string,
+    name: string,
+    unit: string,
+    initialQuantity: number,
+    unitCost: number,
+    createdBy?: string
+  ): Promise<InventoryItem> {
+    const items = StorageService.getInventoryItems();
+    const id = 'inv_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const cleanCode = bakeryCode.trim().toUpperCase();
+
+    const newQty = Number(initialQuantity) || 0;
+    const cost = Number(unitCost) || 0;
+
+    const inventoryItem: InventoryItem = {
+      id,
+      bakeryCode: cleanCode,
+      name: name.trim(),
+      unit: unit || 'kg',
+      currentQuantity: newQty,
+      initialQuantity: newQty,
+      unitCost: cost,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: createdBy || 'sistema',
+    };
+
+    items.unshift(inventoryItem);
+    setItem(KEYS.INVENTORY_ITEMS, items);
+
+    await setDoc(doc(db, 'inventoryItems', id), removeUndefined(inventoryItem)).catch((e) => {
+      handleFirestoreError(e, OperationType.WRITE, `inventoryItems/${id}`);
+    });
+
+    // Register initial ENTRY movement for this newly created inventory item
+    await StorageService.addInventoryMovement(
+      cleanCode,
+      id,
+      name.trim(),
+      'ENTRY',
+      newQty,
+      unit || 'kg',
+      cost,
+      'Quantidade inicial no cadastro do item',
+      createdBy,
+      true
+    );
+
+    return inventoryItem;
+  }
+
+  static async getInventoryItemsFromServer(bakeryCode: string): Promise<InventoryItem[]> {
+    try {
+      const q = query(
+        collection(db, 'inventoryItems'),
+        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+      );
+      const snapshot = await getDocs(q);
+      const list: InventoryItem[] = [];
+      snapshot.forEach((d) => {
+        const item = d.data() as InventoryItem;
+        if (item && item.id) list.push(item);
+      });
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setItem(`padarias_inv_items_${bakeryCode.trim().toUpperCase()}`, list);
+      setItem(KEYS.INVENTORY_ITEMS, list);
+      return list;
+    } catch (e) {
+      console.error('Error fetching inventory items from server:', e);
+      return StorageService.getInventoryItems(bakeryCode);
     }
   }
 }

@@ -493,11 +493,11 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar vocÃª a tomar decisÃ
   const normalProducts = products.filter((p) => p.status === 'normal');
 
   const expiredValue = expiredProducts.reduce(
-    (acc, p) => acc + (p.valorTotal || p.quantidade * (p.valorKg || 12)),
+    (acc, p) => acc + (p.valorTotal || (p.peso && p.valorKg ? p.peso * p.valorKg : p.quantidade * (p.valorKg || 12))),
     0
   );
   const expiringValue = expiringProducts.reduce(
-    (acc, p) => acc + (p.valorTotal || p.quantidade * (p.valorKg || 12)),
+    (acc, p) => acc + (p.valorTotal || (p.peso && p.valorKg ? p.peso * p.valorKg : p.quantidade * (p.valorKg || 12))),
     0
   );
 
@@ -510,7 +510,7 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar vocÃª a tomar decisÃ
   const categoryLossMap: Record<string, number> = {};
   expiredProducts.forEach((p) => {
     const cat = p.categoria || 'Geral';
-    const val = p.valorTotal || p.quantidade * (p.valorKg || 12);
+    const val = p.valorTotal || (p.peso && p.valorKg ? p.peso * p.valorKg : p.quantidade * (p.valorKg || 12));
     categoryLossMap[cat] = (categoryLossMap[cat] || 0) + val;
   });
   const topCategory = Object.entries(categoryLossMap).sort((a, b) => b[1] - a[1])[0] || ['PÃ£es e Massas', 0];

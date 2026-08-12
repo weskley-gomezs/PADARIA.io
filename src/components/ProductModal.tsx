@@ -93,6 +93,37 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
   if (!isOpen) return null;
 
+  const handlePesoChange = (val: string) => {
+    setPeso(val);
+    const p = parseFloat(val);
+    const vk = parseFloat(valorKg);
+    if (!isNaN(p) && p > 0 && !isNaN(vk) && vk > 0) {
+      setValorTotal((p * vk).toFixed(2));
+    }
+  };
+
+  const handleValorKgChange = (val: string) => {
+    setValorKg(val);
+    const vk = parseFloat(val);
+    const p = parseFloat(peso);
+    if (!isNaN(vk) && vk > 0 && !isNaN(p) && p > 0) {
+      setValorTotal((p * vk).toFixed(2));
+    } else if (!isNaN(vk) && vk > 0 && quantidade > 0) {
+      setValorTotal((quantidade * vk).toFixed(2));
+    }
+  };
+
+  const handleValorTotalChange = (val: string) => {
+    setValorTotal(val);
+    const vt = parseFloat(val);
+    const p = parseFloat(peso);
+    if (!isNaN(vt) && vt > 0 && !isNaN(p) && p > 0) {
+      setValorKg((vt / p).toFixed(2));
+    } else if (!isNaN(vt) && vt > 0 && quantidade > 0 && (!peso || parseFloat(peso) === 0)) {
+      setValorKg((vt / quantidade).toFixed(2));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -118,18 +149,30 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       return;
     }
 
+    const parsedPeso = peso ? parseFloat(peso) : undefined;
+    const parsedValorKg = valorKg ? parseFloat(valorKg) : undefined;
+    let parsedValorTotal = valorTotal ? parseFloat(valorTotal) : undefined;
+
+    if (!parsedValorTotal) {
+      if (parsedPeso && parsedValorKg) {
+        parsedValorTotal = Number((parsedPeso * parsedValorKg).toFixed(2));
+      } else if (parsedValorKg && quantidade) {
+        parsedValorTotal = Number((quantidade * parsedValorKg).toFixed(2));
+      }
+    }
+
     onSave(
       nome,
       quantidade,
       dataValidade,
       categoria,
       barcode,
-      valorKg ? parseFloat(valorKg) : undefined,
+      parsedValorKg,
       dataFabricacao,
-      valorTotal ? parseFloat(valorTotal) : undefined,
+      parsedValorTotal,
       motivo,
       notas,
-      peso ? parseFloat(peso) : undefined
+      parsedPeso
     );
     onClose();
   };
@@ -319,7 +362,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 step="0.001"
                 min="0"
                 value={peso}
-                onChange={(e) => setPeso(e.target.value)}
+                onChange={(e) => handlePesoChange(e.target.value)}
                 placeholder="Ex: 0.350"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm box-border"
               />
@@ -333,7 +376,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 step="0.01"
                 min="0"
                 value={valorTotal}
-                onChange={(e) => setValorTotal(e.target.value)}
+                onChange={(e) => handleValorTotalChange(e.target.value)}
                 placeholder="Ex: 25.50"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm box-border"
               />
@@ -347,7 +390,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 step="0.01"
                 min="0"
                 value={valorKg}
-                onChange={(e) => setValorKg(e.target.value)}
+                onChange={(e) => handleValorKgChange(e.target.value)}
                 placeholder="Ex: 15.90"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm box-border"
               />

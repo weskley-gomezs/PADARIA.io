@@ -24,7 +24,7 @@ export const WasteChartSection: React.FC<WasteChartSectionProps> = ({ products }
         const dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
         const monthLabel = dateObj.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
         
-        const estValue = p.valorTotal || (p.quantidade * (p.valorKg || 12.0));
+        const estValue = p.valorTotal || (p.peso && p.valorKg ? p.peso * p.valorKg : p.quantidade * (p.valorKg || 12.0));
 
         if (!monthlyDataMap[yearMonth]) {
           monthlyDataMap[yearMonth] = {
@@ -57,7 +57,7 @@ export const WasteChartSection: React.FC<WasteChartSectionProps> = ({ products }
       if (refStr) {
         const pDate = new Date(refStr);
         if (pDate >= thirtyDaysAgo) {
-          return acc + (p.valorTotal || (p.quantidade * (p.valorKg || 12.0)));
+          return acc + (p.valorTotal || (p.peso && p.valorKg ? p.peso * p.valorKg : p.quantidade * (p.valorKg || 12.0)));
         }
       }
     }
