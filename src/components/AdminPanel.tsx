@@ -66,6 +66,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
     return saved === 'true';
   });
   const [unlockCodeInput, setUnlockCodeInput] = useState<string>('');
+  const [unlockEmailInput, setUnlockEmailInput] = useState<string>('');
+  const [unlockPasswordInput, setUnlockPasswordInput] = useState<string>('');
   const [unlockError, setUnlockError] = useState<string>('');
 
   const isAdminEmail = (email?: string | null) => email === 'admin@padaria.io' || email === 'weskleyg4000@gmail.com';
@@ -284,12 +286,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
     e.preventDefault();
     setUnlockError('');
     try {
-      const user = auth.currentUser;
+      let user = auth.currentUser;
+      if (!user && unlockEmailInput.trim() && unlockPasswordInput) {
+        const cred = await signInWithEmailAndPassword(auth, unlockEmailInput.trim(), unlockPasswordInput);
+        user = cred.user;
+      }
       if (!user) {
-        setUnlockError('Usuário não autenticado.');
+        setUnlockError('Por favor, informe seu e-mail e senha de administrador para autenticação.');
         return;
       }
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       const res = await fetch('/api/admin/unlock', {
         method: 'POST',
         headers: {
@@ -303,9 +309,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
         setIsLocked(false);
         setLoginAttempts(0);
         setUnlockCodeInput('');
+        setUnlockEmailInput('');
+        setUnlockPasswordInput('');
         sessionStorage.removeItem('admin_login_attempts');
         sessionStorage.removeItem('admin_locked');
         setLoginError('');
+        setIsAuthenticated(true);
+        await loadAdminData();
       } else {
         setUnlockError(data.error || 'Código de desbloqueio incorreto.');
         if (data.code === 'SYSTEM_LOCKED') {
@@ -314,7 +324,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
       }
     } catch (err: any) {
       console.error('Unlock error:', err);
-      setUnlockError('Erro ao processar desbloqueio no servidor.');
+      setUnlockError(err.message || 'Erro ao processar desbloqueio no servidor.');
     }
   };
 
@@ -517,6 +527,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
             <form onSubmit={handleUnlockSystem} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-[#111111] uppercase tracking-wider mb-1">
+                  E-mail do Administrador
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={unlockEmailInput}
+                    onChange={(e) => setUnlockEmailInput(e.target.value)}
+                    placeholder="admin@padaria.io"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-sm font-bold"
+                    required
+                  />
+                  <Mail className="w-5 h-5 text-gray-400 absolute right-3.5 top-3" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#111111] uppercase tracking-wider mb-1">
+                  Senha do Administrador
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    value={unlockPasswordInput}
+                    onChange={(e) => setUnlockPasswordInput(e.target.value)}
+                    placeholder="Sua senha"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-sm font-bold"
+                    required
+                  />
+                  <Lock className="w-5 h-5 text-gray-400 absolute right-3.5 top-3" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#111111] uppercase tracking-wider mb-1">
                   Código de Desbloqueio (16 Dígitos)
                 </label>
                 <div className="relative">
@@ -528,7 +572,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
                     maxLength={16}
                     className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-sm font-bold tracking-widest text-center"
                     required
-                    autoFocus
                   />
                   <Key className="w-5 h-5 text-gray-400 absolute right-3.5 top-4" />
                 </div>
