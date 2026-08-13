@@ -1,3 +1,4 @@
+import 'dotenv/config';
 console.log("[VERCEL] API entry point called (/api/index.ts) - Zero-Trust Mode");
 
 import express from 'express';
@@ -500,60 +501,6 @@ ${(typeof stockDivergencesText !== 'undefined' && stockDivergencesText) ? stockD
     } catch (err: any) {
       console.error('[ROUTE] Erro em /api/gemini:', err);
       return res.status(500).json({ success: false, error: err.message, code: 'GEMINI_ERROR' });
-    }
-  });
-
-  // Admin Unlock Route with Server-Side Rate Limiting & Secret Validation
-  app.post('/api/admin/unlock', authenticateFirebaseUser, requireAdmin, async (req, res) => {
-    console.log("[ROUTE] POST /api/admin/unlock - Recebido");
-    try {
-      const { unlockCode } = req.body;
-      if (!unlockCode || typeof unlockCode !== 'string') {
-        return res.status(400).json({ success: false, error: 'Código de desbloqueio ausente ou inválido.', code: 'INVALID_REQUEST' });
-      }
-
-      const uid = req.user.uid;
-      const lockDocRef = adminAny.firestore().collection('admin_locks').doc(uid);
-      const lockDoc = await lockDocRef.get();
-      
-      let attempts = 0;
-      let lockedUntil = 0;
-      let isLocked = false;
-
-      if (lockDoc.exists) {
-        const data = lockDoc.data();
-        attempts = data?.attempts || 0;
-        lockedUntil = data?.lockedUntil || 0;
-        isLocked = data?.locked || false;
-
-        if (isLocked && Date.now() < lockedUntil) {
-          return res.status(429).json({ success: false, error: 'Sistema bloqueado temporariamente por excesso de tentativas. Tente novamente mais tarde.', code: 'SYSTEM_LOCKED' });
-        }
-      }
-
-      const expectedCode = process.env.ADMIN_RECOVERY_CODE || '8429104829384712';
-
-      if (unlockCode.trim() === expectedCode) {
-        await lockDocRef.set({ attempts: 0, locked: false, lockedUntil: 0, updatedAt: Date.now() }, { merge: true });
-        console.log(`[SECURITY] Sistema desbloqueado com sucesso para UID: ${uid}`);
-        return res.json({ success: true });
-      } else {
-        attempts += 1;
-        const maxAttempts = 3;
-        if (attempts >= maxAttempts) {
-          lockedUntil = Date.now() + 15 * 60 * 1000;
-          await lockDocRef.set({ attempts, locked: true, lockedUntil, updatedAt: Date.now() }, { merge: true });
-          console.warn(`[SECURITY] Bloqueio de segurança ativado para UID: ${uid} após ${attempts} tentativas inválidas de desbloqueio.`);
-          return res.status(429).json({ success: false, error: 'Número máximo de tentativas excedido. Sistema bloqueado.', code: 'SYSTEM_LOCKED', attemptsLeft: 0 });
-        } else {
-          await lockDocRef.set({ attempts, locked: false, lockedUntil: 0, updatedAt: Date.now() }, { merge: true });
-          console.warn(`[SECURITY] Tentativa inválida de desbloqueio (${attempts}/${maxAttempts}) para UID: ${uid}`);
-          return res.status(401).json({ success: false, error: 'Código de desbloqueio incorreto.', code: 'INVALID_UNLOCK_CODE', attemptsLeft: maxAttempts - attempts });
-        }
-      }
-    } catch (err: any) {
-      console.error('[ROUTE] Erro em /api/admin/unlock:', err);
-      return res.status(500).json({ success: false, error: 'Erro interno ao processar desbloqueio.', code: 'SERVER_ERROR' });
     }
   });
 

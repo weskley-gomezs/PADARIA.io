@@ -57,18 +57,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
   const [loginEmailInput, setLoginEmailInput] = useState<string>('');
   const [loginPasswordInput, setLoginPasswordInput] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
-  const [loginAttempts, setLoginAttempts] = useState<number>(() => {
-    const saved = sessionStorage.getItem('admin_login_attempts');
-    return saved ? parseInt(saved, 10) : 0;
-  });
-  const [isLocked, setIsLocked] = useState<boolean>(() => {
-    const saved = sessionStorage.getItem('admin_locked');
-    return saved === 'true';
-  });
-  const [unlockCodeInput, setUnlockCodeInput] = useState<string>('');
-  const [unlockEmailInput, setUnlockEmailInput] = useState<string>('');
-  const [unlockPasswordInput, setUnlockPasswordInput] = useState<string>('');
-  const [unlockError, setUnlockError] = useState<string>('');
 
   const isAdminEmail = (email?: string | null) => email === 'admin@padaria.io' || email === 'weskleyg4000@gmail.com';
 
@@ -243,88 +231,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLocked) return;
     setLoginError('');
     try {
       await signInWithEmailAndPassword(auth, loginEmailInput.trim(), loginPasswordInput);
       const user = auth.currentUser;
       if (user && isAdminEmail(user.email)) {
         await StorageService.setUserBakeryMapping(user.uid, 'ADMIN', user.email, 'admin');
-        setLoginAttempts(0);
-        sessionStorage.removeItem('admin_login_attempts');
-        sessionStorage.removeItem('admin_locked');
         setIsAuthenticated(true);
         await loadAdminData();
       } else {
-        const nextAttempts = loginAttempts + 1;
-        setLoginAttempts(nextAttempts);
-        sessionStorage.setItem('admin_login_attempts', nextAttempts.toString());
-        if (nextAttempts >= 3) {
-          setIsLocked(true);
-          sessionStorage.setItem('admin_locked', 'true');
-          setLoginError('Acesso bloqueado por excesso de tentativas falhas. Insira o código de desbloqueio de 16 dígitos.');
-        } else {
-          setLoginError(`Acesso negado: Credenciais inválidas. Tentativa ${nextAttempts} de 3.`);
-        }
+        setLoginError('Acesso negado: Credenciais inválidas.');
       }
     } catch (err: any) {
       console.error('Admin login error:', err);
-      const nextAttempts = loginAttempts + 1;
-      setLoginAttempts(nextAttempts);
-      sessionStorage.setItem('admin_login_attempts', nextAttempts.toString());
-      if (nextAttempts >= 3) {
-        setIsLocked(true);
-        sessionStorage.setItem('admin_locked', 'true');
-        setLoginError('Acesso bloqueado por excesso de tentativas falhas. Insira o código de desbloqueio de 16 dígitos.');
-      } else {
-        setLoginError(`E-mail ou senha incorretos. Tentativa ${nextAttempts} de 3.`);
-      }
-    }
-  };
-
-  const handleUnlockSystem = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setUnlockError('');
-    try {
-      let user = auth.currentUser;
-      if (!user && unlockEmailInput.trim() && unlockPasswordInput) {
-        const cred = await signInWithEmailAndPassword(auth, unlockEmailInput.trim(), unlockPasswordInput);
-        user = cred.user;
-      }
-      if (!user) {
-        setUnlockError('Por favor, informe seu e-mail e senha de administrador para autenticação.');
-        return;
-      }
-      const token = await user.getIdToken(true);
-      const res = await fetch('/api/admin/unlock', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ unlockCode: unlockCodeInput.trim() })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setIsLocked(false);
-        setLoginAttempts(0);
-        setUnlockCodeInput('');
-        setUnlockEmailInput('');
-        setUnlockPasswordInput('');
-        sessionStorage.removeItem('admin_login_attempts');
-        sessionStorage.removeItem('admin_locked');
-        setLoginError('');
-        setIsAuthenticated(true);
-        await loadAdminData();
-      } else {
-        setUnlockError(data.error || 'Código de desbloqueio incorreto.');
-        if (data.code === 'SYSTEM_LOCKED') {
-          setIsLocked(true);
-        }
-      }
-    } catch (err: any) {
-      console.error('Unlock error:', err);
-      setUnlockError(err.message || 'Erro ao processar desbloqueio no servidor.');
+      setLoginError('E-mail ou senha incorretos.');
     }
   };
 
@@ -506,107 +426,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
   }
 
   if (!isAuthenticated) {
-    if (isLocked) {
-      return (
-        <div className="min-h-screen bg-[#111111] flex items-center justify-center px-4 py-12">
-          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-200 p-8 space-y-6">
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
-                <Lock className="w-8 h-8" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-red-600">
-                  Sistema Bloqueado
-                </h2>
-                <p className="text-xs text-gray-500 font-medium">
-                  3 tentativas incorretas excedidas. Insira o código de segurança master para desbloquear.
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleUnlockSystem} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#111111] uppercase tracking-wider mb-1">
-                  E-mail do Administrador
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    value={unlockEmailInput}
-                    onChange={(e) => setUnlockEmailInput(e.target.value)}
-                    placeholder="admin@padaria.io"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-sm font-bold"
-                    required
-                  />
-                  <Mail className="w-5 h-5 text-gray-400 absolute right-3.5 top-3" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-[#111111] uppercase tracking-wider mb-1">
-                  Senha do Administrador
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={unlockPasswordInput}
-                    onChange={(e) => setUnlockPasswordInput(e.target.value)}
-                    placeholder="Sua senha"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-sm font-bold"
-                    required
-                  />
-                  <Lock className="w-5 h-5 text-gray-400 absolute right-3.5 top-3" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-[#111111] uppercase tracking-wider mb-1">
-                  Código de Desbloqueio (16 Dígitos)
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={unlockCodeInput}
-                    onChange={(e) => setUnlockCodeInput(e.target.value)}
-                    placeholder="Digite o código de 16 dígitos"
-                    maxLength={16}
-                    className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-sm font-bold tracking-widest text-center"
-                    required
-                  />
-                  <Key className="w-5 h-5 text-gray-400 absolute right-3.5 top-4" />
-                </div>
-              </div>
-
-              {unlockError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold text-center">
-                  {unlockError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="w-full bg-[#111111] hover:bg-[#FF6B00] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer group"
-              >
-                <span>Desbloquear Sistema</span>
-                <ArrowRight className="w-4 h-4 text-[#FF6B00] group-hover:text-white transition-colors" />
-              </button>
-            </form>
-
-            <div className="pt-4 border-t border-gray-100">
-              <button
-                onClick={() => {
-                  window.location.href = '/app';
-                }}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all text-xs flex items-center justify-center space-x-2"
-              >
-                <span>Voltar para o Sistema (App)</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="min-h-screen bg-[#111111] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-200 p-8 space-y-6">

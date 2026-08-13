@@ -1,3 +1,4 @@
+import 'dotenv/config';
 console.log("[SERVER] Entry point called (/server.ts)");
 import express from 'express';
 import path from 'path';
