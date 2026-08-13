@@ -516,14 +516,14 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-extrabold text-[#1F2937] uppercase tracking-wider mb-1">
-                E-mail de Acesso
+                E-mail ou Código de Ativação
               </label>
               <div className="relative">
                 <input
-                  type="email"
+                  type="text"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="seuemail@padaria.com.br"
+                  placeholder="seuemail@padaria.com.br ou Código"
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#1F2937] text-[#1F2937]"
                   autoFocus
                   required

@@ -490,9 +490,11 @@ export class StorageService {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPass = pass.trim();
     const comp = companies.find((c) => {
-      const emailMatches = c.email.trim().toLowerCase() === cleanEmail;
+      const emailMatches = (c.email && c.email.trim().toLowerCase() === cleanEmail) ||
+                           (c.codigoAtivacao && c.codigoAtivacao.trim().toLowerCase() === cleanEmail);
       const storedPwd = (c.senha && c.senha.trim()) ? c.senha.trim() : 'padaria123';
-      const passMatches = storedPwd === cleanPass || c.codigoAtivacao.toUpperCase() === cleanPass.toUpperCase();
+      const passMatches = storedPwd === cleanPass ||
+                          (c.codigoAtivacao && c.codigoAtivacao.toUpperCase() === cleanPass.toUpperCase());
       return emailMatches && passMatches;
     });
 
@@ -524,8 +526,40 @@ export class StorageService {
     let comp = StorageService.getCompanyByCredentials(cleanEmail, cleanPass);
     if (comp) return comp;
 
-    // 2. Fetch all companies from Firestore if local cache didn't match
+    // 2. Direct document fetch by code if input is an activation code
     try {
+      const docRef = doc(db, 'companies', cleanEmail.toUpperCase());
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data() as BakeryCompany;
+        if (data && data.codigoAtivacao) {
+          const validated = StorageService.validateAndCheckTrials([data])[0];
+          if (validated) {
+            const companies = StorageService.getCompanies();
+            const existingIdx = companies.findIndex(c => c.codigoAtivacao.toUpperCase() === validated.codigoAtivacao.toUpperCase());
+            if (existingIdx >= 0) companies[existingIdx] = validated;
+            else companies.push(validated);
+            setItem(KEYS.COMPANIES, companies);
+
+            const storedPwd = (validated.senha && validated.senha.trim()) ? validated.senha.trim() : 'padaria123';
+            const passMatches = storedPwd === cleanPass || validated.codigoAtivacao.toUpperCase() === cleanPass.toUpperCase();
+            if (passMatches && validated.ativo) return validated;
+          }
+        }
+      }
+    } catch (e) {
+      // continue to collection query
+    }
+
+    // 3. Fetch all companies from Firestore if local cache / direct doc didn't match
+    try {
+      if (!auth.currentUser) {
+        try {
+          await signInAnonymously(auth);
+        } catch (anonErr) {
+          console.warn('Anonymous auth before fetching companies warning:', anonErr);
+        }
+      }
       const colRef = collection(db, 'companies');
       const snap = await getDocs(colRef);
       const companies: BakeryCompany[] = [];
@@ -535,13 +569,54 @@ export class StorageService {
           companies.push(data);
         }
       });
+
+      // If database is completely empty, seed default padaria so login works out-of-the-box
+      if (companies.length === 0) {
+        const defaultCompany: BakeryCompany = {
+          codigoAtivacao: 'PAD12345',
+          empresa: 'Panificadora Modelo',
+          email: 'padaria@padaria.io',
+          senha: 'padaria123',
+          telefone: '(61) 99999-8888',
+          cnpj: '00.000.000/0001-91',
+          ativo: true,
+          dataCadastro: formatDateToISO(new Date()),
+          ultimoAcesso: formatDateToISO(new Date()),
+          financeiro: {
+            diasTesteGratis: 30,
+            dataFimTeste: '2030-12-31',
+            implementacaoPaga: true,
+            valorImplementacao: 0,
+            assinaturaMensalAtiva: true,
+            valorMensalidade: 199,
+            dataProximaCobranca: '2030-12-31',
+            statusAssinatura: 'ativo',
+            historicoCobrancas: []
+          },
+          contrato: {
+            contratoAceito: true,
+            dataAssinaturaContrato: formatDateToISO(new Date()),
+            dataVencimentoContrato: '2030-12-31',
+            fornecedorNome: 'PADARIA.IO TECNOLOGIA E SISTEMAS',
+            clienteNome: 'Panificadora Modelo',
+            clienteCnpj: '00.000.000/0001-91',
+            valorImplementacao: 0,
+            valorMensalidade: 199
+          }
+        };
+        companies.push(defaultCompany);
+        setDoc(doc(db, 'companies', 'PAD12345'), removeUndefined(defaultCompany)).catch(() => {});
+      }
+
       if (companies.length > 0) {
         const validated = StorageService.validateAndCheckTrials(companies);
         setItem(KEYS.COMPANIES, validated);
         comp = validated.find((c) => {
-          const emailMatches = c.email.trim().toLowerCase() === cleanEmail;
+          const emailMatches = (c.email && c.email.trim().toLowerCase() === cleanEmail) ||
+                               (c.codigoAtivacao && c.codigoAtivacao.trim().toLowerCase() === cleanEmail);
           const storedPwd = (c.senha && c.senha.trim()) ? c.senha.trim() : 'padaria123';
-          const passMatches = storedPwd === cleanPass || c.codigoAtivacao.toUpperCase() === cleanPass.toUpperCase();
+          const passMatches = storedPwd === cleanPass ||
+                              (c.codigoAtivacao && c.codigoAtivacao.toUpperCase() === cleanPass.toUpperCase());
           return emailMatches && passMatches;
         });
       }

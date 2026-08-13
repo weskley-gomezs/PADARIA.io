@@ -55,9 +55,9 @@ service cloud.firestore {
       allow read, write: if authenticateFirebaseUser() && (request.auth.uid == uid || requireAdmin());
     }
 
-    // Companies collection: Allow read for authenticated users so they can verify activation codes; write restricted to authorized tenant or admin
+    // Companies collection: Allow read so users can verify credentials and activation codes during login; write restricted to authorized tenant or admin
     match /companies/{companyCode} {
-      allow read: if authenticateFirebaseUser();
+      allow read: if true;
       allow write: if authenticateFirebaseUser() && (requireTenantAccess(companyCode) || requireAdmin());
     }
 
