@@ -139,6 +139,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
 
   // Accordion UI state
   const [isSettingsExpanded, setIsSettingsExpanded] = useState<boolean>(false);
+  const [showReminder, setShowReminder] = useState<boolean>(true);
 
   // Toast / Feedback State
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -200,7 +201,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
 
     const todayStr = formatDateToISO(new Date());
     if (dataValidade > todayStr) {
-      alert('⛔ PRODUTO COM VALIDADE FUTURA!\n\nEste sistema é EXCLUSIVO para controle de VENCIDOS, DESPERDÍCIOS e DESCARTES. Produtos com data de validade futura (a partir de amanhã) não podem ser cadastrados para descarte.');
+      alert('PRODUTO COM VALIDADE FUTURA!\n\nEste sistema é EXCLUSIVO para controle de VENCIDOS, DESPERDÍCIOS e DESCARTES. Produtos com data de validade futura (a partir de amanhã) não podem ser cadastrados para descarte.');
       return;
     }
 
@@ -326,7 +327,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
     const computedStatus = daysLeft < 0 ? 'vencido' : daysLeft <= 3 ? 'vencendo' : 'normal';
 
     if (computedStatus !== 'vencido') {
-      alert('⛔ PRODUTO AINDA DENTRO DA VALIDADE!\n\nEste sistema foi reformulado para aceitar EXCLUSIVAMENTE o registro de produtos que já venceram (pelo menos 1 dia após a validade) para controle de perdas e descarte.');
+      alert('PRODUTO AINDA DENTRO DA VALIDADE!\n\nEste sistema foi reformulado para aceitar EXCLUSIVAMENTE o registro de produtos que já venceram (pelo menos 1 dia após a validade) para controle de perdas e descarte.');
       setIsWasteScannerOpen(false);
       return;
     }
@@ -624,6 +625,22 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   // MAIN DASHBOARD WHEN LOGGED IN
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-8 pb-28 sm:pb-8">
+      {/* Reminder Banner */}
+      {showReminder && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-2xl flex items-center justify-between text-xs sm:text-sm font-semibold shadow-xs">
+          <div className="flex items-center space-x-2">
+            <span className="font-bold">Lembrete:</span>
+            <span>Olhe o aplicativo regularmente para conferir o controle de estoque e validades dos produtos.</span>
+          </div>
+          <button 
+            onClick={() => setShowReminder(false)}
+            className="text-amber-700 hover:text-amber-900 font-bold px-2 py-1 cursor-pointer text-xs shrink-0"
+          >
+            Dispensar
+          </button>
+        </div>
+      )}
+
       {/* Toast Notification */}
       {toastMsg && (
         <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 bg-[#2C2C2C] text-white font-bold px-4 py-3 rounded-xl shadow-xl text-xs border border-[#D4A574] animate-bounce flex items-center space-x-2">
@@ -673,7 +690,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           }`}
         >
           <BarChart3 className="w-3.5 h-3.5" />
-          <span>📊 Dashboard</span>
+          <span>Dashboard</span>
         </button>
 
         <button
@@ -683,7 +700,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           }`}
         >
           <Boxes className="w-3.5 h-3.5 text-[#FF6B00]" />
-          <span>📦 Controle de Estoque</span>
+          <span>Controle de Estoque</span>
         </button>
 
         <button
@@ -695,7 +712,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           }`}
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-          <span>✨ PadeIA™</span>
+          <span>PadeIA</span>
         </button>
 
         <button
@@ -705,7 +722,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           }`}
         >
           <Printer className="w-3.5 h-3.5" />
-          <span>📋 Relatório</span>
+          <span>Relatório</span>
         </button>
         <button
           onClick={() => setActiveTab('config')}
@@ -714,7 +731,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           }`}
         >
           <Settings className="w-3.5 h-3.5" />
-          <span>⚙️ Config</span>
+          <span>Config</span>
         </button>
       </div>
 

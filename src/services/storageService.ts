@@ -1,6 +1,7 @@
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing, InventoryMovement, StockCount, MovementType, InventoryItem } from '../types/index.js';
 import { calculateDaysRemaining, getProductStatus, formatDateToISO, generateActivationCode } from '../utils/dateUtils.js';
 import { db, auth, testFirestoreConnection } from './firebase.js';
+import { signInAnonymously } from 'firebase/auth';
 import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe, query, where } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler.js';
 
@@ -25,9 +26,7 @@ const KEYS = {
   PRODUCTS: 'padarias_products_v1',
   SALES_HISTORY: 'padarias_sales_history_v1',
   TICKETS: 'padarias_tickets_v1',
-  ADMIN_AUTH: 'padarias_admin_authenticated',
   BAKERY_SESSION: 'padarias_active_session',
-  ADMIN_PASSWORD: 'padarias_admin_password',
   ASAAS_SETTINGS: 'padarias_asaas_settings',
   VIP_OFFERS: 'padarias_vip_offers_v1',
   DAILY_CLOSINGS: 'padarias_fechamentos_v1',
@@ -79,9 +78,6 @@ export class StorageService {
     }
     if (!localStorage.getItem(KEYS.VIP_OFFERS)) {
       setItem(KEYS.VIP_OFFERS, []);
-    }
-    if (!localStorage.getItem(KEYS.ADMIN_PASSWORD)) {
-      setItem(KEYS.ADMIN_PASSWORD, 'admin123');
     }
 
     StorageService.purgeDemoDataFromLocal();
@@ -345,55 +341,10 @@ export class StorageService {
   }
 
   static async pullFromFirestore(): Promise<void> {
-    if (!auth.currentUser || auth.currentUser.email !== 'admin@padaria.io') {
-      return;
-    }
-    try {
-      // 1. Settings (Only specific config document for admin)
-      try {
-        const adminDoc = await getDoc(doc(db, 'settings', 'admin'));
-        if (adminDoc.exists()) {
-          const data = adminDoc.data();
-          if (data && data.adminPassword) {
-            setItem(KEYS.ADMIN_PASSWORD, data.adminPassword);
-          }
-        }
-      } catch (e) {
-        console.warn('Firestore fetch settings warning:', e);
-      }
-    } catch (err: any) {
-      console.error('Error syncing settings from Firestore:', err);
-    }
+    // Admin authentication handled exclusively via Firebase Auth and backend roles
   }
 
-  // Admin Password
-  static getAdminPassword(): string {
-    return getItem(KEYS.ADMIN_PASSWORD, 'admin123');
-  }
 
-  static async setAdminPassword(newPass: string): Promise<void> {
-    const trimmed = newPass.trim();
-    setItem(KEYS.ADMIN_PASSWORD, trimmed);
-
-    await setDoc(doc(db, 'settings', 'admin'), {
-      adminPassword: trimmed,
-      updatedAt: new Date().toISOString(),
-    }).catch((err) => {
-      console.error('Failed to save admin password to Firestore', err);
-    });
-  }
-
-  static verifyAdminPassword(inputPass: string): boolean {
-    return inputPass.trim() === StorageService.getAdminPassword();
-  }
-
-  static isAdminAuthenticated(): boolean {
-    return getItem(KEYS.ADMIN_AUTH, false);
-  }
-
-  static setAdminAuthenticated(auth: boolean): void {
-    setItem(KEYS.ADMIN_AUTH, auth);
-  }
 
   // Bakery Session
   static getActiveBakeryCode(): string | null {
@@ -1966,8 +1917,6 @@ export class StorageService {
     setItem(KEYS.SALES_HISTORY, []);
     setItem(KEYS.TICKETS, []);
     setItem(KEYS.VIP_OFFERS, []);
-    setItem(KEYS.ADMIN_PASSWORD, 'admin123');
-    setItem(KEYS.ADMIN_AUTH, false);
     setItem(KEYS.BAKERY_SESSION, null);
   }
 

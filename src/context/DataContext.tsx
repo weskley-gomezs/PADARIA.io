@@ -235,23 +235,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const init = async () => {
       await StorageService.init();
-      const isAdminAuth = StorageService.isAdminAuthenticated();
-      setIsAdminLoggedIn(isAdminAuth);
-      if (isAdminAuth) {
-        try {
-          try {
-            await signInWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
-          } catch (e) {
-            try {
-              await createUserWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
-            } catch (createErr) {
-              await signInAnonymously(auth);
-            }
-          }
-        } catch (err) {
-          console.warn('Failed to auto-sign in admin:', err);
-        }
-      }
     };
     init();
 
@@ -560,29 +543,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginAsAdmin = async (password: string): Promise<boolean> => {
-    if (password === 'admin123') { // standard simple check
-      try {
-        try {
-          await signInWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
-        } catch (authErr) {
-          try {
-            await createUserWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
-          } catch (createErr) {
-            await signInAnonymously(auth);
-          }
-        }
-        const user = auth.currentUser;
-        if (user) {
-          await StorageService.setUserBakeryMapping(user.uid, 'ADMIN', 'admin@padaria.io', 'admin');
-        }
-      } catch (err) {
-        console.warn('Admin Firebase Auth login failed:', err);
+    try {
+      await signInWithEmailAndPassword(auth, 'admin@padaria.io', password);
+      const user = auth.currentUser;
+      if (user) {
+        await StorageService.setUserBakeryMapping(user.uid, 'ADMIN', 'admin@padaria.io', 'admin');
       }
-      StorageService.setAdminAuthenticated(true);
       setIsAdminLoggedIn(true);
       return true;
+    } catch (err) {
+      console.error('Admin Firebase Auth login failed:', err);
+      return false;
     }
-    return false;
   };
 
   const logoutAdmin = async () => {
@@ -591,8 +563,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error('Error signing out admin from Firebase Auth:', e);
     }
-    StorageService.setAdminAuthenticated(false);
     setIsAdminLoggedIn(false);
+    setAuthUser(null);
   };
 
   // ----------------------------------------------------

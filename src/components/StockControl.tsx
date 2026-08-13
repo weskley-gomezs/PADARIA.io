@@ -553,7 +553,7 @@ export const StockControl: React.FC = () => {
           }`}
         >
           <ClipboardCheck className="w-4 h-4 text-[#FF6B00]" />
-          <span>📐 Conferência de Estoque</span>
+          <span>Conferência de Estoque</span>
         </button>
 
         <button
@@ -565,7 +565,7 @@ export const StockControl: React.FC = () => {
           }`}
         >
           <PlusCircle className="w-4 h-4 text-emerald-500" />
-          <span>➕ Cadastrar Produto</span>
+          <span>Cadastrar Produto</span>
         </button>
 
         <button
@@ -577,7 +577,7 @@ export const StockControl: React.FC = () => {
           }`}
         >
           <Layers className="w-4 h-4 text-blue-500" />
-          <span>🔄 Movimentação</span>
+          <span>Movimentação</span>
         </button>
 
         <button
@@ -589,7 +589,7 @@ export const StockControl: React.FC = () => {
           }`}
         >
           <History className="w-4 h-4 text-amber-500" />
-          <span>📋 Histórico</span>
+          <span>Histórico</span>
         </button>
 
         <button
@@ -601,7 +601,7 @@ export const StockControl: React.FC = () => {
           }`}
         >
           <RotateCcw className="w-4 h-4 text-red-500" />
-          <span>⚠️ Reincidentes</span>
+          <span>Reincidentes</span>
           {recurrentDivergences.length > 0 && (
             <span className="ml-1 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full">
               {recurrentDivergences.length}

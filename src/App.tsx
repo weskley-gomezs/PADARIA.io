@@ -122,35 +122,7 @@ export default function App() {
         onClose={() => setIsPrivacyOpen(false)}
       />
 
-      {/* Footer */}
-      {currentView !== 'admin' && (
-        <footer className="hidden sm:block bg-white border-t border-[#E0E0E0] py-6 text-center text-xs text-gray-500 mt-auto">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
-            <div className="flex items-center space-x-2.5">
-              <img 
-                src="https://i.imgur.com/ZGsjvWy.png" 
-                alt="PADARIA.io Logo" 
-                className="h-10 sm:h-12 object-contain"
-                referrerPolicy="no-referrer"
-              />
-              <span className="text-gray-300">•</span>
-              <span className="text-gray-500 text-[11px] sm:text-xs">Sistema de Gestão & Monitoramento Sanitário de Validade</span>
-            </div>
 
-            <div className="flex items-center space-x-4 text-gray-500">
-              <button onClick={() => handleNavigate('landing')} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
-                Início / Site
-              </button>
-              <button onClick={() => setIsPrivacyOpen(true)} className="hover:text-[#2C2C2C] font-semibold cursor-pointer">
-                Política de Privacidade
-              </button>
-              <button onClick={() => handleNavigate('admin')} className="hover:text-[#E8571A] font-extrabold cursor-pointer flex items-center space-x-1">
-                <span>Painel Admin</span>
-              </button>
-            </div>
-          </div>
-        </footer>
-      )}
     </div>
   );
 }

@@ -144,10 +144,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
     let unsubscribe: (() => void) | null = null;
 
     const checkAndLoad = () => {
-      const authStatus = StorageService.isAdminAuthenticated();
       const currentUser = auth.currentUser;
 
-      if (authStatus && currentUser && currentUser.email === 'admin@padaria.io') {
+      if (isAdminLoggedIn && currentUser && currentUser.email === 'admin@padaria.io') {
         loadAdminData();
       } else {
         // Fallback to local storage cache for instant UI and safe pre-login state
@@ -215,30 +214,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
-    if (StorageService.verifyAdminPassword(passwordInput)) {
-      try {
-        try {
-          await signInWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
-        } catch (signInErr) {
-          try {
-            await createUserWithEmailAndPassword(auth, 'admin@padaria.io', 'admin123');
-          } catch (createErr) {
-            await signInAnonymously(auth);
-          }
-        }
-        const user = auth.currentUser;
-        if (user) {
-          await StorageService.setUserBakeryMapping(user.uid, 'ADMIN', 'admin@padaria.io', 'admin');
-        }
-      } catch (err) {
-        console.warn('Admin Firebase Auth login failed:', err);
+    try {
+      await signInWithEmailAndPassword(auth, 'admin@padaria.io', passwordInput);
+      const user = auth.currentUser;
+      if (user) {
+        await StorageService.setUserBakeryMapping(user.uid, 'ADMIN', 'admin@padaria.io', 'admin');
       }
-
-      StorageService.setAdminAuthenticated(true);
       setIsAuthenticated(true);
       await loadAdminData();
-    } else {
-      setPasswordError('Senha incorreta! Use "admin123".');
+    } catch (err) {
+      console.error('Admin login error:', err);
+      setPasswordError('Senha incorreta ou credenciais inválidas.');
     }
   };
 
@@ -590,7 +576,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
 
             <button
               onClick={() => {
-                StorageService.setAdminAuthenticated(false);
                 setIsAuthenticated(false);
                 if (onLogoutAdmin) {
                   onLogoutAdmin();
