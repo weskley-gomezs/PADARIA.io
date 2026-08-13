@@ -5,6 +5,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndP
 import {
   BakeryCompany,
   Product,
+  ProductStatus,
   SaleHistoryItem,
   SupportTicket,
   DailyClosing,
@@ -147,6 +148,12 @@ interface DataContextType {
     initialQuantity: number,
     unitCost: number
   ) => Promise<InventoryItem>;
+  updateInventoryItem: (
+    id: string,
+    name: string,
+    unitCost?: number,
+    unit?: string
+  ) => Promise<InventoryItem>;
   calculateExpectedStock: (productId: string) => {
     expected: number;
     initial: number;
@@ -244,7 +251,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (user) {
         console.log('[AUTH] Confirmed user session:', user.uid, user.email);
         if (isAdminEmail(user.email)) {
-          setActiveCodeState(null);
+          const savedCode = StorageService.getActiveBakeryCode();
+          if (savedCode) {
+            setActiveCodeState(savedCode);
+            const comp = await StorageService.getCompanyByCodeAsync(savedCode);
+            if (comp) {
+              setActiveCompany(comp);
+            } else {
+              setActiveCompany(null);
+            }
+          } else {
+            setActiveCodeState(null);
+            setActiveCompany(null);
+          }
           setIsAdminLoggedIn(true);
           setAuthUser(user);
         } else {
@@ -345,11 +364,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let unsubs: Unsubscribe[] = [];
 
-    if (authUser && activeCode && !isAdminEmail(authUser.email)) {
+    if (authUser && activeCode) {
       console.log('[DATA] Initializing tenant subscriptions for:', activeCode, 'User:', authUser.uid);
       // 1. Fetch current active company immediately
       StorageService.getCompanyByCodeAsync(activeCode).then((comp) => {
-        if (comp && comp.ativo) {
+        if (comp && (comp.ativo || isAdminEmail(authUser.email))) {
           setActiveCompany(comp);
         } else if (comp && !comp.ativo) {
           setActiveCompany(null);
@@ -360,7 +379,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 2. Single Company Listener
       try {
         const unsubComp = StorageService.subscribeCompany(activeCode, (comp) => {
-          if (comp && comp.ativo) {
+          if (comp && (comp.ativo || isAdminEmail(authUser.email))) {
             setActiveCompany(comp);
           } else {
             setActiveCompany(null);
@@ -434,6 +453,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const authEmail = comp.email || `${comp.codigoAtivacao.toLowerCase()}@padaria.io`;
       const authPassword = comp.senha || `Padaria@${comp.codigoAtivacao}!2026`;
 
+      // Pre-set active code to prevent async onAuthStateChanged race conditions
+      StorageService.setActiveBakeryCode(comp.codigoAtivacao);
+      setActiveCodeState(comp.codigoAtivacao);
+
       let user: any = null;
       try {
         const cred = await signInWithEmailAndPassword(auth, authEmail, authPassword);
@@ -484,6 +507,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const email = comp.email || `${trimmedCode.toLowerCase()}@padaria.io`;
       const password = comp.senha || `Padaria@${trimmedCode}!2026`;
+
+      // Pre-set active code to prevent async onAuthStateChanged race conditions
+      StorageService.setActiveBakeryCode(trimmedCode);
+      setActiveCodeState(trimmedCode);
 
       let userCredential;
       try {
@@ -574,7 +601,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     valorTotal?: number,
     motivo?: string,
     notas?: string,
-    peso?: number
+    peso?: number,
+    statusOverride?: ProductStatus
   ): Promise<Product> => {
     if (!activeCode) throw new Error('Bakery code required');
 
@@ -594,7 +622,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       notas,
       peso,
       dataCadastro: new Date().toISOString().split('T')[0],
-      status: 'normal',
+      status: statusOverride || 'normal',
       diasParaVencer: 10
     };
 
@@ -614,7 +642,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         valorTotal,
         motivo,
         notas,
-        peso
+        peso,
+        statusOverride
       );
       // Replace optimistic temp item with the real persisted one
       setProducts((prev) => prev.map((p) => (p.id === tempId ? realProduct : p)));
@@ -850,6 +879,30 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       prev.map((p) => (p.id === productId ? { ...p, quantidade: physical } : p))
     );
 
+    // Automatically record waste (descarte) as system-wide waste (desperdício) if wasteQuantity > 0
+    if (waste > 0) {
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const estValue = Number((waste * unitCost).toFixed(2));
+        await addProduct(
+          productName,
+          waste,
+          todayStr,
+          'Estoque', // categoria
+          undefined, // barcode
+          unitCost, // valorKg
+          undefined, // dataFabricacao
+          estValue, // valorTotal
+          'Descarte', // motivo
+          notes || 'Gerado automaticamente pela Conferência de Estoque', // notas
+          undefined, // peso
+          'vencido' // statusOverride (forces status to 'vencido' to show as desperdício)
+        );
+      } catch (err) {
+        console.error('[AUTO_WASTE] Erro ao registrar descarte como desperdício:', err);
+      }
+    }
+
     try {
       const realCount = await StorageService.addStockCount(
         activeCode,
@@ -915,6 +968,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setInventoryItems((prev) => prev.filter((i) => i.id !== tempItem.id));
       throw err;
     }
+  };
+
+  const updateInventoryItem = async (
+    id: string,
+    name: string,
+    unitCost?: number,
+    unit?: string
+  ): Promise<InventoryItem> => {
+    const realUpdated = await StorageService.updateInventoryItem(id, name, unitCost, unit);
+    setInventoryItems((prev) => prev.map((i) => (i.id === id ? realUpdated : i)));
+    return realUpdated;
   };
 
   const calculateExpectedStock = useCallback(
@@ -1291,6 +1355,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addMovement,
         addStockCount,
         addInventoryItem,
+        updateInventoryItem,
         calculateExpectedStock,
         inventoryItems,
 

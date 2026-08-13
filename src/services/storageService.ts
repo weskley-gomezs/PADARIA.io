@@ -2281,6 +2281,34 @@ export class StorageService {
     return inventoryItem;
   }
 
+  static async updateInventoryItem(
+    id: string,
+    name: string,
+    unitCost?: number,
+    unit?: string
+  ): Promise<InventoryItem> {
+    const items = StorageService.getInventoryItems();
+    const idx = items.findIndex((i) => i.id === id);
+    if (idx === -1) throw new Error('Inventory item not found');
+
+    const updated: InventoryItem = {
+      ...items[idx],
+      name: name.trim(),
+      updatedAt: new Date().toISOString()
+    };
+    if (unitCost !== undefined) updated.unitCost = Number(unitCost);
+    if (unit !== undefined) updated.unit = unit;
+
+    items[idx] = updated;
+    setItem(KEYS.INVENTORY_ITEMS, items);
+
+    await setDoc(doc(db, 'inventoryItems', id), removeUndefined(updated)).catch((e) => {
+      handleFirestoreError(e, OperationType.WRITE, `inventoryItems/${id}`);
+    });
+
+    return updated;
+  }
+
   static async getInventoryItemsFromServer(bakeryCode: string): Promise<InventoryItem[]> {
     if (!auth.currentUser) {
       console.warn('[DATA] getInventoryItemsFromServer skipped: user not authenticated');

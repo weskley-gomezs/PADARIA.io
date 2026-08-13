@@ -23,7 +23,9 @@ import {
   Building2,
   ShieldCheck,
   Check,
-  Plus
+  Plus,
+  Edit,
+  Save
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { MovementType } from '../types';
@@ -38,18 +40,21 @@ export const StockControl: React.FC = () => {
     addMovement,
     addStockCount,
     addInventoryItem,
+    updateInventoryItem,
+    updateProduct,
     calculateExpectedStock,
     activeCompany,
     activeCode
   } = useData();
 
   // Sub-tab selection inside Stock Control
-  // 'conference' = Conferência de Estoque (Default)
-  // 'register'   = Cadastrar Produto no Estoque
+  // 'register'   = Cadastrar Produto no Estoque (Default)
+  // 'conference' = Conferência de Estoque
   // 'movement'   = Lançar Movimentação Manual
   // 'history'    = Histórico de Divergências
   // 'recurrent'  = Itens Reincidentes
-  const [subTab, setSubTab] = useState<'conference' | 'register' | 'movement' | 'history' | 'recurrent'>('conference');
+  // 'edit'       = Editar Nome do Produto
+  const [subTab, setSubTab] = useState<'conference' | 'register' | 'movement' | 'history' | 'recurrent' | 'edit'>('register');
 
   // Search and Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -113,6 +118,87 @@ export const StockControl: React.FC = () => {
       alert('Erro ao cadastrar produto: ' + (err.message || 'Tente novamente'));
     } finally {
       setIsSubmittingRegister(false);
+    }
+  };
+
+  // ==========================================
+  // EDIT PRODUCT TAB STATE & HANDLERS
+  // ==========================================
+  const [editingItemId, setEditingItemId] = useState<string>('');
+  const [editingItemType, setEditingItemType] = useState<'inventory' | 'product'>('inventory');
+  const [editName, setEditName] = useState<string>('');
+  const [editCost, setEditCost] = useState<string>('');
+  const [editUnit, setEditUnit] = useState<string>('kg');
+  const [isSavingEdit, setIsSavingEdit] = useState<boolean>(false);
+  const [editSuccessMsg, setEditSuccessMsg] = useState<string | null>(null);
+  const [editErrorMsg, setEditErrorMsg] = useState<string | null>(null);
+  const [searchEditTerm, setSearchEditTerm] = useState<string>('');
+
+  const handleSelectEditItem = (id: string, type: 'inventory' | 'product') => {
+    setEditingItemId(id);
+    setEditingItemType(type);
+    setEditSuccessMsg(null);
+    setEditErrorMsg(null);
+
+    if (type === 'inventory') {
+      const item = inventoryItems.find((i) => i.id === id);
+      if (item) {
+        setEditName(item.name);
+        setEditCost(String(item.unitCost || 0));
+        setEditUnit(item.unit || 'kg');
+      }
+    } else {
+      const item = products.find((p) => p.id === id);
+      if (item) {
+        setEditName(item.nome);
+        setEditCost(String(item.valorKg || 0));
+        setEditUnit(item.unidade || 'kg');
+      }
+    }
+  };
+
+  const handleSaveProductEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItemId) return;
+    if (!editName.trim()) {
+      setEditErrorMsg('O nome do produto não pode ficar em branco.');
+      return;
+    }
+
+    setIsSavingEdit(true);
+    setEditSuccessMsg(null);
+    setEditErrorMsg(null);
+
+    try {
+      const costNum = parseFloat(editCost.replace(',', '.')) || 0;
+      if (editingItemType === 'inventory') {
+        await updateInventoryItem(editingItemId, editName.trim(), costNum, editUnit);
+        setEditSuccessMsg(`Produto de estoque "${editName.trim()}" atualizado com sucesso!`);
+      } else {
+        const original = products.find((p) => p.id === editingItemId);
+        if (original) {
+          await updateProduct(
+            editingItemId,
+            editName.trim(),
+            original.quantidade,
+            original.dataValidade,
+            original.categoria,
+            original.barcode,
+            costNum,
+            original.dataFabricacao,
+            original.valorTotal,
+            original.motivo,
+            original.notas,
+            original.peso
+          );
+          setEditSuccessMsg(`Produto de validade "${editName.trim()}" atualizado com sucesso!`);
+        }
+      }
+    } catch (err: any) {
+      console.error(err);
+      setEditErrorMsg('Ocorreu um erro ao salvar as alterações do produto.');
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -545,6 +631,18 @@ export const StockControl: React.FC = () => {
       {/* Mobile Touch-App Sub-Navigation Tabs */}
       <div className="bg-white p-1.5 rounded-2xl border border-gray-200 shadow-xs flex items-center overflow-x-auto gap-1 scrollbar-none">
         <button
+          onClick={() => setSubTab('register')}
+          className={`flex items-center space-x-1.5 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all whitespace-nowrap cursor-pointer min-h-[44px] flex-1 justify-center ${
+            subTab === 'register'
+              ? 'bg-[#111111] text-white shadow-xs'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <PlusCircle className="w-4 h-4 text-emerald-500" />
+          <span>Cadastrar Produto</span>
+        </button>
+
+        <button
           onClick={() => setSubTab('conference')}
           className={`flex items-center space-x-1.5 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all whitespace-nowrap cursor-pointer min-h-[44px] flex-1 justify-center ${
             subTab === 'conference'
@@ -557,15 +655,15 @@ export const StockControl: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setSubTab('register')}
+          onClick={() => setSubTab('edit')}
           className={`flex items-center space-x-1.5 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all whitespace-nowrap cursor-pointer min-h-[44px] flex-1 justify-center ${
-            subTab === 'register'
+            subTab === 'edit'
               ? 'bg-[#111111] text-white shadow-xs'
               : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
-          <PlusCircle className="w-4 h-4 text-emerald-500" />
-          <span>Cadastrar Produto</span>
+          <Edit className="w-4 h-4 text-purple-500" />
+          <span>Editar Nome</span>
         </button>
 
         <button
@@ -1212,6 +1310,224 @@ export const StockControl: React.FC = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SUB-TAB 6: EDITAR PRODUTO (NOME, PREÇO, UNIDADE)                           */}
+      {/* ========================================================================= */}
+      {subTab === 'edit' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-scale-in">
+          {/* Left Panel: Searchable Product List */}
+          <div className="lg:col-span-6 bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-xs space-y-4">
+            <div>
+              <h2 className="text-base font-black text-[#2C2C2C] flex items-center space-x-2">
+                <Search className="w-5 h-5 text-purple-600" />
+                <span>1. Selecione um Produto</span>
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Utilize o campo abaixo para buscar o produto que deseja editar.
+              </p>
+            </div>
+
+            {/* Local Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Buscar produto por nome..."
+                value={searchEditTerm}
+                onChange={(e) => setSearchEditTerm(e.target.value)}
+                className="w-full h-11 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-xl text-xs font-bold text-gray-[#2C2C2C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+              />
+            </div>
+
+            {/* List of Items */}
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+              {/* Filtered Inventory Items */}
+              <div>
+                <h3 className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider mb-2">
+                  Itens do Estoque ({inventoryItems.length})
+                </h3>
+                {inventoryItems.filter(i => i.name.toLowerCase().includes(searchEditTerm.toLowerCase())).length === 0 ? (
+                  <p className="text-xs text-gray-400 italic py-1">Nenhum item encontrado.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {inventoryItems
+                      .filter(i => i.name.toLowerCase().includes(searchEditTerm.toLowerCase()))
+                      .map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => handleSelectEditItem(item.id, 'inventory')}
+                          className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+                            editingItemId === item.id && editingItemType === 'inventory'
+                              ? 'border-purple-500 bg-purple-50/50 ring-2 ring-purple-100'
+                              : 'border-gray-200 hover:bg-gray-50 bg-white'
+                          }`}
+                        >
+                          <div>
+                            <span className="text-xs font-black text-gray-900 block">{item.name}</span>
+                            <span className="text-[10px] font-bold text-gray-500 block uppercase">
+                              Estoque atual: {item.currentQuantity} {item.unit} • R$ {item.unitCost.toFixed(2)}/{item.unit}
+                            </span>
+                          </div>
+                          <Edit className="w-3.5 h-3.5 text-purple-600 shrink-0 opacity-60" />
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Filtered Expiration Module Products */}
+              <div className="pt-2 border-t border-gray-100">
+                <h3 className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider mb-2">
+                  Lotes / Validade ({products.length})
+                </h3>
+                {products.filter(p => p.nome.toLowerCase().includes(searchEditTerm.toLowerCase())).length === 0 ? (
+                  <p className="text-xs text-gray-400 italic py-1">Nenhum lote encontrado.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {products
+                      .filter(p => p.nome.toLowerCase().includes(searchEditTerm.toLowerCase()))
+                      .map((prod) => (
+                        <button
+                          key={prod.id}
+                          type="button"
+                          onClick={() => handleSelectEditItem(prod.id, 'product')}
+                          className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+                            editingItemId === prod.id && editingItemType === 'product'
+                              ? 'border-purple-500 bg-purple-50/50 ring-2 ring-purple-100'
+                              : 'border-gray-200 hover:bg-gray-50 bg-white'
+                          }`}
+                        >
+                          <div>
+                            <span className="text-xs font-black text-gray-900 block">{prod.nome}</span>
+                            <span className="text-[10px] font-bold text-gray-500 block uppercase">
+                              Lote de Validade: {prod.quantidade} {prod.unidade || 'unid'} • Val: {formatDateToBR(prod.dataValidade)}
+                            </span>
+                          </div>
+                          <Edit className="w-3.5 h-3.5 text-blue-500 shrink-0 opacity-60" />
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Panel: Edit Form */}
+          <div className="lg:col-span-6 bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-xs space-y-4">
+            <div>
+              <h2 className="text-base font-black text-[#2C2C2C] flex items-center space-x-2">
+                <Edit className="w-5 h-5 text-purple-600" />
+                <span>2. Editar Dados do Produto</span>
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Altere as informações do produto selecionado no painel ao lado.
+              </p>
+            </div>
+
+            {!editingItemId ? (
+              <div className="p-8 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-center space-y-2">
+                <Package className="w-8 h-8 text-gray-300" />
+                <span className="text-xs font-black text-gray-400 uppercase">Nenhum Produto Selecionado</span>
+                <span className="text-[11px] text-gray-500 max-w-xs">
+                  Selecione um produto da lista à esquerda para começar a editar os dados.
+                </span>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveProductEdit} className="space-y-4 animate-scale-in">
+                {editSuccessMsg && (
+                  <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center space-x-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{editSuccessMsg}</span>
+                  </div>
+                )}
+
+                {editErrorMsg && (
+                  <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 text-xs font-bold rounded-xl flex items-center space-x-2">
+                    <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>{editErrorMsg}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-extrabold text-gray-800 uppercase tracking-wider mb-1.5">
+                    Nome do Produto *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Nome do produto"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full h-12 px-4 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-[#2C2C2C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-extrabold text-gray-800 uppercase tracking-wider mb-1.5">
+                      Valor Unitário (Custo R$)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">
+                        R$
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        value={editCost}
+                        onChange={(e) => setEditCost(e.target.value)}
+                        className="w-full h-12 pl-10 pr-3 bg-gray-50 border border-gray-300 rounded-xl text-sm font-extrabold text-[#2C2C2C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold text-gray-800 uppercase tracking-wider mb-1.5">
+                      Unidade de Pesagem
+                    </label>
+                    <select
+                      value={editUnit}
+                      onChange={(e) => setEditUnit(e.target.value)}
+                      className="w-full h-12 px-3 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-[#2C2C2C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00] cursor-pointer"
+                    >
+                      <option value="kg">kg (Quilograma)</option>
+                      <option value="l">l (Litro)</option>
+                      <option value="ml">ml (Mililitro)</option>
+                      <option value="g">g (Grama)</option>
+                      <option value="unidade">unidade (Unid)</option>
+                      <option value="embalagem">embalagem (Emb)</option>
+                      <option value="caixa">caixa (Cx)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSavingEdit || !editName.trim()}
+                    className="w-full h-13 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs sm:text-sm uppercase rounded-xl shadow-xs transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-1.5"
+                  >
+                    {isSavingEdit ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Salvando Alterações...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Salvar Dados do Produto</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       )}
 
