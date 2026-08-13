@@ -2,134 +2,198 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAuthenticated() {
-      return request.auth != null;
+    // Helper 1: Check if user is authenticated in Firebase Auth
+    function authenticateFirebaseUser() {
+      return request.auth != null && request.auth.uid != null;
     }
 
+    // Helper 2: Check if user document exists in /users/{uid}
+    function hasUserDoc() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    // Helper 3: Get user document data
     function getUserData() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
-        : null;
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function getUserBakeryCode() {
-      let data = getUserData();
-      return data != null && 'bakeryCode' in data ? data.bakeryCode : '';
+    // Helper 4: Check if user mapping document exists in /user_bakery_mappings/{uid}
+    function hasUserMappingDoc() {
+      return exists(/databases/$(database)/documents/user_bakery_mappings/$(request.auth.uid));
     }
 
-    function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.email == 'admin@padaria.io' || 
-        (getUserData() != null && getUserData().role == 'admin')
+    // Helper 5: Get user mapping document data
+    function getUserMappingData() {
+      return get(/databases/$(database)/documents/user_bakery_mappings/$(request.auth.uid)).data;
+    }
+
+    // Helper 6: Require System Admin access
+    function requireAdmin() {
+      return authenticateFirebaseUser() && (
+        (request.auth.token != null && request.auth.token.email == 'admin@padaria.io') ||
+        (hasUserDoc() && getUserData().role == 'admin') ||
+        (hasUserMappingDoc() && getUserMappingData().role == 'admin')
       );
     }
 
-    function belongsToTenant(tenantCode) {
-      return isAuthenticated() && (getUserBakeryCode() == tenantCode || isAdmin());
+    // Helper 7: Require Tenant Access (User belongs to the tenant or is Admin)
+    function requireTenantAccess(bakeryCode) {
+      return authenticateFirebaseUser() && (
+        requireAdmin() ||
+        (hasUserDoc() && getUserData().bakeryCode == bakeryCode) ||
+        (hasUserMappingDoc() && getUserMappingData().bakeryCode == bakeryCode)
+      );
     }
 
+    // Users collection: Each user can manage their own profile; Admin can manage all
     match /users/{uid} {
-      allow read: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
-      allow create: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
-      allow update: if isAuthenticated() && (
-                     (request.auth.uid == uid &&
-                      request.resource.data.bakeryCode == resource.data.bakeryCode &&
-                      request.resource.data.role == resource.data.role) ||
-                     isAdmin()
-                    );
-      allow delete: if isAdmin();
+      allow read, write: if authenticateFirebaseUser() && (request.auth.uid == uid || requireAdmin());
     }
 
+    // User bakery mappings collection
+    match /user_bakery_mappings/{uid} {
+      allow read, write: if authenticateFirebaseUser() && (request.auth.uid == uid || requireAdmin());
+    }
+
+    // Companies collection: Allow read for authenticated users so they can verify activation codes; write restricted to authorized tenant or admin
     match /companies/{companyCode} {
-      allow read: if isAuthenticated() && belongsToTenant(companyCode);
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && belongsToTenant(companyCode);
-      allow delete: if isAdmin();
+      allow read: if authenticateFirebaseUser();
+      allow write: if authenticateFirebaseUser() && (requireTenantAccess(companyCode) || requireAdmin());
     }
 
+    // Products collection
     match /products/{productId} {
-      allow read: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow create: if isAuthenticated() && (request.resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow update: if isAuthenticated() && (
-                     (resource.data.bakeryCode == getUserBakeryCode() && request.resource.data.bakeryCode == resource.data.bakeryCode) || 
-                     isAdmin()
-                    );
-      allow delete: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
+      allow read: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
+      allow create: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        (request.resource.data.bakeryCode != null && requireTenantAccess(request.resource.data.bakeryCode))
+      );
+      allow update, delete: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
     }
 
+    // Sales collection
     match /sales/{saleId} {
-      allow read: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow create: if isAuthenticated() && (request.resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow update: if isAuthenticated() && (
-                     (resource.data.bakeryCode == getUserBakeryCode() && request.resource.data.bakeryCode == resource.data.bakeryCode) || 
-                     isAdmin()
-                    );
-      allow delete: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
+      allow read: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
+      allow create: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        (request.resource.data.bakeryCode != null && requireTenantAccess(request.resource.data.bakeryCode))
+      );
+      allow update, delete: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
     }
 
+    // VIP Offers collection
     match /vipOffers/{offerId} {
-      allow read: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow create: if isAuthenticated() && (request.resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow update: if isAuthenticated() && (
-                     (resource.data.bakeryCode == getUserBakeryCode() && request.resource.data.bakeryCode == resource.data.bakeryCode) || 
-                     isAdmin()
-                    );
-      allow delete: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
+      allow read: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
+      allow create: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        (request.resource.data.bakeryCode != null && requireTenantAccess(request.resource.data.bakeryCode))
+      );
+      allow update, delete: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
     }
 
+    // Daily Closings collection
     match /dailyClosings/{closingId} {
-      allow read: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow create: if isAuthenticated() && (request.resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow update: if isAuthenticated() && (
-                     (resource.data.bakeryCode == getUserBakeryCode() && request.resource.data.bakeryCode == resource.data.bakeryCode) || 
-                     isAdmin()
-                    );
-      allow delete: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
+      allow read: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
+      allow create: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        (request.resource.data.bakeryCode != null && requireTenantAccess(request.resource.data.bakeryCode))
+      );
+      allow update, delete: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
     }
 
+    // Support Tickets collection
     match /tickets/{ticketId} {
-      allow read: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow create: if isAuthenticated() && (request.resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow update: if isAuthenticated() && (
-                     (resource.data.bakeryCode == getUserBakeryCode() && request.resource.data.bakeryCode == resource.data.bakeryCode) || 
-                     isAdmin()
-                    );
-      allow delete: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
+      allow read: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
+      allow create: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        (request.resource.data.bakeryCode != null && requireTenantAccess(request.resource.data.bakeryCode))
+      );
+      allow update, delete: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
     }
 
+    // Inventory Movements collection
     match /inventoryMovements/{movementId} {
-      allow read: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow create: if isAuthenticated() && (request.resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow update: if isAuthenticated() && (
-                     (resource.data.bakeryCode == getUserBakeryCode() && request.resource.data.bakeryCode == resource.data.bakeryCode) || 
-                     isAdmin()
-                    );
-      allow delete: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
+      allow read: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
+      allow create: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        (request.resource.data.bakeryCode != null && requireTenantAccess(request.resource.data.bakeryCode))
+      );
+      allow update, delete: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
     }
 
+    // Stock Counts collection
     match /stockCounts/{countId} {
-      allow read: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow create: if isAuthenticated() && (request.resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow update: if isAuthenticated() && (
-                     (resource.data.bakeryCode == getUserBakeryCode() && request.resource.data.bakeryCode == resource.data.bakeryCode) || 
-                     isAdmin()
-                    );
-      allow delete: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
+      allow read: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
+      allow create: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        (request.resource.data.bakeryCode != null && requireTenantAccess(request.resource.data.bakeryCode))
+      );
+      allow update, delete: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
     }
 
+    // Inventory Items collection
     match /inventoryItems/{itemId} {
-      allow read: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow create: if isAuthenticated() && (request.resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
-      allow update: if isAuthenticated() && (
-                     (resource.data.bakeryCode == getUserBakeryCode() && request.resource.data.bakeryCode == resource.data.bakeryCode) || 
-                     isAdmin()
-                    );
-      allow delete: if isAuthenticated() && (resource.data.bakeryCode == getUserBakeryCode() || isAdmin());
+      allow read: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
+      allow create: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        (request.resource.data.bakeryCode != null && requireTenantAccess(request.resource.data.bakeryCode))
+      );
+      allow update, delete: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
     }
 
+    // System Settings collection: Strictly Admin Only
     match /settings/{settingId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow read, write: if requireAdmin();
     }
   }
 }
+
+

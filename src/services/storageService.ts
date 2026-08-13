@@ -1,6 +1,6 @@
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing, InventoryMovement, StockCount, MovementType, InventoryItem } from '../types/index.js';
 import { calculateDaysRemaining, getProductStatus, formatDateToISO, generateActivationCode } from '../utils/dateUtils.js';
-import { db, testFirestoreConnection } from './firebase.js';
+import { db, auth, testFirestoreConnection } from './firebase.js';
 import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe, query, where } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler.js';
 
@@ -63,7 +63,7 @@ function setItem<T>(key: string, value: T): void {
 export class StorageService {
   private static isInitialized = false;
 
-  // Initialize and sync with Firestore
+  // Initialize local structures safely
   static async init(): Promise<void> {
     if (!localStorage.getItem(KEYS.COMPANIES)) {
       setItem(KEYS.COMPANIES, []);
@@ -85,16 +85,18 @@ export class StorageService {
     }
 
     StorageService.purgeDemoDataFromLocal();
-
-    if (!StorageService.isInitialized) {
-      StorageService.isInitialized = true;
-      testFirestoreConnection();
-      await StorageService.pullFromFirestore();
-    }
+    StorageService.isInitialized = true;
   }
 
-  // Real-time Subscriptions using Firestore onSnapshot
+  // Real-time Subscriptions using Firestore onSnapshot (Guarded for Auth)
   static subscribeCompany(code: string, callback: (company: BakeryCompany | null) => void): Unsubscribe {
+    if (!auth.currentUser) {
+      const localComps = StorageService.getCompanies();
+      const found = localComps.find(c => c.codigoAtivacao.toUpperCase() === code.trim().toUpperCase());
+      callback(found || null);
+      return () => {};
+    }
+
     const docRef = doc(db, 'companies', code.trim().toUpperCase());
     return onSnapshot(
       docRef,
@@ -117,6 +119,11 @@ export class StorageService {
   }
 
   static subscribeCompanies(callback: (companies: BakeryCompany[]) => void): Unsubscribe {
+    if (!auth.currentUser) {
+      callback(StorageService.getCompanies());
+      return () => {};
+    }
+
     const colRef = collection(db, 'companies');
     return onSnapshot(
       colRef,
@@ -338,8 +345,11 @@ export class StorageService {
   }
 
   static async pullFromFirestore(): Promise<void> {
+    if (!auth.currentUser || auth.currentUser.email !== 'admin@padaria.io') {
+      return;
+    }
     try {
-      // 1. Settings (Only specific config document, no tenant data)
+      // 1. Settings (Only specific config document for admin)
       try {
         const adminDoc = await getDoc(doc(db, 'settings', 'admin'));
         if (adminDoc.exists()) {
@@ -443,6 +453,32 @@ export class StorageService {
     return companies.find((c) => c.codigoAtivacao.toUpperCase() === cleanCode);
   }
 
+  static async getCompanyByCodeAsync(code: string): Promise<BakeryCompany | undefined> {
+    const cleanCode = code.trim().toUpperCase();
+    let comp = StorageService.getCompanyByCode(cleanCode);
+    if (comp) return comp;
+
+    try {
+      const docRef = doc(db, 'companies', cleanCode);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data() as BakeryCompany;
+        const validated = StorageService.validateAndCheckTrials([data])[0];
+        if (validated) {
+          const companies = StorageService.getCompanies();
+          const existingIdx = companies.findIndex(c => c.codigoAtivacao.toUpperCase() === cleanCode);
+          if (existingIdx >= 0) companies[existingIdx] = validated;
+          else companies.push(validated);
+          setItem(KEYS.COMPANIES, companies);
+        }
+        return validated;
+      }
+    } catch (err) {
+      console.warn('Error fetching company doc from Firestore:', err);
+    }
+    return undefined;
+  }
+
   static getCompanyByEmail(email: string): BakeryCompany | undefined {
     const companies = StorageService.getCompanies();
     const cleanEmail = email.trim().toLowerCase();
@@ -475,6 +511,42 @@ export class StorageService {
       if (!comp.ativo) {
         return undefined;
       }
+    }
+
+    return comp;
+  }
+
+  static async getCompanyByCredentialsAsync(email: string, pass: string): Promise<BakeryCompany | undefined> {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = pass.trim();
+
+    // 1. Check local cache first
+    let comp = StorageService.getCompanyByCredentials(cleanEmail, cleanPass);
+    if (comp) return comp;
+
+    // 2. Fetch all companies from Firestore if local cache didn't match
+    try {
+      const colRef = collection(db, 'companies');
+      const snap = await getDocs(colRef);
+      const companies: BakeryCompany[] = [];
+      snap.forEach((d) => {
+        const data = d.data() as BakeryCompany;
+        if (data && data.codigoAtivacao) {
+          companies.push(data);
+        }
+      });
+      if (companies.length > 0) {
+        const validated = StorageService.validateAndCheckTrials(companies);
+        setItem(KEYS.COMPANIES, validated);
+        comp = validated.find((c) => {
+          const emailMatches = c.email.trim().toLowerCase() === cleanEmail;
+          const storedPwd = (c.senha && c.senha.trim()) ? c.senha.trim() : 'padaria123';
+          const passMatches = storedPwd === cleanPass || c.codigoAtivacao.toUpperCase() === cleanPass.toUpperCase();
+          return emailMatches && passMatches;
+        });
+      }
+    } catch (err) {
+      console.warn('Error fetching companies from Firestore during credential check:', err);
     }
 
     return comp;
@@ -1510,6 +1582,10 @@ export class StorageService {
 
   // ON-DEMAND SERVERSIDE FETCHERS (Extremely cost-effective, no permanent listeners)
   static async getCompaniesFromServer(): Promise<BakeryCompany[]> {
+    if (!auth.currentUser) {
+      console.warn('[DATA] getCompaniesFromServer skipped: user not authenticated');
+      return StorageService.getCompanies();
+    }
     try {
       const compSnap = await getDocs(collection(db, 'companies'));
       const remoteCompanies: BakeryCompany[] = [];
@@ -1534,6 +1610,10 @@ export class StorageService {
   }
 
   static async getProductsFromServer(bakeryCode: string): Promise<Product[]> {
+    if (!auth.currentUser) {
+      console.warn('[DATA] getProductsFromServer skipped: user not authenticated');
+      return StorageService.getProducts(bakeryCode);
+    }
     try {
       const q = query(collection(db, 'products'), where('bakeryCode', '==', bakeryCode.trim().toUpperCase()));
       const snapshot = await getDocs(q);
@@ -1571,6 +1651,10 @@ export class StorageService {
     endDate?: string,
     limitCount = 300
   ): Promise<SaleHistoryItem[]> {
+    if (!auth.currentUser) {
+      console.warn('[DATA] getSalesHistoryFromServer skipped: user not authenticated');
+      return StorageService.getSalesHistory(bakeryCode);
+    }
     try {
       const q = query(
         collection(db, 'sales'),
@@ -1609,6 +1693,10 @@ export class StorageService {
   }
 
   static async getVipOffersFromServer(bakeryCode: string): Promise<VipOffer[]> {
+    if (!auth.currentUser) {
+      console.warn('[DATA] getVipOffersFromServer skipped: user not authenticated');
+      return StorageService.getVipOffers(bakeryCode);
+    }
     try {
       const q = query(
         collection(db, 'vipOffers'),
@@ -1636,6 +1724,10 @@ export class StorageService {
   }
 
   static async getDailyClosingsFromServer(bakeryCode: string, limitCount = 90): Promise<DailyClosing[]> {
+    if (!auth.currentUser) {
+      console.warn('[DATA] getDailyClosingsFromServer skipped: user not authenticated');
+      return StorageService.getDailyClosings(bakeryCode);
+    }
     try {
       const q = query(
         collection(db, 'dailyClosings'),
@@ -1661,6 +1753,10 @@ export class StorageService {
   }
 
   static async getTicketsFromServer(bakeryCode?: string): Promise<SupportTicket[]> {
+    if (!auth.currentUser) {
+      console.warn('[DATA] getTicketsFromServer skipped: user not authenticated');
+      return StorageService.getTickets(bakeryCode);
+    }
     try {
       let q: any = collection(db, 'tickets');
       if (bakeryCode) {
@@ -1690,6 +1786,9 @@ export class StorageService {
 
   // Admin global fetches
   static async getProductsFromServerAdmin(): Promise<Product[]> {
+    if (!auth.currentUser) {
+      return StorageService.getProducts();
+    }
     try {
       const snapshot = await getDocs(collection(db, 'products'));
       const products: Product[] = [];
@@ -1719,6 +1818,9 @@ export class StorageService {
   }
 
   static async getSalesHistoryFromServerAdmin(): Promise<SaleHistoryItem[]> {
+    if (!auth.currentUser) {
+      return StorageService.getSalesHistory();
+    }
     try {
       const snapshot = await getDocs(collection(db, 'sales'));
       const sales: SaleHistoryItem[] = [];
@@ -1739,6 +1841,9 @@ export class StorageService {
   }
 
   static async getVipOffersFromServerAdmin(): Promise<VipOffer[]> {
+    if (!auth.currentUser) {
+      return StorageService.getVipOffers();
+    }
     try {
       const snapshot = await getDocs(collection(db, 'vipOffers'));
       const offers: VipOffer[] = [];
@@ -1760,6 +1865,9 @@ export class StorageService {
   }
 
   static async getDailyClosingsFromServerAdmin(): Promise<DailyClosing[]> {
+    if (!auth.currentUser) {
+      return StorageService.getDailyClosings();
+    }
     try {
       const snapshot = await getDocs(collection(db, 'dailyClosings'));
       const closings: DailyClosing[] = [];
@@ -1790,10 +1898,13 @@ export class StorageService {
 
   static async getUserBakeryMapping(uid: string): Promise<{ bakeryCode: string; role: string } | null> {
     try {
-      const docRef = doc(db, 'users', uid);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
+      const snap = await getDoc(doc(db, 'users', uid));
+      if (snap.exists() && snap.data()?.bakeryCode) {
         return snap.data() as { bakeryCode: string; role: string };
+      }
+      const mappingSnap = await getDoc(doc(db, 'user_bakery_mappings', uid));
+      if (mappingSnap.exists() && mappingSnap.data()?.bakeryCode) {
+        return mappingSnap.data() as { bakeryCode: string; role: string };
       }
       return null;
     } catch (e) {
@@ -1803,15 +1914,19 @@ export class StorageService {
   }
 
   static async setUserBakeryMapping(uid: string, bakeryCode: string, email: string, role: string = 'owner'): Promise<void> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    const data = removeUndefined({
+      uid,
+      bakeryCode: cleanCode,
+      email,
+      role,
+      updatedAt: new Date().toISOString()
+    });
     try {
-      const docRef = doc(db, 'users', uid);
-      await setDoc(docRef, removeUndefined({
-        uid,
-        bakeryCode: bakeryCode.toUpperCase(),
-        email,
-        role,
-        updatedAt: new Date().toISOString()
-      }), { merge: true });
+      await Promise.all([
+        setDoc(doc(db, 'users', uid), data, { merge: true }).catch((err) => console.warn('Warning updating /users doc:', err)),
+        setDoc(doc(db, 'user_bakery_mappings', uid), data, { merge: true }).catch((err) => console.warn('Warning updating /user_bakery_mappings doc:', err))
+      ]);
     } catch (e) {
       console.error('Error setting user bakery mapping:', e);
     }
@@ -1921,6 +2036,10 @@ export class StorageService {
   }
 
   static async getInventoryMovementsFromServer(bakeryCode: string): Promise<InventoryMovement[]> {
+    if (!auth.currentUser) {
+      console.warn('[DATA] getInventoryMovementsFromServer skipped: user not authenticated');
+      return StorageService.getInventoryMovements(bakeryCode);
+    }
     try {
       const q = query(
         collection(db, 'inventoryMovements'),
@@ -2053,6 +2172,10 @@ export class StorageService {
   }
 
   static async getStockCountsFromServer(bakeryCode: string): Promise<StockCount[]> {
+    if (!auth.currentUser) {
+      console.warn('[DATA] getStockCountsFromServer skipped: user not authenticated');
+      return StorageService.getStockCounts(bakeryCode);
+    }
     try {
       const q = query(
         collection(db, 'stockCounts'),
@@ -2135,6 +2258,10 @@ export class StorageService {
   }
 
   static async getInventoryItemsFromServer(bakeryCode: string): Promise<InventoryItem[]> {
+    if (!auth.currentUser) {
+      console.warn('[DATA] getInventoryItemsFromServer skipped: user not authenticated');
+      return StorageService.getInventoryItems(bakeryCode);
+    }
     try {
       const q = query(
         collection(db, 'inventoryItems'),

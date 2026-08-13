@@ -20,6 +20,7 @@ import {
   InventoryItem
 } from '../types';
 import { Unsubscribe } from 'firebase/firestore';
+import { formatDateToISO } from '../utils/dateUtils';
 
 interface DataContextType {
   // Core states
@@ -45,6 +46,7 @@ interface DataContextType {
 
   // Auth operations
   loginAsBakery: (code: string) => Promise<boolean>;
+  loginAsBakeryWithCredentials: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   logoutBakery: () => void;
   loginAsAdmin: (password: string) => Promise<boolean>;
   logoutAdmin: () => void;
@@ -216,8 +218,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const setActiveCode = useCallback((code: string | null) => {
-    StorageService.setActiveBakeryCode(code);
-    setActiveCodeState(code);
+    const cleanCode = code ? code.trim().toUpperCase() : null;
+    StorageService.setActiveBakeryCode(cleanCode);
+    setActiveCodeState(cleanCode);
+    if (cleanCode && auth.currentUser && auth.currentUser.email !== 'admin@padaria.io') {
+      StorageService.setUserBakeryMapping(
+        auth.currentUser.uid,
+        cleanCode,
+        auth.currentUser.email || `${cleanCode.toLowerCase()}@padaria.io`,
+        'owner'
+      ).catch(() => {});
+    }
   }, []);
 
   // Initialize service & Firebase Auth listener
@@ -246,8 +257,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        console.log('[AUTH] Confirmed user session:', user.uid, user.email);
         if (user.email === 'admin@padaria.io') {
           setActiveCodeState(null);
+          setIsAdminLoggedIn(true);
           setAuthUser(user);
         } else {
           let mapping = await StorageService.getUserBakeryMapping(user.uid);
@@ -259,14 +272,31 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
           if (mapping && mapping.bakeryCode) {
-            setActiveCodeState(mapping.bakeryCode);
-            StorageService.setActiveBakeryCode(mapping.bakeryCode);
+            const cleanCode = mapping.bakeryCode.trim().toUpperCase();
+            await StorageService.setUserBakeryMapping(user.uid, cleanCode, user.email || `${cleanCode.toLowerCase()}@padaria.io`, mapping.role || 'owner');
+            StorageService.setActiveBakeryCode(cleanCode);
+            const comp = await StorageService.getCompanyByCodeAsync(cleanCode);
+            if (comp) setActiveCompany(comp);
+            setActiveCodeState(cleanCode);
+            setAuthUser(user);
+          } else {
+            setAuthUser(user);
           }
-          setAuthUser(user);
         }
       } else {
+        console.log('[AUTH] No user session found - resetting active tenant and state');
         setAuthUser(null);
         setActiveCodeState(null);
+        setActiveCompany(null);
+        StorageService.setActiveBakeryCode(null);
+        setProducts([]);
+        setSalesHistory([]);
+        setVipOffers([]);
+        setDailyClosings([]);
+        setTickets([]);
+        setInventoryMovements([]);
+        setStockCounts([]);
+        setInventoryItems([]);
       }
       setIsLoading(false);
     });
@@ -277,20 +307,33 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load and cache tenant data on demand when tenant changes (with race condition prevention)
   const fetchGenerationRef = useRef(0);
   const refreshTenantData = useCallback(async (code: string, showLoading = false) => {
+    if (!auth.currentUser) {
+      console.warn('[DATA] Skipping refreshTenantData: auth.currentUser is null');
+      return;
+    }
+    const cleanCode = code.trim().toUpperCase();
+    if (auth.currentUser.email !== 'admin@padaria.io') {
+      await StorageService.setUserBakeryMapping(
+        auth.currentUser.uid,
+        cleanCode,
+        auth.currentUser.email || `${cleanCode.toLowerCase()}@padaria.io`,
+        'owner'
+      );
+    }
     const currentGen = ++fetchGenerationRef.current;
     if (showLoading) {
       setIsLoading(true);
     }
     try {
       const [prods, sales, vips, closings, ticks, movs, counts, invItems] = await Promise.all([
-        StorageService.getProductsFromServer(code),
-        StorageService.getSalesHistoryFromServer(code),
-        StorageService.getVipOffersFromServer(code),
-        StorageService.getDailyClosingsFromServer(code),
-        StorageService.getTicketsFromServer(code),
-        StorageService.getInventoryMovementsFromServer(code),
-        StorageService.getStockCountsFromServer(code),
-        StorageService.getInventoryItemsFromServer(code)
+        StorageService.getProductsFromServer(cleanCode),
+        StorageService.getSalesHistoryFromServer(cleanCode),
+        StorageService.getVipOffersFromServer(cleanCode),
+        StorageService.getDailyClosingsFromServer(cleanCode),
+        StorageService.getTicketsFromServer(cleanCode),
+        StorageService.getInventoryMovementsFromServer(cleanCode),
+        StorageService.getStockCountsFromServer(cleanCode),
+        StorageService.getInventoryItemsFromServer(cleanCode)
       ]);
       if (currentGen === fetchGenerationRef.current) {
         setProducts(prods);
@@ -313,12 +356,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Real-time Subscriptions Manager (Only keep the singular active company status listener)
+  // Real-time Subscriptions Manager (Strictly Gated on authUser)
   useEffect(() => {
     let unsubs: Unsubscribe[] = [];
 
-    if (activeCode && authUser) {
-      // 1. Single Company Listener (High-end real-time security & status monitoring)
+    if (authUser && activeCode && authUser.email !== 'admin@padaria.io') {
+      console.log('[DATA] Initializing tenant subscriptions for:', activeCode, 'User:', authUser.uid);
+      // 1. Fetch current active company immediately
+      StorageService.getCompanyByCodeAsync(activeCode).then((comp) => {
+        if (comp && comp.ativo) {
+          setActiveCompany(comp);
+        } else if (comp && !comp.ativo) {
+          setActiveCompany(null);
+          setActiveCode(null);
+        }
+      });
+
+      // 2. Single Company Listener
       try {
         const unsubComp = StorageService.subscribeCompany(activeCode, (comp) => {
           if (comp && comp.ativo) {
@@ -335,9 +389,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Error subscribing to company:', err);
       }
 
-      // Trigger server-side pull for other items immediately upon change (on-demand)
+      // Trigger server-side pull for other items immediately upon change
       refreshTenantData(activeCode, true);
-    } else if (!activeCode) {
+    } else {
       setActiveCompany(null);
       setProducts([]);
       setSalesHistory([]);
@@ -352,7 +406,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       unsubs.forEach((unsub) => unsub());
     };
-  }, [activeCode, authUser, refreshTenantData]);
+  }, [authUser, activeCode, refreshTenantData]);
 
   // Load Admin Support Tickets on demand when viewing Admin or LoggedIn
   useEffect(() => {
@@ -365,20 +419,86 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [isAdminLoggedIn, activeCode, authUser]);
 
-  // Auth handlers (Firebase Auth integrated)
+  // Auth handlers
+  const loginAsBakeryWithCredentials = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPass = pass.trim();
+
+      const comp = await StorageService.getCompanyByCredentialsAsync(cleanEmail, cleanPass);
+      if (!comp) {
+        setIsLoading(false);
+        return { success: false, error: 'E-mail ou senha incorretos. Verifique suas credenciais ou solicite apoio ao suporte.' };
+      }
+
+      if (!comp.ativo) {
+        setIsLoading(false);
+        return { success: false, error: 'Esta panificadora está desativada. Solicite a reativação no Painel Admin.' };
+      }
+
+      const todayStr = formatDateToISO(new Date());
+      if (comp.financeiro?.dataFimTeste && todayStr > comp.financeiro.dataFimTeste) {
+        const isPaid = comp.financeiro.statusAssinatura === 'ativo' || comp.financeiro.statusAssinatura === 'concluido';
+        if (!isPaid) {
+          setIsLoading(false);
+          return { success: false, error: 'O período de teste da sua panificadora expirou. Entre em contato para reativação.' };
+        }
+      }
+
+      const authEmail = comp.email || `${comp.codigoAtivacao.toLowerCase()}@padaria.io`;
+      const authPassword = comp.senha || `Padaria@${comp.codigoAtivacao}!2026`;
+
+      let user: any = null;
+      try {
+        const cred = await signInWithEmailAndPassword(auth, authEmail, authPassword);
+        user = cred.user;
+      } catch (signInErr) {
+        try {
+          const cred = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+          user = cred.user;
+        } catch (createErr) {
+          try {
+            const cred = await signInAnonymously(auth);
+            user = cred.user;
+          } catch (anonErr) {
+            console.warn('Firebase auth fallback warning:', anonErr);
+          }
+        }
+      }
+
+      if (user) {
+        await StorageService.setUserBakeryMapping(user.uid, comp.codigoAtivacao, authEmail, 'owner');
+        setAuthUser(user);
+      } else {
+        setAuthUser({ uid: 'local_' + comp.codigoAtivacao, email: authEmail });
+      }
+
+      StorageService.setActiveBakeryCode(comp.codigoAtivacao);
+      setActiveCode(comp.codigoAtivacao);
+      setActiveCompany(comp);
+
+      await refreshTenantData(comp.codigoAtivacao, false);
+
+      setIsLoading(false);
+      return { success: true };
+    } catch (e: any) {
+      console.error('Error in loginAsBakeryWithCredentials:', e);
+      setIsLoading(false);
+      return { success: false, error: e.message || 'Erro inesperado ao realizar login.' };
+    }
+  };
+
   const loginAsBakery = async (code: string): Promise<boolean> => {
     const trimmedCode = code.trim().toUpperCase();
-    const companies = StorageService.getCompanies();
-    const found = companies.find(
-      (c) => c.codigoAtivacao.toUpperCase() === trimmedCode
-    );
-    if (!found || !found.ativo) {
+    const comp = await StorageService.getCompanyByCodeAsync(trimmedCode);
+    if (!comp || !comp.ativo) {
       return false;
     }
 
     try {
-      const email = found.email || `${trimmedCode.toLowerCase()}@padaria.io`;
-      const password = found.senha || `Padaria@${trimmedCode}!2026`;
+      const email = comp.email || `${trimmedCode.toLowerCase()}@padaria.io`;
+      const password = comp.senha || `Padaria@${trimmedCode}!2026`;
 
       let userCredential;
       try {
@@ -393,10 +513,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const user = userCredential.user;
       await StorageService.setUserBakeryMapping(user.uid, trimmedCode, email, 'owner');
+      setAuthUser(user);
+      setActiveCompany(comp);
+      StorageService.setActiveBakeryCode(trimmedCode);
       setActiveCode(trimmedCode);
+      await refreshTenantData(trimmedCode, false);
       return true;
     } catch (e) {
       console.error('Error during secure loginAsBakery:', e);
+      setActiveCompany(comp);
+      StorageService.setActiveBakeryCode(trimmedCode);
       setActiveCode(trimmedCode);
       return true;
     }
@@ -1175,6 +1301,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAdminLoggedIn,
 
         loginAsBakery,
+        loginAsBakeryWithCredentials,
         logoutBakery,
         loginAsAdmin,
         logoutAdmin,

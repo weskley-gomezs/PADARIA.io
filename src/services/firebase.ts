@@ -52,6 +52,7 @@ setLogLevel('error');
 
 export async function testFirestoreConnection(): Promise<boolean> {
   try {
+    if (!auth.currentUser) return false;
     await getDoc(doc(db, 'settings', 'connection_check'));
     return true;
   } catch (error: any) {

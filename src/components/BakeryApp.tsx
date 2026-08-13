@@ -44,7 +44,6 @@ import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, VipOffer } from
 import { StorageService } from '../services/storageService';
 import { useData } from '../context/DataContext';
 import { StockControl } from './StockControl';
-import { StockConference } from './StockConference';
 import { formatDateToBR, getRelativeExpirationText, generateActivationCode, calculateDaysRemaining, formatDateToISO } from '../utils/dateUtils';
 import { generateContractPDF, generateSystemManualPDF, generateExecutiveReportPDF } from '../utils/pdfGenerator';
 import { ProductModal } from './ProductModal';
@@ -71,6 +70,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
     salesHistory,
     vipOffers,
     setActiveCode,
+    loginAsBakeryWithCredentials,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -87,6 +87,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string>('');
+  const [isSubmittingLogin, setIsSubmittingLogin] = useState<boolean>(false);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -147,7 +148,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     const cleanEmail = emailInput.trim().toLowerCase();
@@ -158,21 +159,20 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
       return;
     }
 
-    const comp = StorageService.getCompanyByCredentials(cleanEmail, cleanPass);
-    if (!comp) {
-      setLoginError('E-mail ou senha incorretos. Verifique suas credenciais ou solicite apoio ao suporte.');
-      return;
+    setIsSubmittingLogin(true);
+    try {
+      const res = await loginAsBakeryWithCredentials(cleanEmail, cleanPass);
+      if (!res.success) {
+        setLoginError(res.error || 'E-mail ou senha incorretos.');
+      } else {
+        setEmailInput('');
+        setPasswordInput('');
+      }
+    } catch (err) {
+      setLoginError('Ocorreu um erro ao conectar ao servidor. Tente novamente.');
+    } finally {
+      setIsSubmittingLogin(false);
     }
-
-    if (!comp.ativo) {
-      setLoginError('Esta panificadora está desativada. Solicite a reativação no Painel Admin.');
-      return;
-    }
-
-    StorageService.setActiveBakeryCode(comp.codigoAtivacao);
-    setActiveCode(comp.codigoAtivacao);
-    setEmailInput('');
-    setPasswordInput('');
   };
 
   const handleLogout = () => {
@@ -583,10 +583,20 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
 
             <button
               type="submit"
-              className="w-full bg-[#1F2937] hover:bg-black text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md text-sm flex items-center justify-center space-x-2 cursor-pointer"
+              disabled={isSubmittingLogin}
+              className="w-full bg-[#1F2937] hover:bg-black disabled:bg-gray-400 text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md text-sm flex items-center justify-center space-x-2 cursor-pointer disabled:cursor-not-allowed"
             >
-              <span>Entrar no Sistema</span>
-              <Sparkles className="w-4 h-4 text-[#D4A574]" />
+              {isSubmittingLogin ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Entrando no Sistema...</span>
+                </div>
+              ) : (
+                <>
+                  <span>Entrar no Sistema</span>
+                  <Sparkles className="w-4 h-4 text-[#D4A574]" />
+                </>
+              )}
             </button>
 
             <div className="text-center pt-2">
