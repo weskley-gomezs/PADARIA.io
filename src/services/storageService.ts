@@ -1973,7 +1973,7 @@ export class StorageService {
     const entries = Number(entriesQuantity) || 0;
     const production = Number(productionQuantity) || 0;
     const waste = Number(wasteQuantity) || 0;
-    const expected = Number(expectedQuantity) || (initial + entries - production - waste);
+    const expected = Number(expectedQuantity) || (initial - production - waste + entries);
     const physical = Number(physicalQuantity) || 0;
     const varianceQty = Number((physical - expected).toFixed(3));
     const cost = Number(unitCost) || 0;

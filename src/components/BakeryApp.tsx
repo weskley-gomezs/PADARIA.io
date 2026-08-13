@@ -36,13 +36,15 @@ import {
   EyeOff,
   Check,
   Download,
-  Boxes
+  Boxes,
+  ClipboardCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, VipOffer } from '../types';
 import { StorageService } from '../services/storageService';
 import { useData } from '../context/DataContext';
 import { StockControl } from './StockControl';
+import { StockConference } from './StockConference';
 import { formatDateToBR, getRelativeExpirationText, generateActivationCode, calculateDaysRemaining, formatDateToISO } from '../utils/dateUtils';
 import { generateContractPDF, generateSystemManualPDF, generateExecutiveReportPDF } from '../utils/pdfGenerator';
 import { ProductModal } from './ProductModal';
@@ -90,7 +92,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'stock' | 'padeia' | 'relatorio' | 'config'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'stock' | 'conference' | 'padeia' | 'relatorio' | 'config'>('dashboard');
 
   useEffect(() => {
     const handleOpenPadeia = () => setActiveTab('padeia');
