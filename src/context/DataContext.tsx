@@ -217,11 +217,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
+  const isAdminEmail = (email?: string | null) => email === 'admin@padaria.io' || email === 'weskleyg4000@gmail.com';
+
   const setActiveCode = useCallback((code: string | null) => {
     const cleanCode = code ? code.trim().toUpperCase() : null;
     StorageService.setActiveBakeryCode(cleanCode);
     setActiveCodeState(cleanCode);
-    if (cleanCode && auth.currentUser && auth.currentUser.email !== 'admin@padaria.io') {
+    if (cleanCode && auth.currentUser && !isAdminEmail(auth.currentUser.email)) {
       StorageService.setUserBakeryMapping(
         auth.currentUser.uid,
         cleanCode,
@@ -241,7 +243,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         console.log('[AUTH] Confirmed user session:', user.uid, user.email);
-        if (user.email === 'admin@padaria.io') {
+        if (isAdminEmail(user.email)) {
           setActiveCodeState(null);
           setIsAdminLoggedIn(true);
           setAuthUser(user);
@@ -295,7 +297,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     const cleanCode = code.trim().toUpperCase();
-    if (auth.currentUser.email !== 'admin@padaria.io') {
+    if (!isAdminEmail(auth.currentUser.email)) {
       await StorageService.setUserBakeryMapping(
         auth.currentUser.uid,
         cleanCode,
@@ -343,7 +345,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let unsubs: Unsubscribe[] = [];
 
-    if (authUser && activeCode && authUser.email !== 'admin@padaria.io') {
+    if (authUser && activeCode && !isAdminEmail(authUser.email)) {
       console.log('[DATA] Initializing tenant subscriptions for:', activeCode, 'User:', authUser.uid);
       // 1. Fetch current active company immediately
       StorageService.getCompanyByCodeAsync(activeCode).then((comp) => {
@@ -393,7 +395,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Load Admin Support Tickets on demand when viewing Admin or LoggedIn
   useEffect(() => {
-    if (isAdminLoggedIn && !activeCode && authUser && authUser.email === 'admin@padaria.io') {
+    if (isAdminLoggedIn && !activeCode && authUser && isAdminEmail(authUser.email)) {
       StorageService.getTicketsFromServer().then((allTickets) => {
         setTickets(allTickets);
       }).catch(err => {
@@ -543,18 +545,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginAsAdmin = async (password: string): Promise<boolean> => {
-    try {
-      await signInWithEmailAndPassword(auth, 'admin@padaria.io', password);
-      const user = auth.currentUser;
-      if (user) {
-        await StorageService.setUserBakeryMapping(user.uid, 'ADMIN', 'admin@padaria.io', 'admin');
-      }
-      setIsAdminLoggedIn(true);
-      return true;
-    } catch (err) {
-      console.error('Admin Firebase Auth login failed:', err);
-      return false;
-    }
+    // Password-based admin login is disabled for zero-trust security.
+    console.warn('[SECURITY] Tentativa de login administrativo por senha desativada.');
+    return false;
   };
 
   const logoutAdmin = async () => {

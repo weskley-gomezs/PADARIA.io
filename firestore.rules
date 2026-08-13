@@ -30,7 +30,7 @@ service cloud.firestore {
     // Helper 6: Require System Admin access
     function requireAdmin() {
       return authenticateFirebaseUser() && (
-        (request.auth.token != null && request.auth.token.email == 'admin@padaria.io') ||
+        (request.auth.token != null && (request.auth.token.email == 'admin@padaria.io' || request.auth.token.email == 'weskleyg4000@gmail.com')) ||
         (hasUserDoc() && getUserData().role == 'admin') ||
         (hasUserMappingDoc() && getUserMappingData().role == 'admin')
       );

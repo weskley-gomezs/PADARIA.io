@@ -53,8 +53,22 @@ type AdminTab = 'empresas' | 'cobranca' | 'contratos' | 'suporte' | 'treinamento
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdminLoggedIn, onLogoutAdmin }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [passwordInput, setPasswordInput] = useState<string>('');
-  const [passwordError, setPasswordError] = useState<string>('');
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
+  const [loginEmailInput, setLoginEmailInput] = useState<string>('');
+  const [loginPasswordInput, setLoginPasswordInput] = useState<string>('');
+  const [loginError, setLoginError] = useState<string>('');
+  const [loginAttempts, setLoginAttempts] = useState<number>(() => {
+    const saved = sessionStorage.getItem('admin_login_attempts');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+  const [isLocked, setIsLocked] = useState<boolean>(() => {
+    const saved = sessionStorage.getItem('admin_locked');
+    return saved === 'true';
+  });
+  const [unlockCodeInput, setUnlockCodeInput] = useState<string>('');
+  const [unlockError, setUnlockError] = useState<string>('');
+
+  const isAdminEmail = (email?: string | null) => email === 'admin@padaria.io' || email === 'weskleyg4000@gmail.com';
 
   // Sidebar & Navigation
   const [activeTab, setActiveTab] = useState<AdminTab>('empresas');
@@ -135,20 +149,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
   const [formError, setFormError] = useState<string>('');
 
   useEffect(() => {
-    if (isAdminLoggedIn !== undefined) {
-      setIsAuthenticated(isAdminLoggedIn);
-    }
-  }, [isAdminLoggedIn]);
-
-  useEffect(() => {
     let unsubscribe: (() => void) | null = null;
 
-    const checkAndLoad = () => {
+    const checkAndLoad = async () => {
       const currentUser = auth.currentUser;
-
-      if (isAdminLoggedIn && currentUser && currentUser.email === 'admin@padaria.io') {
-        loadAdminData();
+      if (currentUser && isAdminEmail(currentUser.email)) {
+        setIsAuthenticated(true);
+        setIsCheckingAuth(false);
+        await StorageService.setUserBakeryMapping(currentUser.uid, 'ADMIN', currentUser.email || 'weskleyg4000@gmail.com', 'admin').catch(() => {});
+        await loadAdminData();
       } else {
+        // Check if user has admin role in Firestore mapping
+        if (currentUser) {
+          try {
+            const mapping = await StorageService.getUserBakeryMapping(currentUser.uid);
+            if (mapping && mapping.role === 'admin') {
+              setIsAuthenticated(true);
+              setIsCheckingAuth(false);
+              await loadAdminData();
+              return;
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+        setIsAuthenticated(false);
+        setIsCheckingAuth(false);
         // Fallback to local storage cache for instant UI and safe pre-login state
         setCompanies(StorageService.getCompanies());
         setProducts(StorageService.getProducts());
@@ -161,10 +187,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
       }
     };
 
-    // Initial check
     checkAndLoad();
 
-    // Listen to Firebase Auth state transitions to fetch fresh data once admin@padaria.io is logged in
     unsubscribe = auth.onAuthStateChanged((user) => {
       checkAndLoad();
     });
@@ -172,13 +196,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [isAdminLoggedIn]);
+  }, []);
 
   const loadAdminData = async () => {
     try {
       const currentUser = auth.currentUser;
-      if (!currentUser || currentUser.email !== 'admin@padaria.io') {
-        return;
+      if (!currentUser || !isAdminEmail(currentUser.email)) {
+        // Check mapping role
+        const mapping = await StorageService.getUserBakeryMapping(currentUser?.uid || '');
+        if (!mapping || mapping.role !== 'admin') {
+          return;
+        }
       }
 
       const [comps, prods, sls, tiks, vips, closings] = await Promise.all([
@@ -213,18 +241,57 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPasswordError('');
+    if (isLocked) return;
+    setLoginError('');
     try {
-      await signInWithEmailAndPassword(auth, 'admin@padaria.io', passwordInput);
+      await signInWithEmailAndPassword(auth, loginEmailInput.trim(), loginPasswordInput);
       const user = auth.currentUser;
-      if (user) {
-        await StorageService.setUserBakeryMapping(user.uid, 'ADMIN', 'admin@padaria.io', 'admin');
+      if (user && isAdminEmail(user.email)) {
+        await StorageService.setUserBakeryMapping(user.uid, 'ADMIN', user.email, 'admin');
+        setLoginAttempts(0);
+        sessionStorage.removeItem('admin_login_attempts');
+        sessionStorage.removeItem('admin_locked');
+        setIsAuthenticated(true);
+        await loadAdminData();
+      } else {
+        const nextAttempts = loginAttempts + 1;
+        setLoginAttempts(nextAttempts);
+        sessionStorage.setItem('admin_login_attempts', nextAttempts.toString());
+        if (nextAttempts >= 3) {
+          setIsLocked(true);
+          sessionStorage.setItem('admin_locked', 'true');
+          setLoginError('Acesso bloqueado por excesso de tentativas falhas. Insira o código de desbloqueio de 16 dígitos.');
+        } else {
+          setLoginError(`Acesso negado: Credenciais inválidas. Tentativa ${nextAttempts} de 3.`);
+        }
       }
-      setIsAuthenticated(true);
-      await loadAdminData();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Admin login error:', err);
-      setPasswordError('Senha incorreta ou credenciais inválidas.');
+      const nextAttempts = loginAttempts + 1;
+      setLoginAttempts(nextAttempts);
+      sessionStorage.setItem('admin_login_attempts', nextAttempts.toString());
+      if (nextAttempts >= 3) {
+        setIsLocked(true);
+        sessionStorage.setItem('admin_locked', 'true');
+        setLoginError('Acesso bloqueado por excesso de tentativas falhas. Insira o código de desbloqueio de 16 dígitos.');
+      } else {
+        setLoginError(`E-mail ou senha incorretos. Tentativa ${nextAttempts} de 3.`);
+      }
+    }
+  };
+
+  const handleUnlockSystem = (e: React.FormEvent) => {
+    e.preventDefault();
+    setUnlockError('');
+    if (unlockCodeInput.trim() === '1999200220242025') {
+      setIsLocked(false);
+      setLoginAttempts(0);
+      setUnlockCodeInput('');
+      sessionStorage.removeItem('admin_login_attempts');
+      sessionStorage.removeItem('admin_locked');
+      setLoginError('');
+    } else {
+      setUnlockError('Código de desbloqueio incorreto.');
     }
   };
 
@@ -393,8 +460,87 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
       (c.cnpj && c.cnpj.includes(searchTerm))
   );
 
-  // LOGIN SCREEN
+  // AUTH CHECK & ACCESS DENIED SCREEN (403 FORBIDDEN)
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-[#111111] flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-10 h-10 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm font-semibold text-gray-400">Verificando autorização administrativa...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
+    if (isLocked) {
+      return (
+        <div className="min-h-screen bg-[#111111] flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-200 p-8 space-y-6">
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
+                <Lock className="w-8 h-8" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-red-600">
+                  Sistema Bloqueado
+                </h2>
+                <p className="text-xs text-gray-500 font-medium">
+                  3 tentativas incorretas excedidas. Insira o código de segurança master para desbloquear.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleUnlockSystem} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#111111] uppercase tracking-wider mb-1">
+                  Código de Desbloqueio (16 Dígitos)
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    value={unlockCodeInput}
+                    onChange={(e) => setUnlockCodeInput(e.target.value)}
+                    placeholder="Digite o código de 16 dígitos"
+                    maxLength={16}
+                    className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-sm font-bold tracking-widest text-center"
+                    required
+                    autoFocus
+                  />
+                  <Key className="w-5 h-5 text-gray-400 absolute right-3.5 top-4" />
+                </div>
+              </div>
+
+              {unlockError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold text-center">
+                  {unlockError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-[#111111] hover:bg-[#FF6B00] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer group"
+              >
+                <span>Desbloquear Sistema</span>
+                <ArrowRight className="w-4 h-4 text-[#FF6B00] group-hover:text-white transition-colors" />
+              </button>
+            </form>
+
+            <div className="pt-4 border-t border-gray-100">
+              <button
+                onClick={() => {
+                  window.location.href = '/app';
+                }}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all text-xs flex items-center justify-center space-x-2"
+              >
+                <span>Voltar para o Sistema (App)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-[#111111] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-200 p-8 space-y-6">
@@ -403,7 +549,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
               <img
                 src="https://i.imgur.com/ZGsjvWy.png"
                 alt="Logo Padaria"
-                className="h-28 sm:h-36 object-contain"
+                className="h-24 object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -412,7 +558,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
                 Painel Administrativo Master
               </h2>
               <p className="text-xs text-gray-500 font-medium">
-                Gestão de Cadastro, Chaves de Ativação e Financeiro
+                Autenticação Segura para Administradores
               </p>
             </div>
           </div>
@@ -420,24 +566,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
           <form onSubmit={handleAdminLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-[#111111] uppercase tracking-wider mb-1">
-                Senha de Acesso Master
+                E-mail do Administrador
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  value={loginEmailInput}
+                  onChange={(e) => setLoginEmailInput(e.target.value)}
+                  placeholder="admin@padaria.io"
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-sm font-bold"
+                  required
+                />
+                <Mail className="w-5 h-5 text-gray-400 absolute right-3.5 top-4" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#111111] uppercase tracking-wider mb-1">
+                Senha Master
               </label>
               <div className="relative">
                 <input
                   type="password"
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  placeholder="Digite sua senha de Admin"
+                  value={loginPasswordInput}
+                  onChange={(e) => setLoginPasswordInput(e.target.value)}
+                  placeholder="Digite sua senha"
                   className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-sm font-bold"
-                  autoFocus
+                  required
                 />
                 <Lock className="w-5 h-5 text-gray-400 absolute right-3.5 top-4" />
               </div>
             </div>
 
-            {passwordError && (
+            {loginError && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold">
-                {passwordError}
+                {loginError}
               </div>
             )}
 
@@ -445,10 +608,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
               type="submit"
               className="w-full bg-[#111111] hover:bg-[#FF6B00] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer group"
             >
-              <span>Acessar Painel Central</span>
+              <span>Entrar no Painel Central</span>
               <ArrowRight className="w-4 h-4 text-[#FF6B00] group-hover:text-white transition-colors" />
             </button>
           </form>
+
+          <div className="pt-4 border-t border-gray-100 space-y-2">
+            <button
+              onClick={() => {
+                window.location.href = '/app';
+              }}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all text-xs flex items-center justify-center space-x-2"
+            >
+              <span>Voltar para o Sistema (App)</span>
+            </button>
+          </div>
         </div>
       </div>
     );
