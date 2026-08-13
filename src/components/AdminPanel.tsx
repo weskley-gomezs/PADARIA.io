@@ -280,18 +280,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
     }
   };
 
-  const handleUnlockSystem = (e: React.FormEvent) => {
+  const handleUnlockSystem = async (e: React.FormEvent) => {
     e.preventDefault();
     setUnlockError('');
-    if (unlockCodeInput.trim() === '1999200220242025') {
-      setIsLocked(false);
-      setLoginAttempts(0);
-      setUnlockCodeInput('');
-      sessionStorage.removeItem('admin_login_attempts');
-      sessionStorage.removeItem('admin_locked');
-      setLoginError('');
-    } else {
-      setUnlockError('Código de desbloqueio incorreto.');
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        setUnlockError('Usuário não autenticado.');
+        return;
+      }
+      const token = await user.getIdToken();
+      const res = await fetch('/api/admin/unlock', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ unlockCode: unlockCodeInput.trim() })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsLocked(false);
+        setLoginAttempts(0);
+        setUnlockCodeInput('');
+        sessionStorage.removeItem('admin_login_attempts');
+        sessionStorage.removeItem('admin_locked');
+        setLoginError('');
+      } else {
+        setUnlockError(data.error || 'Código de desbloqueio incorreto.');
+        if (data.code === 'SYSTEM_LOCKED') {
+          setIsLocked(true);
+        }
+      }
+    } catch (err: any) {
+      console.error('Unlock error:', err);
+      setUnlockError('Erro ao processar desbloqueio no servidor.');
     }
   };
 
