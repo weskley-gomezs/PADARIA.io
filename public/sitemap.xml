@@ -3,70 +3,131 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
                             http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  <!-- Homepage -->
   <url>
     <loc>https://padaria.io/</loc>
-    <lastmod>2026-08-07</lastmod>
+    <lastmod>2026-08-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+
+  <!-- Topic Cluster Pillar Pages -->
   <url>
-    <loc>https://padaria.io/sistema-para-padaria</loc>
-    <lastmod>2026-08-07</lastmod>
+    <loc>https://padaria.io/software-para-padarias</loc>
+    <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://padaria.io/controle-validade</loc>
-    <lastmod>2026-08-07</lastmod>
+    <loc>https://padaria.io/controle-de-estoque-para-padarias</loc>
+    <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://padaria.io/controle-estoque</loc>
-    <lastmod>2026-08-07</lastmod>
+    <loc>https://padaria.io/controle-de-perdas-para-padarias</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/desperdicio-em-padarias</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/controle-de-validade-para-padarias</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/divergencia-de-estoque</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/gestao-de-estoque-para-padarias</loc>
+    <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://padaria.io/gestao-padaria</loc>
-    <lastmod>2026-08-07</lastmod>
+    <loc>https://padaria.io/reducao-de-desperdicio-em-padarias</loc>
+    <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+
+  <!-- Contents Hub -->
   <url>
-    <loc>https://padaria.io/desperdicio</loc>
-    <lastmod>2026-08-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://padaria.io/producao</loc>
-    <lastmod>2026-08-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://padaria.io/gestao-confeitaria</loc>
-    <lastmod>2026-08-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://padaria.io/gestao-cafeteria</loc>
-    <lastmod>2026-08-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://padaria.io/blog</loc>
-    <lastmod>2026-08-07</lastmod>
+    <loc>https://padaria.io/conteudos</loc>
+    <lastmod>2026-08-14</lastmod>
     <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- In-Depth Practical Articles & Guides -->
+  <url>
+    <loc>https://padaria.io/conteudos/como-controlar-o-estoque-de-uma-padaria</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/guias</loc>
-    <lastmod>2026-08-07</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://padaria.io/conteudos/como-reduzir-desperdicios-em-uma-padaria</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/conteudos/como-descobrir-onde-uma-padaria-esta-perdendo-dinheiro</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/conteudos/como-controlar-produtos-vencidos-em-uma-padaria</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/conteudos/o-que-e-divergencia-de-estoque-e-como-identificar</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/conteudos/como-calcular-perdas-de-estoque-em-uma-padaria</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/conteudos/como-controlar-queijo-presunto-e-outros-frios-no-estoque</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/conteudos/como-fazer-conferencia-de-estoque-em-uma-padaria</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/conteudos/planilha-de-estoque-para-padaria-limitacoes-e-alternativas</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://padaria.io/conteudos/checklist-de-controle-de-estoque-para-padarias</loc>
+    <lastmod>2026-08-14</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 </urlset>

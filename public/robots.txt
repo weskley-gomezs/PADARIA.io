@@ -1,8 +1,8 @@
 User-agent: *
 Allow: /
-Allow: /api/
 Disallow: /admin
 Disallow: /app
+Disallow: /api/
 
-# Sitemap URL
+# Sitemap
 Sitemap: https://padaria.io/sitemap.xml
