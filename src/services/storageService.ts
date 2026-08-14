@@ -1,4 +1,4 @@
-import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing, InventoryMovement, StockCount, MovementType, InventoryItem } from '../types/index.js';
+import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing, InventoryMovement, StockCount, MovementType, InventoryItem, OperationalTask, TaskShift, TaskStatus, TaskCategory } from '../types/index.js';
 import { calculateDaysRemaining, getProductStatus, formatDateToISO, generateActivationCode } from '../utils/dateUtils.js';
 import { db, auth, testFirestoreConnection } from './firebase.js';
 import { signInAnonymously } from 'firebase/auth';
@@ -33,6 +33,7 @@ const KEYS = {
   INVENTORY_MOVEMENTS: 'padarias_inventory_movements_v1',
   STOCK_COUNTS: 'padarias_stock_counts_v1',
   INVENTORY_ITEMS: 'padarias_inventory_items_v1',
+  OPERATIONAL_TASKS: 'padarias_operational_tasks_v1',
 };
 
 const EXCLUDED_CODES = ['AB12CD34', 'PAD8X92M', 'DEMO9999', '6SSHQQTZ', '8FM8XCN6', 'CAVU5FKP'];
@@ -2332,6 +2333,198 @@ export class StorageService {
     } catch (e) {
       console.error('Error fetching inventory items from server:', e);
       return StorageService.getInventoryItems(bakeryCode);
+    }
+  }
+
+  // ==========================================
+  // OPERATIONAL TASKS & TEAM ROUTINES
+  // ==========================================
+  static getOperationalTasks(bakeryCode?: string): OperationalTask[] {
+    const all = getItem<OperationalTask[]>(KEYS.OPERATIONAL_TASKS, []);
+    if (bakeryCode) {
+      const clean = bakeryCode.trim().toUpperCase();
+      return all.filter((t) => t.bakeryCode && t.bakeryCode.trim().toUpperCase() === clean);
+    }
+    return all;
+  }
+
+  static async getOperationalTasksFromServer(bakeryCode: string): Promise<OperationalTask[]> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    if (!auth.currentUser) {
+      return StorageService.getOperationalTasks(cleanCode);
+    }
+    try {
+      const q = query(
+        collection(db, 'operationalTasks'),
+        where('bakeryCode', '==', cleanCode)
+      );
+      const snapshot = await getDocs(q);
+      const list: OperationalTask[] = [];
+      snapshot.forEach((d) => {
+        const item = d.data() as OperationalTask;
+        if (item && item.id) list.push(item);
+      });
+
+      // If empty for this tenant, auto-seed default operational tasks for today
+      if (list.length === 0) {
+        return await StorageService.seedDefaultTasksForTodayIfEmpty(cleanCode);
+      }
+
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setItem(`padarias_tasks_${cleanCode}`, list);
+      setItem(KEYS.OPERATIONAL_TASKS, list);
+      return list;
+    } catch (e) {
+      console.warn('Notice: fetching operational tasks from server encountered an issue, using local operational tasks:', e);
+      return StorageService.getOperationalTasks(cleanCode);
+    }
+  }
+
+  static async seedDefaultTasksForTodayIfEmpty(bakeryCode: string): Promise<OperationalTask[]> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    const todayStr = formatDateToISO(new Date());
+
+    const defaults: Array<Omit<OperationalTask, 'id' | 'createdAt'>> = [
+      {
+        bakeryCode: cleanCode,
+        title: 'Conferência do estoque de frios, laticínios e recheios',
+        description: 'Verificar validades e pesagem dos produtos fracionados no balcão refrigerado.',
+        shift: 'manha',
+        category: 'conferencia',
+        status: 'pendente',
+        dueDate: todayStr,
+        dueTime: '08:00',
+        priority: 'alta'
+      },
+      {
+        bakeryCode: cleanCode,
+        title: 'Registro de sobras e descartes da 1ª fornada',
+        description: 'Lançar no sistema os pães e salgados que não atingiram o padrão visual ou de peso.',
+        shift: 'manha',
+        category: 'perdas',
+        status: 'pendente',
+        dueDate: todayStr,
+        dueTime: '10:30',
+        priority: 'media'
+      },
+      {
+        bakeryCode: cleanCode,
+        title: 'Auditoria de validades na gôndola e balcão',
+        description: 'Identificar produtos com vencimento próximo (1 a 3 dias) para promoção no Clube VIP.',
+        shift: 'tarde',
+        category: 'conferencia',
+        status: 'pendente',
+        dueDate: todayStr,
+        dueTime: '14:30',
+        priority: 'alta'
+      },
+      {
+        bakeryCode: cleanCode,
+        title: 'Contagem física dos ingredientes críticos (Farinha, Açúcar e Fermento)',
+        description: 'Fazer a conferência física rápida para alimentar o módulo de divergências de estoque.',
+        shift: 'tarde',
+        category: 'conferencia',
+        status: 'pendente',
+        dueDate: todayStr,
+        dueTime: '16:00',
+        priority: 'media'
+      },
+      {
+        bakeryCode: cleanCode,
+        title: 'Fechamento diário de perdas e conciliação de sobras do dia',
+        description: 'Totalizar descartes do dia e checar se o relatório diário foi enviado com sucesso.',
+        shift: 'noite',
+        category: 'fechamento',
+        status: 'pendente',
+        dueDate: todayStr,
+        dueTime: '19:30',
+        priority: 'alta'
+      }
+    ];
+
+    const createdList: OperationalTask[] = [];
+    for (const def of defaults) {
+      try {
+        const task = await StorageService.addOperationalTask(def);
+        createdList.push(task);
+      } catch (err) {
+        console.warn('Error seeding task:', err);
+      }
+    }
+    return createdList;
+  }
+
+  static async addOperationalTask(taskData: Omit<OperationalTask, 'id' | 'createdAt'>): Promise<OperationalTask> {
+    const cleanCode = taskData.bakeryCode.trim().toUpperCase();
+    const id = 'task_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const newTask: OperationalTask = {
+      ...taskData,
+      id,
+      bakeryCode: cleanCode,
+      createdAt: new Date().toISOString()
+    };
+
+    const all = StorageService.getOperationalTasks();
+    all.unshift(newTask);
+    setItem(KEYS.OPERATIONAL_TASKS, all);
+
+    if (auth.currentUser) {
+      await setDoc(doc(db, 'operationalTasks', id), removeUndefined(newTask)).catch((e) => {
+        console.warn('Warning writing operational task to Firestore:', e);
+      });
+    }
+
+    return newTask;
+  }
+
+  static async updateOperationalTask(id: string, updates: Partial<OperationalTask>): Promise<OperationalTask | null> {
+    const all = StorageService.getOperationalTasks();
+    const idx = all.findIndex((t) => t.id === id);
+    if (idx === -1) return null;
+
+    const updated: OperationalTask = {
+      ...all[idx],
+      ...updates
+    };
+
+    all[idx] = updated;
+    setItem(KEYS.OPERATIONAL_TASKS, all);
+
+    if (auth.currentUser) {
+      await setDoc(doc(db, 'operationalTasks', id), removeUndefined(updated)).catch((e) => {
+        console.warn('Warning updating operational task in Firestore:', e);
+      });
+    }
+
+    return updated;
+  }
+
+  static async toggleOperationalTask(id: string, completedBy?: string, notes?: string): Promise<OperationalTask | null> {
+    const all = StorageService.getOperationalTasks();
+    const task = all.find((t) => t.id === id);
+    if (!task) return null;
+
+    const isCurrentlyDone = task.status === 'concluida';
+    const newStatus: TaskStatus = isCurrentlyDone ? 'pendente' : 'concluida';
+
+    const updates: Partial<OperationalTask> = {
+      status: newStatus,
+      completedAt: isCurrentlyDone ? undefined : new Date().toISOString(),
+      completedBy: isCurrentlyDone ? undefined : (completedBy || 'Equipe de Operação'),
+      notes: notes !== undefined ? notes : task.notes
+    };
+
+    return await StorageService.updateOperationalTask(id, updates);
+  }
+
+  static async deleteOperationalTask(id: string): Promise<void> {
+    const all = StorageService.getOperationalTasks().filter((t) => t.id !== id);
+    setItem(KEYS.OPERATIONAL_TASKS, all);
+
+    if (auth.currentUser) {
+      await deleteDoc(doc(db, 'operationalTasks', id)).catch((e) => {
+        console.warn('Warning deleting operational task from Firestore:', e);
+      });
     }
   }
 }

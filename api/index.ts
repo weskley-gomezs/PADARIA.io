@@ -323,6 +323,7 @@ try {
       let salesHistory: any[] = [];
       let vipOffers: any[] = [];
       let stockDivergencesText: string = 'Nenhuma conferência realizada ainda.';
+      let tasksOverviewText: string = 'Nenhuma rotina da equipe cadastrada para hoje.';
 
       if (db && bakeryCode) {
         try {
@@ -344,11 +345,20 @@ try {
           const movSnap = await adminAny.firestore().collection('inventoryMovements').where('bakeryCode', '==', bakeryCode).get();
           const inventoryMovements = movSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
+          const taskSnap = await adminAny.firestore().collection('operationalTasks').where('bakeryCode', '==', bakeryCode).get();
+          const operationalTasks = taskSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+
           stockDivergencesText = stockCounts.length > 0
             ? stockCounts.slice(0, 10).map((c: any) =>
                 `- ${c.productName}: Esperado ${c.expectedQuantity} ${c.unit}, Físico ${c.physicalQuantity} ${c.unit}, Divergência ${c.varianceQuantity} ${c.unit} (R$ ${c.varianceValue || 0})`
               ).join('\n')
             : 'Nenhuma conferência de estoque físico registrada ainda.';
+
+          tasksOverviewText = operationalTasks.length > 0
+            ? operationalTasks.slice(0, 10).map((t: any) =>
+                `- [${t.status === 'concluida' ? 'CONCLUÍDA' : 'PENDENTE'}] [Turno: ${t.shift.toUpperCase()}] ${t.title} (Resp: ${t.completedBy || t.assignedTo || 'Equipe'}, Venc: ${t.dueTime || t.dueDate})`
+              ).join('\n')
+            : 'Nenhuma tarefa de rotina cadastrada para hoje.';
         } catch (dbErr) {
           console.warn('[PADEIA] Erro ao buscar dados do tenant no Firestore:', dbErr);
         }
@@ -365,17 +375,21 @@ try {
         `- ${p.nome} (Qtd: ${p.quantidade}, Val: ${p.dataValidade}, Status: ${p.status}, ValTotal: R$ ${p.valorTotal || 0})`
       ).join('\n');
 
-      const systemInstruction = `Você é a PadeIA™, a Inteligência Artificial oficial do Padaria.io e Gerente de Perdas, Estoque e Desperdícios.
+      const systemInstruction = `Você é a PadeIA™, a Inteligência Artificial e Copiloto Operacional Executivo do Padaria.io ("Sua padaria funcionando. Você vivendo.").
+SEU PAPEL: Dar ao dono da padaria uma visão clara, executiva e estratégica do que está acontecendo na operação, mesmo quando ele está fisicamente longe da padaria.
 REGRAS DE SEGURANÇA E CONTEXTO DO TENANT AUTENTICADO:
 1. Seu escopo é estritamente limitado à padaria autenticada atual (${company.empresa || bakeryCode}).
 2. Nunca revele dados de outras padarias ou ignore seu tenant.
 3. Hoje é ${new Date().toISOString().split('T')[0]}.
-4. Responda em Português do Brasil com postura consultiva, construtiva e amigável (sem fazer acusações diretas).
-5. Se o usuário perguntar sobre divergências de estoque ou conferência física, analise os dados reais do estoque fornecidos abaixo.
+4. Responda em Português do Brasil com postura consultiva, executiva, precisa e construtiva (sem fazer acusações diretas à equipe).
+5. Use os dados reais da operação (Validades, Perdas, Divergências Físicas e Rotinas da Equipe) para fundamentar suas respostas.
 
 DADOS DA PADARIA (${company.empresa || bakeryCode}):
-- Produtos em Vencimento/Normal (${products.length} itens):
+- Produtos em Vencimento/Normal (${products.length} itens no total):
 ${topProductsText || 'Nenhum produto cadastrado'}
+
+- Status de Rotinas e Tarefas Operacionais da Equipe:
+${tasksOverviewText}
 
 - Histórico de Divergências de Estoque Físico:
 ${(typeof stockDivergencesText !== 'undefined' && stockDivergencesText) ? stockDivergencesText : 'Nenhuma conferência realizada ainda.'}`;

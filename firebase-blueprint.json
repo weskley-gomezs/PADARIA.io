@@ -156,6 +156,29 @@
         "createdBy": { "type": "string" }
       },
       "required": ["id", "bakeryCode", "name", "currentQuantity", "unitCost"]
+    },
+    "OperationalTask": {
+      "title": "OperationalTask",
+      "description": "Bakery team routine task and operational checklist item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bakeryCode": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "shift": { "type": "string", "enum": ["manha", "tarde", "noite", "geral"] },
+        "category": { "type": "string", "enum": ["conferencia", "perdas", "producao", "fechamento", "limpeza", "geral"] },
+        "status": { "type": "string", "enum": ["pendente", "concluida", "atrasada"] },
+        "dueDate": { "type": "string" },
+        "dueTime": { "type": "string" },
+        "completedAt": { "type": "string" },
+        "completedBy": { "type": "string" },
+        "assignedTo": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "priority": { "type": "string", "enum": ["baixa", "media", "alta", "urgente"] }
+      },
+      "required": ["id", "bakeryCode", "title", "shift", "status", "dueDate"]
     }
   },
   "firestore": {
@@ -190,6 +213,10 @@
     "/inventoryItems/{itemId}": {
       "schema": "InventoryItem",
       "description": "Collection storing standard raw inventory items and ingredients"
+    },
+    "/operationalTasks/{taskId}": {
+      "schema": "OperationalTask",
+      "description": "Collection storing daily bakery routine checklists and team tasks"
     },
     "/settings/{settingId}": {
       "schema": "AdminSettings",

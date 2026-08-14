@@ -18,7 +18,11 @@ import {
   InventoryMovement,
   StockCount,
   MovementType,
-  InventoryItem
+  InventoryItem,
+  OperationalTask,
+  TaskShift,
+  TaskStatus,
+  TaskCategory
 } from '../types';
 import { Unsubscribe } from 'firebase/firestore';
 import { formatDateToISO } from '../utils/dateUtils';
@@ -36,6 +40,7 @@ interface DataContextType {
   inventoryMovements: InventoryMovement[];
   stockCounts: StockCount[];
   inventoryItems: InventoryItem[];
+  operationalTasks: OperationalTask[];
   isAdminLoggedIn: boolean;
   isLoading: boolean;
   authUser: any;
@@ -165,6 +170,12 @@ interface DataContextType {
     cost: number;
   };
 
+  // Operational Routines / Team Tasks
+  addOperationalTask: (taskData: Omit<OperationalTask, 'id' | 'createdAt'>) => Promise<OperationalTask>;
+  updateOperationalTask: (id: string, updates: Partial<OperationalTask>) => Promise<OperationalTask | null>;
+  toggleOperationalTask: (id: string, completedBy?: string, notes?: string) => Promise<OperationalTask | null>;
+  deleteOperationalTask: (id: string) => Promise<void>;
+
   // Admin company actions
   addCompany: (
     empresa: string,
@@ -204,6 +215,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [inventoryMovements, setInventoryMovements] = useState<InventoryMovement[]>([]);
   const [stockCounts, setStockCounts] = useState<StockCount[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [operationalTasks, setOperationalTasks] = useState<OperationalTask[]>([]);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
   const [authUser, setAuthUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -301,6 +313,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setInventoryMovements([]);
         setStockCounts([]);
         setInventoryItems([]);
+        setOperationalTasks([]);
       }
       setIsLoading(false);
     });
@@ -329,7 +342,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
     }
     try {
-      const [prods, sales, vips, closings, ticks, movs, counts, invItems] = await Promise.all([
+      const [prods, sales, vips, closings, ticks, movs, counts, invItems, tasks] = await Promise.all([
         StorageService.getProductsFromServer(cleanCode),
         StorageService.getSalesHistoryFromServer(cleanCode),
         StorageService.getVipOffersFromServer(cleanCode),
@@ -337,7 +350,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         StorageService.getTicketsFromServer(cleanCode),
         StorageService.getInventoryMovementsFromServer(cleanCode),
         StorageService.getStockCountsFromServer(cleanCode),
-        StorageService.getInventoryItemsFromServer(cleanCode)
+        StorageService.getInventoryItemsFromServer(cleanCode),
+        StorageService.getOperationalTasksFromServer(cleanCode)
       ]);
       if (currentGen === fetchGenerationRef.current) {
         setProducts(prods);
@@ -348,6 +362,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setInventoryMovements(movs);
         setStockCounts(counts);
         setInventoryItems(invItems);
+        setOperationalTasks(tasks);
       }
     } catch (e) {
       if (currentGen === fetchGenerationRef.current) {
@@ -405,6 +420,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setInventoryMovements([]);
       setStockCounts([]);
       setInventoryItems([]);
+      setOperationalTasks([]);
     }
 
     return () => {
@@ -1231,6 +1247,37 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // ----------------------------------------------------
+  // ----------------------------------------------------
+  // OPERATIONAL TASKS & TEAM ROUTINES
+  // ----------------------------------------------------
+  const addOperationalTask = async (taskData: Omit<OperationalTask, 'id' | 'createdAt'>): Promise<OperationalTask> => {
+    const created = await StorageService.addOperationalTask(taskData);
+    setOperationalTasks((prev) => [created, ...prev.filter((t) => t.id !== created.id)]);
+    return created;
+  };
+
+  const updateOperationalTask = async (id: string, updates: Partial<OperationalTask>): Promise<OperationalTask | null> => {
+    const updated = await StorageService.updateOperationalTask(id, updates);
+    if (updated) {
+      setOperationalTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    }
+    return updated;
+  };
+
+  const toggleOperationalTask = async (id: string, completedBy?: string, notes?: string): Promise<OperationalTask | null> => {
+    const updated = await StorageService.toggleOperationalTask(id, completedBy, notes);
+    if (updated) {
+      setOperationalTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    }
+    return updated;
+  };
+
+  const deleteOperationalTask = async (id: string): Promise<void> => {
+    setOperationalTasks((prev) => prev.filter((t) => t.id !== id));
+    await StorageService.deleteOperationalTask(id);
+  };
+
+  // ----------------------------------------------------
   // DAILY CLOSINGS
   // ----------------------------------------------------
   const saveDailyClosing = async (
@@ -1321,6 +1368,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         tickets,
         inventoryMovements,
         stockCounts,
+        inventoryItems,
+        operationalTasks,
         isAdminLoggedIn,
         isLoading,
         authUser,
@@ -1357,7 +1406,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addInventoryItem,
         updateInventoryItem,
         calculateExpectedStock,
-        inventoryItems,
+
+        addOperationalTask,
+        updateOperationalTask,
+        toggleOperationalTask,
+        deleteOperationalTask,
 
         addCompany,
         toggleCompanyStatus,

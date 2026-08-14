@@ -41,7 +41,11 @@ service cloud.firestore {
       return authenticateFirebaseUser() && (
         requireAdmin() ||
         (hasUserDoc() && getUserData().bakeryCode == bakeryCode) ||
-        (hasUserMappingDoc() && getUserMappingData().bakeryCode == bakeryCode)
+        (hasUserMappingDoc() && getUserMappingData().bakeryCode == bakeryCode) ||
+        (request.auth.token != null && request.auth.token.email != null && (
+          request.auth.token.email == bakeryCode + '@padaria.io' ||
+          request.auth.token.email == bakeryCode.lower() + '@padaria.io'
+        ))
       );
     }
 
@@ -175,6 +179,22 @@ service cloud.firestore {
 
     // Inventory Items collection
     match /inventoryItems/{itemId} {
+      allow read: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
+      allow create: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        (request.resource.data.bakeryCode != null && requireTenantAccess(request.resource.data.bakeryCode))
+      );
+      allow update, delete: if authenticateFirebaseUser() && (
+        requireAdmin() ||
+        requireTenantAccess(resource.data.bakeryCode)
+      );
+    }
+
+    // Operational Tasks collection
+    match /operationalTasks/{taskId} {
       allow read: if authenticateFirebaseUser() && (
         requireAdmin() ||
         requireTenantAccess(resource.data.bakeryCode)

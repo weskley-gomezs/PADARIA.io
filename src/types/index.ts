@@ -286,6 +286,28 @@ export interface InventoryItem {
   createdBy: string;
 }
 
+export type TaskShift = 'manha' | 'tarde' | 'noite' | 'geral';
+export type TaskStatus = 'pendente' | 'concluida' | 'atrasada';
+export type TaskCategory = 'conferencia' | 'perdas' | 'producao' | 'fechamento' | 'limpeza' | 'geral';
+
+export interface OperationalTask {
+  id: string;
+  bakeryCode: string;
+  title: string;
+  description?: string;
+  shift: TaskShift;
+  category: TaskCategory;
+  status: TaskStatus;
+  dueDate: string; // YYYY-MM-DD
+  dueTime?: string; // HH:mm
+  completedAt?: string; // ISO string
+  completedBy?: string;
+  assignedTo?: string;
+  notes?: string;
+  createdAt: string; // ISO string
+  priority: 'baixa' | 'media' | 'alta' | 'urgente';
+}
+
 
 
 

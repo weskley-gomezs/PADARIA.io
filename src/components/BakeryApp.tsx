@@ -37,7 +37,11 @@ import {
   Check,
   Download,
   Boxes,
-  ClipboardCheck
+  ClipboardCheck,
+  Scale,
+  UserCheck,
+  Layers,
+  Activity
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, VipOffer } from '../types';
@@ -56,6 +60,9 @@ import { WasteChartSection } from './WasteChartSection';
 import { VipClubSection } from './VipClubSection';
 import { VipOfferModal } from './VipOfferModal';
 import { PadeIA } from './PadeIA';
+import { OwnerSummaryDashboard } from './OwnerSummaryDashboard';
+import { TeamRoutineSection } from './TeamRoutineSection';
+import { DivergencesSection } from './DivergencesSection';
 
 interface BakeryAppProps {
   presetCode?: string | null;
@@ -93,7 +100,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'stock' | 'conference' | 'padeia' | 'relatorio' | 'config'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'summary' | 'divergences' | 'routine' | 'stock' | 'dashboard' | 'vip' | 'padeia' | 'relatorio' | 'config'>('summary');
 
   useEffect(() => {
     const handleOpenPadeia = () => setActiveTab('padeia');
@@ -649,7 +656,46 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         </div>
       )}
 
-      {/* Top Banner Header */}
+      {/* Mobile App Header (Native App Feel) */}
+      <div className="sm:hidden bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-xs flex items-center justify-between gap-3">
+        <div className="flex items-center space-x-2.5 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
+            <Boxes className="w-5 h-5 text-[#FF6B00]" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center space-x-1.5">
+              <h1 className="text-sm font-black text-[#2C2C2C] truncate">{company.empresa}</h1>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Online" />
+            </div>
+            <p className="text-[11px] text-gray-500 font-medium truncate">
+              {company.email || 'App Operacional'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsWasteScannerOpen(true)}
+            className="w-9 h-9 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-white flex items-center justify-center shadow-xs transition-transform cursor-pointer"
+            title="Escanear com Câmera"
+            aria-label="Escanear Câmera"
+          >
+            <Camera className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsSupportOpen(true)}
+            className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 flex items-center justify-center transition-transform cursor-pointer"
+            title="Suporte"
+            aria-label="Suporte"
+          >
+            <LifeBuoy className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Banner Header */}
       <div className="hidden sm:flex bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -660,7 +706,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           </p>
         </div>
 
-        {/* Quick Action Buttons Grid on Mobile */}
+        {/* Quick Action Buttons Grid */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setIsSupportOpen(true)}
@@ -681,29 +727,86 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         </div>
       </div>
 
-      {/* Navigation Tabs Bar (Scrollable on Mobile) */}
-      <div className="hidden sm:flex items-center space-x-2 border-b border-gray-200 pb-2 overflow-x-auto no-scrollbar">
+      {/* Navigation Tabs Bar (Horizontal Swipeable Pills on Mobile & Desktop) */}
+      <div className="flex items-center space-x-2 border-b border-gray-200/80 pb-2.5 overflow-x-auto no-scrollbar scroll-smooth px-0.5">
+        {/* 1. Resumo do Dono */}
         <button
-          onClick={() => setActiveTab('dashboard')}
+          id="tab-btn-summary"
+          onClick={() => setActiveTab('summary')}
           className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'dashboard' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+            activeTab === 'summary' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          <BarChart3 className="w-3.5 h-3.5" />
-          <span>Dashboard</span>
+          <Activity className="w-3.5 h-3.5 text-amber-400" />
+          <span>Resumo do Dono</span>
         </button>
 
+        {/* 2. Divergências */}
         <button
+          id="tab-btn-divergences"
+          onClick={() => setActiveTab('divergences')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'divergences' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+          }`}
+        >
+          <Scale className="w-3.5 h-3.5 text-amber-500" />
+          <span>Divergências</span>
+        </button>
+
+        {/* 3. Rotinas da Equipe */}
+        <button
+          id="tab-btn-routine"
+          onClick={() => setActiveTab('routine')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'routine' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+          }`}
+        >
+          <UserCheck className="w-3.5 h-3.5 text-indigo-400" />
+          <span>Rotinas da Equipe</span>
+        </button>
+
+        {/* 4. Controle de Estoque */}
+        <button
+          id="tab-btn-stock"
           onClick={() => setActiveTab('stock')}
           className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
             activeTab === 'stock' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
           }`}
         >
           <Boxes className="w-3.5 h-3.5 text-[#FF6B00]" />
-          <span>Controle de Estoque</span>
+          <span>Estoque</span>
         </button>
 
+        {/* 5. Validades & Descartes */}
         <button
+          id="tab-btn-dashboard"
+          onClick={() => setActiveTab('dashboard')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'dashboard' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+          }`}
+        >
+          <BarChart3 className="w-3.5 h-3.5" />
+          <span>Validades</span>
+        </button>
+
+        {/* 6. Clube VIP (Em Manutenção) */}
+        <button
+          id="tab-btn-vip"
+          onClick={() => setActiveTab('vip')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'vip' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+          }`}
+        >
+          <Crown className="w-3.5 h-3.5 text-amber-500" />
+          <span>Clube VIP</span>
+          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+            Em Manutenção
+          </span>
+        </button>
+
+        {/* 7. PadeIA */}
+        <button
+          id="tab-btn-padeia"
           onClick={() => setActiveTab('padeia')}
           className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
             activeTab === 'padeia'
@@ -712,10 +815,12 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           }`}
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-          <span>PadeIA</span>
+          <span>PadeIA™</span>
         </button>
 
+        {/* 8. Relatório */}
         <button
+          id="tab-btn-relatorio"
           onClick={() => setActiveTab('relatorio')}
           className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
             activeTab === 'relatorio' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -724,7 +829,10 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           <Printer className="w-3.5 h-3.5" />
           <span>Relatório</span>
         </button>
+
+        {/* 9. Config */}
         <button
+          id="tab-btn-config"
           onClick={() => setActiveTab('config')}
           className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
             activeTab === 'config' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -735,7 +843,31 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         </button>
       </div>
 
+      {activeTab === 'summary' && (
+        <OwnerSummaryDashboard
+          onNavigateTab={(tab) => setActiveTab(tab as any)}
+          onOpenNewProductModal={() => {
+            setProductToEdit(null);
+            setIsProductModalOpen(true);
+          }}
+          onOpenStockCountModal={() => setActiveTab('divergences')}
+        />
+      )}
+
+      {activeTab === 'divergences' && (
+        <DivergencesSection
+          onNavigateTab={(tab) => setActiveTab(tab as any)}
+          onOpenNewCountModal={() => setActiveTab('stock')}
+        />
+      )}
+
+      {activeTab === 'routine' && <TeamRoutineSection />}
+
       {activeTab === 'stock' && <StockControl />}
+
+      {activeTab === 'vip' && company && (
+        <VipClubSection bakeryCode={company.codigoAtivacao} />
+      )}
 
       {activeTab === 'padeia' && (
         <PadeIA
@@ -744,7 +876,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           salesHistory={salesHistory}
           vipOffers={vipOffers}
           onOpenScanner={() => setIsWasteScannerOpen(true)}
-          onNavigateBack={() => setActiveTab('dashboard')}
+          onNavigateBack={() => setActiveTab('summary')}
           onOpenVipOfferModal={(prod) => {
             setVipOfferProductInfo({
               productId: prod.id,
@@ -1357,50 +1489,58 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
       </button>
 
       {/* FIXED MOBILE BOTTOM APP TAB BAR (DOCK) */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 px-2 py-1.5 flex justify-around items-center shadow-xl">
-        {/* 1. Dashboard */}
+      <nav 
+        aria-label="Navegação Principal Mobile"
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200/90 px-1 pt-1.5 pb-[max(0.6rem,env(safe-area-inset-bottom))] flex justify-around items-center shadow-2xl touch-manipulation select-none"
+      >
+        {/* 1. Resumo */}
         <button
           type="button"
-          onClick={() => setActiveTab('dashboard')}
-          className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'dashboard' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          id="mobile-nav-summary"
+          onClick={() => setActiveTab('summary')}
+          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
+            activeTab === 'summary' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          <BarChart3 className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 font-bold">Dashboard</span>
+          <Activity className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5 font-bold">Resumo</span>
         </button>
 
-        {/* 2. Estoque */}
+        {/* 2. Divergências */}
         <button
           type="button"
-          onClick={() => setActiveTab('stock')}
-          className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'stock' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          id="mobile-nav-divergences"
+          onClick={() => setActiveTab('divergences')}
+          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
+            activeTab === 'divergences' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          <Boxes className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 font-bold">Estoque</span>
+          <Scale className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5 font-bold">Divergências</span>
         </button>
 
-        {/* 2. Foto */}
+        {/* 3. Rotinas */}
         <button
           type="button"
-          onClick={() => setIsWasteScannerOpen(true)}
-          className="flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all cursor-pointer text-gray-500 hover:text-gray-800 active:scale-95"
-          title="Tirar foto de etiqueta de produto"
+          id="mobile-nav-routine"
+          onClick={() => setActiveTab('routine')}
+          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
+            activeTab === 'routine' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          }`}
         >
-          <Camera className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 font-bold">Foto</span>
+          <UserCheck className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5 font-bold">Rotinas</span>
         </button>
 
-        {/* 3. PadeIA - Prominent Highlighted Button */}
+        {/* 4. PadeIA - Prominent Highlighted Center Action */}
         <button
           type="button"
+          id="mobile-nav-padeia"
           onClick={() => setActiveTab('padeia')}
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
+          className={`min-h-[48px] flex flex-col items-center justify-center py-1 px-2.5 mx-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
             activeTab === 'padeia'
               ? 'bg-gradient-to-r from-[#FF6B00] to-[#E8571A] text-white font-black shadow-md ring-2 ring-orange-300'
-              : 'bg-orange-50 text-[#E8571A] font-extrabold border border-orange-200'
+              : 'bg-orange-50 text-[#E8571A] font-extrabold border border-orange-200 shadow-xs'
           }`}
         >
           <div className="flex items-center space-x-1">
@@ -1409,28 +1549,30 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           </div>
         </button>
 
-        {/* 4. Relatórios */}
+        {/* 5. Estoque */}
         <button
           type="button"
+          id="mobile-nav-stock"
+          onClick={() => setActiveTab('stock')}
+          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
+            activeTab === 'stock' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Boxes className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5 font-bold">Estoque</span>
+        </button>
+
+        {/* 6. Mais / Relatórios */}
+        <button
+          type="button"
+          id="mobile-nav-relatorio"
           onClick={() => setActiveTab('relatorio')}
-          className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all cursor-pointer ${
+          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
             activeTab === 'relatorio' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
           <Printer className="w-5 h-5" />
           <span className="text-[10px] mt-0.5 font-bold">Relatórios</span>
-        </button>
-
-        {/* 5. Config */}
-        <button
-          type="button"
-          onClick={() => setActiveTab('config')}
-          className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'config' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          <Settings className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 font-bold">Config</span>
         </button>
       </nav>
     </div>
