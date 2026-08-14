@@ -197,7 +197,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </div>
               <span className="text-[10px] text-amber-700 font-bold block flex items-center space-x-1">
                 <AlertTriangle className="w-3 h-3" />
-                <span>Alerta no WhatsApp da equipe</span>
+                <span>Alerta visual no relatório</span>
               </span>
             </div>
 

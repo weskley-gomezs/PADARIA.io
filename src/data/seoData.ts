@@ -189,7 +189,7 @@ export const CLUSTER_PAGES: Record<string, SeoPageData> = {
           headers: ['Motivo da Baixa', 'Causa Raiz Mais Comum', 'Ação Preventiva Recomendada'],
           rows: [
             ['Sobra de Balcão / Excesso', 'Fornada final mal dimensionada', 'Reduzir fornada das 17h e sincronizar com fluxo'],
-            ['Vencimento de Lote', 'Falta de rotação FIFO ou compra em lote grande', 'Alertas preventivos no WhatsApp 3 dias antes'],
+            ['Vencimento de Lote', 'Falta de rotação FIFO ou compra em lote grande', 'Relatórios diários e alertas visuais no sistema 3 dias antes'],
             ['Queima / Erro de Forno', 'Desatenção ou descalibração de temperatura', 'Revisão de fichas técnicas e timer sonoro'],
             ['Avaria / Queda', 'Manuseio inadequado no transporte interno', 'Melhoria das bandejas e treinamento da equipe']
           ]
@@ -272,7 +272,7 @@ export const CLUSTER_PAGES: Record<string, SeoPageData> = {
     slug: 'controle-de-validade-para-padarias',
     url: 'https://padaria.io/controle-de-validade-para-padarias',
     title: 'Controle de Validade para Padarias | Sistema de Gestão Sanitária | Padaria.io',
-    metaDescription: 'Automatize o controle de validade e vencimento em padarias e confeitarias. Alertas no WhatsApp, conformidade com a Vigilância Sanitária e zero produtos vencidos.',
+    metaDescription: 'Automatize o controle de validade e vencimento em padarias e confeitarias. Relatórios completos no sistema, conformidade com a Vigilância Sanitária e zero produtos vencidos.',
     h1: 'Controle de Validade para Padarias: Conformidade Sanitária e Prevenção',
     subtitle: 'Elimine o risco de produtos vencidos no estoque ou no expositor, automatize etiquetas de lote e fique 100% seguro em auditorias da Vigilância Sanitária.',
     cluster: 'validade',
@@ -288,7 +288,7 @@ export const CLUSTER_PAGES: Record<string, SeoPageData> = {
       },
       {
         question: 'Como o Padaria.io alerta sobre produtos vencendo?',
-        answer: 'O sistema organiza os itens por faixas de prioridade visual (Vencidos em Vermelho, Vencendo em 1-3 dias em Amarelo, Normais em Verde) e pode enviar resumos diários para o WhatsApp da gerência.'
+        answer: 'O sistema organiza os itens por faixas de prioridade visual (Vencidos em Vermelho, Vencendo em 1-3 dias em Amarelo, Normais em Verde) e gera relatórios em tempo real no painel de controle da gerência.'
       }
     ],
     contentSections: [
@@ -535,7 +535,9 @@ export interface ArticleData {
   relatedArticles: { title: string; slug: string; category: string }[];
 }
 
-export const ARTICLES_DATA: Record<string, ArticleData> = {
+import { NEW_15_ARTICLES_DATA } from './newArticlesData';
+
+export const BASE_ARTICLES_DATA: Record<string, ArticleData> = {
   'como-controlar-o-estoque-de-uma-padaria': {
     slug: 'como-controlar-o-estoque-de-uma-padaria',
     url: 'https://padaria.io/conteudos/como-controlar-o-estoque-de-uma-padaria',
@@ -1011,7 +1013,7 @@ export const ARTICLES_DATA: Record<string, ArticleData> = {
           headers: ['Recurso', 'Planilha Excel / Google Sheets', 'Padaria.io'],
           rows: [
             ['Acesso pelo celular no balcão', 'Difícil e desconfigura células', 'Nativo, rápido e intuitivo'],
-            ['Alertas no WhatsApp de Validade', 'Não possui', 'Automático para a gerência'],
+            ['Alertas e Relatórios de Validade', 'Não possui', 'Relatórios visuais e painel em tempo real'],
             ['Auditoria de Perdas com Foto', 'Inviável em planilhas', 'Registro fotográfico direto na câmera'],
             ['Segurança de Dados e Backup', 'Risco de corromper arquivo', '100% em nuvem seguro e auditado']
           ]
@@ -1090,3 +1092,9 @@ export const ARTICLES_DATA: Record<string, ArticleData> = {
     ]
   }
 };
+
+export const ARTICLES_DATA: Record<string, ArticleData> = {
+  ...BASE_ARTICLES_DATA,
+  ...NEW_15_ARTICLES_DATA
+};
+

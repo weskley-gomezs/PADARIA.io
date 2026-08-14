@@ -20,7 +20,18 @@ export const ContentsHubView: React.FC<ContentsHubViewProps> = ({
   const articlesList = Object.values(ARTICLES_DATA);
   const clusterList = Object.values(CLUSTER_PAGES);
 
-  const categories = ['Todos', 'Gestão de Estoque', 'Redução de Perdas', 'Controle de Validade', 'Divergências', 'Checklists Operacionais', 'Tecnologia'];
+  const categories = [
+    'Todos',
+    'Gestão de Estoque',
+    'Conferência de Estoque',
+    'Divergências',
+    'Frios e Perecíveis',
+    'Redução de Perdas',
+    'Controle de Validade',
+    'Gestão Financeira',
+    'Checklists Operacionais',
+    'Tecnologia'
+  ];
 
   const filteredArticles = articlesList.filter(article => {
     const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

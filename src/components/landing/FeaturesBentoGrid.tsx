@@ -57,7 +57,7 @@ export const FeaturesBentoGrid: React.FC = () => {
             </h3>
 
             <p className="text-xs sm:text-sm text-gray-600 font-medium leading-relaxed max-w-2xl">
-              Esqueça checagens manuais no fim do dia. O Padaria.io monitora datas de vencimento de insumos e produtos finalizados, emitindo alertas por nível de urgência no WhatsApp da equipe.
+              Esqueça checagens manuais no fim do dia. O Padaria.io monitora datas de vencimento de insumos e produtos finalizados, gerando relatórios automáticos e alertas visuais no sistema por nível de urgência.
             </p>
 
             <ul className="grid sm:grid-cols-2 gap-2.5 pt-2 text-xs font-bold text-gray-700">

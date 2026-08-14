@@ -21,9 +21,9 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenWhatsApp }) => {
         'De forma alguma! A plataforma foi desenvolvida exatamente para o ritmo acelerado de padarias e confeitarias. As telas são ultra-intuitivas e o registro de baixas pode ser feito rapidamente em celulares, tablets ou com leitor de código de barras.',
     },
     {
-      question: 'Como funciona o alerta de validade por WhatsApp?',
+      question: 'Como funciona o alerta e relatório de validade?',
       answer:
-        'O Padaria.io monitora as datas de vencimento cadastradas e envia notificações automáticas para o grupo de WhatsApp da sua gerência ou equipe, apontando quais itens precisam de ação imediata (degustação, promoção ou exposição prioritária).',
+        'O Padaria.io monitora as datas de vencimento cadastradas e gera relatórios em tempo real com semáforo de urgência no painel gerencial, apontando quais itens precisam de ação imediata (degustação, promoção, produção ou exposição prioritária).',
     },
     {
       question: 'Preciso instalar algum servidor caro na minha padaria?',
