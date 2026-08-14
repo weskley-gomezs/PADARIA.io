@@ -338,8 +338,11 @@ try {
   });
 
   app.post('/api/padeia/chat', authenticateFirebaseUser, requireTenantAccess, rateLimit(30, 60000), async (req, res) => {
-    console.log("[ROUTE] POST /api/padeia/chat - Recebido");
+    console.log("[PADEIA] Request received");
     try {
+      console.log("[PADEIA] Authentication verified");
+      console.log("[PADEIA] Tenant verified");
+
       const { message, history = [] } = req.body;
 
       if (!message || typeof message !== 'string' || message.trim() === '') {
@@ -350,8 +353,12 @@ try {
         return res.status(400).json({ success: false, error: 'Mensagem excede o limite máximo permitido de 3000 caracteres.', code: 'MESSAGE_TOO_LONG' });
       }
 
-      if (!ai) {
-        return res.status(500).json({ success: false, error: 'Serviço PadeIA™ não inicializado.', code: 'AI_UNAVAILABLE' });
+      const hasApiKey = !!process.env.GEMINI_API_KEY;
+      console.log(`[PADEIA] GEMINI_API_KEY configured: ${hasApiKey}`);
+
+      if (!ai || !hasApiKey) {
+        console.error('[PADEIA ERROR] stage=gemini_init error="GEMINI_API_KEY não configurada ou serviço Gemini não inicializado"');
+        return res.status(500).json({ success: false, error: 'Serviço PadeIA™ não configurado (chave de API ausente).', code: 'AI_UNAVAILABLE' });
       }
 
       // ZERO-TRUST: Fetch tenant data strictly from Firestore based on authenticated user's bakeryCode
@@ -363,6 +370,7 @@ try {
       let stockDivergencesText: string = 'Nenhuma conferência realizada ainda.';
       let tasksOverviewText: string = 'Nenhuma rotina da equipe cadastrada para hoje.';
 
+      console.log("[PADEIA] Context loading");
       if (adminDb && bakeryCode) {
         try {
           const compDoc = await adminDb.collection('companies').doc(bakeryCode).get();
@@ -388,29 +396,26 @@ try {
 
           stockDivergencesText = stockCounts.length > 0
             ? stockCounts.slice(0, 10).map((c: any) =>
-                `- ${c.productName}: Esperado ${c.expectedQuantity} ${c.unit}, Físico ${c.physicalQuantity} ${c.unit}, Divergência ${c.varianceQuantity} ${c.unit} (R$ ${c.varianceValue || 0})`
+                `- ${c.productName || 'Produto'}: Esperado ${c.expectedQuantity ?? 0} ${c.unit || 'un'}, Físico ${c.physicalQuantity ?? 0} ${c.unit || 'un'}, Divergência ${c.varianceQuantity ?? 0} ${c.unit || 'un'} (R$ ${c.varianceValue || 0})`
               ).join('\n')
             : 'Nenhuma conferência de estoque físico registrada ainda.';
 
           tasksOverviewText = operationalTasks.length > 0
             ? operationalTasks.slice(0, 10).map((t: any) =>
-                `- [${t.status === 'concluida' ? 'CONCLUÍDA' : 'PENDENTE'}] [Turno: ${t.shift.toUpperCase()}] ${t.title} (Resp: ${t.completedBy || t.assignedTo || 'Equipe'}, Venc: ${t.dueTime || t.dueDate})`
+                `- [${t.status === 'concluida' ? 'CONCLUÍDA' : 'PENDENTE'}] [Turno: ${(t.shift || 'geral').toUpperCase()}] ${t.title || 'Tarefa'} (Resp: ${t.completedBy || t.assignedTo || 'Equipe'}, Venc: ${t.dueTime || t.dueDate || 'N/A'})`
               ).join('\n')
             : 'Nenhuma tarefa de rotina cadastrada para hoje.';
         } catch (dbErr) {
-          console.warn('[PADEIA] Erro ao buscar dados do tenant no Firestore:', dbErr);
+          console.warn('[PADEIA ERROR] stage=context warning="Erro ao buscar dados do tenant no Firestore"', dbErr);
         }
       }
+      console.log("[PADEIA] Context loaded");
 
       const expiredProds = products.filter((p: any) => p.status === 'vencido');
       const expiringProds = products.filter((p: any) => p.status === 'vencendo');
-      const normalProds = products.filter((p: any) => p.status === 'normal');
-
-      const expiredVal = expiredProds.reduce((sum: number, p: any) => sum + (p.valorTotal || p.quantidade * (p.valorKg || 12)), 0);
-      const expiringVal = expiringProds.reduce((sum: number, p: any) => sum + (p.valorTotal || p.quantidade * (p.valorKg || 12)), 0);
 
       const topProductsText = products.slice(0, 15).map((p: any) => 
-        `- ${p.nome} (Qtd: ${p.quantidade}, Val: ${p.dataValidade}, Status: ${p.status}, ValTotal: R$ ${p.valorTotal || 0})`
+        `- ${p.nome || 'Produto'} (Qtd: ${p.quantidade ?? 0}, Val: ${p.dataValidade || 'N/A'}, Status: ${p.status || 'normal'}, ValTotal: R$ ${p.valorTotal || 0})`
       ).join('\n');
 
       const systemInstruction = `Você é a PadeIA™, a Inteligência Artificial e Copiloto Operacional Executivo do Padaria.io ("Sua padaria funcionando. Você vivendo.").
@@ -432,27 +437,44 @@ ${tasksOverviewText}
 - Histórico de Divergências de Estoque Físico:
 ${(typeof stockDivergencesText !== 'undefined' && stockDivergencesText) ? stockDivergencesText : 'Nenhuma conferência realizada ainda.'}`;
 
-      const formattedHistory = Array.isArray(history) ? history.slice(-20).map((h: any) => ({
-        role: h.role === 'model' || h.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: String(h.content || h.text || '').substring(0, 2000) }],
-      })) : [];
+      const formattedHistory = Array.isArray(history)
+        ? history
+            .slice(-20)
+            .map((h: any) => {
+              const text = String(h.content || h.text || '').substring(0, 2000).trim();
+              if (!text) return null;
+              return {
+                role: h.role === 'model' || h.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text }]
+              };
+            })
+            .filter((item): item is { role: string; parts: { text: string }[] } => item !== null)
+        : [];
 
       const contents = [
         ...formattedHistory,
         { role: 'user', parts: [{ text: message }] }
       ];
 
+      console.log("[PADEIA] Gemini request starting");
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-3.1-flash-lite',
         contents,
         config: { systemInstruction },
       });
+      console.log("[PADEIA] Gemini response received");
 
+      console.log("[PADEIA] Response formatting");
       const reply = response.text || 'Não consegui processar a resposta no momento.';
+      console.log("[PADEIA] Request completed");
       return res.json({ success: true, reply });
     } catch (error: any) {
-      console.error('[ROUTE] ERRO em /api/padeia/chat:', error);
-      return res.status(500).json({ success: false, error: 'Erro ao processar consulta com a PadeIA™.', code: 'PADEIA_ERROR' });
+      console.error('[PADEIA ERROR] stage=gemini_request', error?.message || error);
+      return res.status(500).json({
+        success: false,
+        error: 'INTERNAL_SERVER_ERROR',
+        message: 'Erro interno ao processar a PadeIA™.'
+      });
     }
   });
 
@@ -545,7 +567,7 @@ ${(typeof stockDivergencesText !== 'undefined' && stockDivergencesText) ? stockD
         return res.status(400).json({ success: false, error: 'Prompt não fornecido.', code: 'MISSING_PROMPT' });
       }
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-3.1-flash-lite',
         contents: prompt,
         config: { systemInstruction: systemInstruction || 'Você é um assistente especialista.' }
       });
@@ -554,6 +576,19 @@ ${(typeof stockDivergencesText !== 'undefined' && stockDivergencesText) ? stockD
       console.error('[ROUTE] Erro em /api/gemini:', err);
       return res.status(500).json({ success: false, error: err.message, code: 'GEMINI_ERROR' });
     }
+  });
+
+  // Global Express Error Handler Middleware
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error('[EXPRESS GLOBAL ERROR]', err?.stack || err);
+    if (res.headersSent) {
+      return next(err);
+    }
+    return res.status(500).json({
+      success: false,
+      error: 'INTERNAL_SERVER_ERROR',
+      message: 'Erro interno no servidor.'
+    });
   });
 
   console.log("[INIT] Servidor Zero-Trust pronto.");

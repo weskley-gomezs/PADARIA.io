@@ -539,11 +539,26 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar você a tomar decis�
         })
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = {};
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao consultar a PadeIA™');
+        let errorMessage = `Erro HTTP ${response.status}`;
+
+        if (contentType.includes('application/json')) {
+          try {
+            data = await response.json();
+            errorMessage = data?.message || data?.error || errorMessage;
+          } catch (_) {}
+        } else {
+          const text = await response.text();
+          console.error('[PADEIA] Non-JSON error response:', text);
+        }
+
+        throw new Error(errorMessage);
       }
+
+      data = await response.json();
 
       const rawReply = data.reply || 'Não consegui obter uma resposta no momento. Tente novamente.';
 
