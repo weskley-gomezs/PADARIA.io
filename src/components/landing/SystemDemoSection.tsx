@@ -27,7 +27,7 @@ export const SystemDemoSection: React.FC<SystemDemoSectionProps> = ({ onOpenWhat
           INTERFACE EM AÇÃO
         </span>
         <h2 className="text-2xl sm:text-4xl font-black text-[#0B0F17] tracking-tight">
-          Veja como o Padaria.io funciona no dia a dia
+          Veja como o Padariaio funciona no dia a dia
         </h2>
         <p className="text-sm sm:text-base text-gray-600 font-medium">
           Conheça a clareza das telas e a simplicidade das rotinas para gerência, balcão e cozinha.
@@ -104,7 +104,7 @@ export const SystemDemoSection: React.FC<SystemDemoSectionProps> = ({ onOpenWhat
           </div>
           <div className="text-[11px] font-bold text-gray-500 flex items-center space-x-1.5 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>https://app.padaria.io/modulos/{activeTab}</span>
+            <span>https://app.padariaio.com.br/modulos/{activeTab}</span>
           </div>
           <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
             ● Ativo

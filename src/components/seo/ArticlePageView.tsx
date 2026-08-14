@@ -27,12 +27,12 @@ export const ArticlePageView: React.FC<ArticlePageViewProps> = ({
     'description': article.metaDescription,
     'author': {
       '@type': 'Organization',
-      'name': 'Padaria.io',
-      'url': 'https://padaria.io'
+      'name': 'Padariaio',
+      'url': 'https://padariaio.com.br'
     },
     'publisher': {
       '@type': 'Organization',
-      'name': 'Padaria.io',
+      'name': 'Padariaio',
       'logo': {
         '@type': 'ImageObject',
         'url': 'https://i.imgur.com/HSJoe7l.png'
@@ -267,7 +267,7 @@ export const ArticlePageView: React.FC<ArticlePageViewProps> = ({
         {/* Conversion Banner Section */}
         <ConversionBanner
           onOpenDemo={onOpenDemo}
-          title="Coloque este método em prática na sua padaria com o Padaria.io"
+          title="Coloque este método em prática na sua padaria com o Padariaio"
           subtitle="Controle estoque, validade, perdas e divergências pelo celular ou computador em minutos."
           contextTag="Aplicação Prática"
         />

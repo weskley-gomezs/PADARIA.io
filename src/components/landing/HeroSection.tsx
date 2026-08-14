@@ -89,7 +89,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           transition={{ duration: 0.6, delay: 0.25 }}
           className="text-base sm:text-xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed"
         >
-          O <strong className="text-gray-900 font-bold">Padaria.io</strong> é o sistema para padaria completo que automatiza o controle de validade, gestão de estoque alimentício e redução de perdas na panificação e confeitaria com inteligência artificial.
+          O <strong className="text-gray-900 font-bold">Padariaio</strong> é o sistema para padaria completo que automatiza o controle de validade, gestão de estoque alimentício e redução de perdas na panificação e confeitaria com inteligência artificial.
         </motion.p>
 
         {/* 4. Action Buttons */}
@@ -155,7 +155,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
           <div className="text-[11px] font-bold text-gray-500 flex items-center space-x-1.5 bg-white px-3.5 py-1 rounded-full border border-gray-200/80 shadow-2xs">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>https://padaria.io/gestao-inteligente</span>
+            <span>https://padariaio.com.br/gestao-inteligente</span>
           </div>
           <div className="flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />

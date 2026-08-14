@@ -128,7 +128,7 @@ export const InstallPwaPrompt: React.FC = () => {
               <div className="relative shrink-0">
                 <img
                   src="https://i.imgur.com/HSJoe7l.png"
-                  alt="Padaria.io Icon"
+                  alt="Padariaio Icon"
                   className="w-14 h-14 rounded-2xl object-cover shadow-md border border-orange-500/30"
                 />
                 <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#E8571A] text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-sm">
@@ -143,7 +143,7 @@ export const InstallPwaPrompt: React.FC = () => {
                   <span>Baixar Aplicativo</span>
                 </div>
                 <h3 className="font-extrabold text-sm text-white leading-snug">
-                  Instalar Padaria.io no seu celular ou computador
+                  Instalar Padariaio no seu celular ou computador
                 </h3>
                 <p className="text-[11px] text-gray-300 font-medium leading-relaxed">
                   Acesso instantâneo de 1 clique direto da tela inicial, sem abrir navegador!
@@ -196,7 +196,7 @@ export const InstallPwaPrompt: React.FC = () => {
                 <div className="flex items-center space-x-4">
                   <img
                     src="https://i.imgur.com/HSJoe7l.png"
-                    alt="Padaria.io"
+                    alt="Padariaio"
                     className="w-16 h-16 rounded-2xl object-cover shadow-lg border-2 border-[#E8571A]"
                   />
                   <div>

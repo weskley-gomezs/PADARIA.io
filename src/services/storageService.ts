@@ -527,7 +527,7 @@ export class StorageService {
         const defaultCompany: BakeryCompany = {
           codigoAtivacao: 'PAD12345',
           empresa: 'Panificadora Modelo',
-          email: 'padaria@padaria.io',
+          email: 'padaria@padariaio.com.br',
           senha: 'padaria123',
           telefone: '(61) 99999-8888',
           cnpj: '00.000.000/0001-91',
@@ -610,6 +610,95 @@ export class StorageService {
       return company;
     }
     return undefined;
+  }
+
+  static async updateCompanyCategories(code: string, categories: string[]): Promise<BakeryCompany | undefined> {
+    const companies = StorageService.getCompanies();
+    const company = companies.find((c) => c.codigoAtivacao.toUpperCase() === code.trim().toUpperCase());
+    if (company) {
+      company.categoriasCustomizadas = categories;
+      setItem(KEYS.COMPANIES, companies);
+
+      await setDoc(doc(db, 'companies', company.codigoAtivacao), removeUndefined(company)).catch((e) => {
+        handleFirestoreError(e, OperationType.WRITE, `companies/${company.codigoAtivacao}`);
+      });
+      return company;
+    }
+    return undefined;
+  }
+
+  static async renameCategoryInProducts(bakeryCode: string, oldName: string, newName: string): Promise<void> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    let allProducts = StorageService.getProducts();
+    let changedProducts = false;
+
+    allProducts = allProducts.map((p) => {
+      if (p.bakeryCode.toUpperCase() === cleanCode && p.categoria === oldName) {
+        changedProducts = true;
+        const updated = { ...p, categoria: newName };
+        setDoc(doc(db, 'products', p.id), removeUndefined(updated)).catch(() => {});
+        return updated;
+      }
+      return p;
+    });
+
+    if (changedProducts) {
+      setItem(KEYS.PRODUCTS, allProducts);
+    }
+
+    let allInventory = StorageService.getInventoryItems();
+    let changedInventory = false;
+
+    allInventory = allInventory.map((i) => {
+      if (i.bakeryCode && i.bakeryCode.toUpperCase() === cleanCode && (i.category === oldName || (i as any).categoria === oldName)) {
+        changedInventory = true;
+        const updated = { ...i, category: newName };
+        setDoc(doc(db, 'inventoryItems', i.id), removeUndefined(updated)).catch(() => {});
+        return updated;
+      }
+      return i;
+    });
+
+    if (changedInventory) {
+      setItem(KEYS.INVENTORY_ITEMS, allInventory);
+    }
+  }
+
+  static async replaceCategoryInProducts(bakeryCode: string, oldName: string, fallbackName: string): Promise<void> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    let allProducts = StorageService.getProducts();
+    let changedProducts = false;
+
+    allProducts = allProducts.map((p) => {
+      if (p.bakeryCode.toUpperCase() === cleanCode && p.categoria === oldName) {
+        changedProducts = true;
+        const updated = { ...p, categoria: fallbackName };
+        setDoc(doc(db, 'products', p.id), removeUndefined(updated)).catch(() => {});
+        return updated;
+      }
+      return p;
+    });
+
+    if (changedProducts) {
+      setItem(KEYS.PRODUCTS, allProducts);
+    }
+
+    let allInventory = StorageService.getInventoryItems();
+    let changedInventory = false;
+
+    allInventory = allInventory.map((i) => {
+      if (i.bakeryCode && i.bakeryCode.toUpperCase() === cleanCode && (i.category === oldName || (i as any).categoria === oldName)) {
+        changedInventory = true;
+        const updated = { ...i, category: fallbackName };
+        setDoc(doc(db, 'inventoryItems', i.id), removeUndefined(updated)).catch(() => {});
+        return updated;
+      }
+      return i;
+    });
+
+    if (changedInventory) {
+      setItem(KEYS.INVENTORY_ITEMS, allInventory);
+    }
   }
 
   static async addCompany(
@@ -2236,7 +2325,8 @@ export class StorageService {
     unit: string,
     initialQuantity: number,
     unitCost: number,
-    createdBy?: string
+    createdBy?: string,
+    category?: string
   ): Promise<InventoryItem> {
     const items = StorageService.getInventoryItems();
     const id = 'inv_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
@@ -2253,6 +2343,7 @@ export class StorageService {
       currentQuantity: newQty,
       initialQuantity: newQty,
       unitCost: cost,
+      category: category ? category.trim() : 'Panificação',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       createdBy: createdBy || 'sistema',
@@ -2286,7 +2377,8 @@ export class StorageService {
     id: string,
     name: string,
     unitCost?: number,
-    unit?: string
+    unit?: string,
+    category?: string
   ): Promise<InventoryItem> {
     const items = StorageService.getInventoryItems();
     const idx = items.findIndex((i) => i.id === id);
@@ -2299,6 +2391,7 @@ export class StorageService {
     };
     if (unitCost !== undefined) updated.unitCost = Number(unitCost);
     if (unit !== undefined) updated.unit = unit;
+    if (category !== undefined) updated.category = category;
 
     items[idx] = updated;
     setItem(KEYS.INVENTORY_ITEMS, items);
@@ -2308,6 +2401,16 @@ export class StorageService {
     });
 
     return updated;
+  }
+
+  static async deleteInventoryItem(id: string): Promise<void> {
+    let items = StorageService.getInventoryItems();
+    items = items.filter((i) => i.id !== id);
+    setItem(KEYS.INVENTORY_ITEMS, items);
+
+    await deleteDoc(doc(db, 'inventoryItems', id)).catch((e) => {
+      handleFirestoreError(e, OperationType.DELETE, `inventoryItems/${id}`);
+    });
   }
 
   static async getInventoryItemsFromServer(bakeryCode: string): Promise<InventoryItem[]> {

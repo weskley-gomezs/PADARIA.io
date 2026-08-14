@@ -100,7 +100,7 @@ export const AdminSaasAnalytics: React.FC<AdminSaasAnalyticsProps> = ({
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'ia'; text: string; date: string }>>([
     {
       sender: 'ia',
-      text: 'Olá, Administrador Master! Sou a PadeIA Admin. Estou pronta para analisar os indicadores financeiros do SaaS Padaria.io, consumo de IA, custos do Firebase/Vercel e projeções de faturamento. Como posso ajudar agora?',
+      text: 'Olá, Administrador Master! Sou a PadeIA Admin. Estou pronta para analisar os indicadores financeiros do SaaS Padariaio, consumo de IA, custos do Firebase/Vercel e projeções de faturamento. Como posso ajudar agora?',
       date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -339,7 +339,7 @@ export const AdminSaasAnalytics: React.FC<AdminSaasAnalyticsProps> = ({
 
     try {
       const promptContext = `
-Você é a PadeIA Admin, a Inteligência Artificial corporativa do Padaria.io responsável pela gestão financeira e operacional do SaaS.
+Você é a PadeIA Admin, a Inteligência Artificial corporativa do Padariaio responsável pela gestão financeira e operacional do SaaS.
 Responda de forma clara, profissional, objetiva e direta com números reais do sistema.
 
 DADOS REAIS E ATUAIS DO SAAS PADARIA.IO:

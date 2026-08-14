@@ -11,11 +11,11 @@ interface ConversionBannerProps {
 export const ConversionBanner: React.FC<ConversionBannerProps> = ({
   onOpenDemo,
   title = 'Pronto para estancar o prejuízo invisível na sua padaria?',
-  subtitle = 'Solicite uma demonstração guiada do Padaria.io com um de nossos consultores de panificação e veja o sistema funcionando na prática.',
+  subtitle = 'Solicite uma demonstração guiada do Padariaio com um de nossos consultores de panificação e veja o sistema funcionando na prática.',
   contextTag = 'Demonstração Gratuita'
 }) => {
   const handleWhatsApp = () => {
-    const message = encodeURIComponent('Olá! Gostaria de agendar uma demonstração do Padaria.io para a minha padaria.');
+    const message = encodeURIComponent('Olá! Gostaria de agendar uma demonstração do Padariaio para a minha padaria.');
     window.open(`https://wa.me/5561996507712?text=${message}`, '_blank', 'noopener,noreferrer');
   };
 

@@ -94,7 +94,7 @@ export default function App() {
 
   const openWhatsApp = (customMessage?: string) => {
     const text = encodeURIComponent(
-      customMessage || 'Olá! Gostaria de agendar uma demonstração gratuita do Padaria.io para minha padaria.'
+      customMessage || 'Olá! Gostaria de agendar uma demonstração gratuita do Padariaio para minha padaria.'
     );
     window.open(`https://wa.me/5561996507712?text=${text}`, '_blank', 'noopener,noreferrer');
   };
@@ -104,7 +104,7 @@ export default function App() {
       <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-10 h-10 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-sm font-semibold text-gray-500">Iniciando Padaria.io...</span>
+          <span className="text-sm font-semibold text-gray-500">Iniciando Padariaio...</span>
         </div>
       </div>
     );

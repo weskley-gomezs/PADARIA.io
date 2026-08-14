@@ -335,7 +335,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
                         : `Vence em ${scanAnalysis.daysRemaining} dia(s)`}
                     </h4>
                     <p className="text-[11px] sm:text-xs text-red-700 font-semibold mt-1">
-                      Este produto ainda está na validade ({formatDateToBR(scanAnalysis.dataValidade || '')}). O Padaria.io aceita apenas produtos que venceram ou que vencem hoje para o controle de perdas, doação e descarte.
+                      Este produto ainda está na validade ({formatDateToBR(scanAnalysis.dataValidade || '')}). O Padariaio aceita apenas produtos que venceram ou que vencem hoje para o controle de perdas, doação e descarte.
                     </p>
                   </div>
                 </div>
@@ -558,7 +558,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
                 </button>
               ) : (
                 <div className="p-2.5 sm:p-3 bg-red-100 border border-red-300 rounded-xl text-center text-xs font-bold text-red-800">
-                  ⛔ Registro Não Permitido: O Padaria.io aceita apenas produtos que já venceram.
+                  ⛔ Registro Não Permitido: O Padariaio aceita apenas produtos que já venceram.
                 </div>
               )}
 

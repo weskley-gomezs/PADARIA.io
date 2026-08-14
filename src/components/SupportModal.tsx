@@ -65,7 +65,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({
               <LifeBuoy className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-white">Central de Suporte Padaria.io</h3>
+              <h3 className="text-lg font-black text-white">Central de Suporte Padariaio</h3>
               <p className="text-xs text-[#D4A574]">
                 {empresaNome} • Código: {bakeryCode}
               </p>

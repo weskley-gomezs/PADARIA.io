@@ -40,7 +40,7 @@ export const ValueProofSection: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.15 }}
           className="text-base sm:text-2xl text-gray-300 font-semibold max-w-2xl mx-auto tracking-wide"
         >
-          É isso que o Padaria.io foi desenvolvido para fazer.
+          É isso que o Padariaio foi desenvolvido para fazer.
         </motion.p>
       </div>
     </section>

@@ -151,6 +151,7 @@
         "currentQuantity": { "type": "number" },
         "initialQuantity": { "type": "number" },
         "unitCost": { "type": "number" },
+        "category": { "type": "string" },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" },
         "createdBy": { "type": "string" }

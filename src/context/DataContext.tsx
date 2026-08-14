@@ -27,6 +27,17 @@ import {
 import { Unsubscribe } from 'firebase/firestore';
 import { formatDateToISO } from '../utils/dateUtils';
 
+export const DEFAULT_CATEGORIES = [
+  'Panificação',
+  'Confeitaria',
+  'Laticínios',
+  'Frios & Embutidos',
+  'Salgados',
+  'Bebidas',
+  'Embalados',
+  'Geral',
+];
+
 interface DataContextType {
   // Core states
   currentView: 'landing' | 'app' | 'admin';
@@ -151,14 +162,17 @@ interface DataContextType {
     name: string,
     unit: string,
     initialQuantity: number,
-    unitCost: number
+    unitCost: number,
+    category?: string
   ) => Promise<InventoryItem>;
   updateInventoryItem: (
     id: string,
     name: string,
     unitCost?: number,
-    unit?: string
+    unit?: string,
+    category?: string
   ) => Promise<InventoryItem>;
+  deleteInventoryItem: (id: string) => Promise<void>;
   calculateExpectedStock: (productId: string) => {
     expected: number;
     initial: number;
@@ -194,6 +208,13 @@ interface DataContextType {
   updateCompanyCNPJ: (code: string, cnpj: string) => Promise<BakeryCompany | undefined>;
   deleteCompaniesWithoutCNPJ: () => Promise<number>;
   clearAllSystemData: () => Promise<void>;
+
+  // Category management
+  categories: string[];
+  addCategory: (categoryName: string) => Promise<boolean>;
+  renameCategory: (oldName: string, newName: string) => Promise<boolean>;
+  deleteCategory: (categoryName: string, fallbackCategory?: string) => Promise<boolean>;
+  resetCategories: () => Promise<boolean>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -236,7 +257,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const isAdminEmail = (email?: string | null) => email === 'admin@padaria.io' || email === 'weskleyg4000@gmail.com';
+  const isAdminEmail = (email?: string | null) => email === 'admin@padariaio.com.br' || email === 'weskleyg4000@gmail.com';
 
   const setActiveCode = useCallback((code: string | null) => {
     const cleanCode = code ? code.trim().toUpperCase() : null;
@@ -246,7 +267,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       StorageService.setUserBakeryMapping(
         auth.currentUser.uid,
         cleanCode,
-        auth.currentUser.email || `${cleanCode.toLowerCase()}@padaria.io`,
+        auth.currentUser.email || `${cleanCode.toLowerCase()}@padariaio.com.br`,
         'owner'
       ).catch(() => {});
     }
@@ -283,13 +304,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!mapping || !mapping.bakeryCode) {
             const code = StorageService.getActiveBakeryCode();
             if (code) {
-              await StorageService.setUserBakeryMapping(user.uid, code, user.email || `${code.toLowerCase()}@padaria.io`, 'owner');
+              await StorageService.setUserBakeryMapping(user.uid, code, user.email || `${code.toLowerCase()}@padariaio.com.br`, 'owner');
               mapping = { bakeryCode: code, role: 'owner' };
             }
           }
           if (mapping && mapping.bakeryCode) {
             const cleanCode = mapping.bakeryCode.trim().toUpperCase();
-            await StorageService.setUserBakeryMapping(user.uid, cleanCode, user.email || `${cleanCode.toLowerCase()}@padaria.io`, mapping.role || 'owner');
+            await StorageService.setUserBakeryMapping(user.uid, cleanCode, user.email || `${cleanCode.toLowerCase()}@padariaio.com.br`, mapping.role || 'owner');
             StorageService.setActiveBakeryCode(cleanCode);
             const comp = await StorageService.getCompanyByCodeAsync(cleanCode);
             if (comp) setActiveCompany(comp);
@@ -333,7 +354,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await StorageService.setUserBakeryMapping(
         auth.currentUser.uid,
         cleanCode,
-        auth.currentUser.email || `${cleanCode.toLowerCase()}@padaria.io`,
+        auth.currentUser.email || `${cleanCode.toLowerCase()}@padariaio.com.br`,
         'owner'
       );
     }
@@ -466,7 +487,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      const authEmail = comp.email || `${comp.codigoAtivacao.toLowerCase()}@padaria.io`;
+      const authEmail = comp.email || `${comp.codigoAtivacao.toLowerCase()}@padariaio.com.br`;
       const authPassword = comp.senha || `Padaria@${comp.codigoAtivacao}!2026`;
 
       // Pre-set active code to prevent async onAuthStateChanged race conditions
@@ -521,7 +542,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const email = comp.email || `${trimmedCode.toLowerCase()}@padaria.io`;
+      const email = comp.email || `${trimmedCode.toLowerCase()}@padariaio.com.br`;
       const password = comp.senha || `Padaria@${trimmedCode}!2026`;
 
       // Pre-set active code to prevent async onAuthStateChanged race conditions
@@ -948,7 +969,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string,
     unit: string,
     initialQuantity: number,
-    unitCost: number
+    unitCost: number,
+    category?: string
   ): Promise<InventoryItem> => {
     if (!activeCode) throw new Error('Bakery code required');
 
@@ -960,6 +982,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       currentQuantity: Number(initialQuantity) || 0,
       initialQuantity: Number(initialQuantity) || 0,
       unitCost: Number(unitCost) || 0,
+      category: category || 'Panificação',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       createdBy: authUser?.email || 'sistema'
@@ -974,7 +997,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unit,
         initialQuantity,
         unitCost,
-        authUser?.email
+        authUser?.email,
+        category
       );
       setInventoryItems((prev) => prev.map((i) => (i.id === tempItem.id ? realItem : i)));
       const freshMovs = await StorageService.getInventoryMovementsFromServer(activeCode);
@@ -990,11 +1014,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     id: string,
     name: string,
     unitCost?: number,
-    unit?: string
+    unit?: string,
+    category?: string
   ): Promise<InventoryItem> => {
-    const realUpdated = await StorageService.updateInventoryItem(id, name, unitCost, unit);
+    const realUpdated = await StorageService.updateInventoryItem(id, name, unitCost, unit, category);
     setInventoryItems((prev) => prev.map((i) => (i.id === id ? realUpdated : i)));
     return realUpdated;
+  };
+
+  const deleteInventoryItem = async (id: string): Promise<void> => {
+    await StorageService.deleteInventoryItem(id);
+    setInventoryItems((prev) => prev.filter((i) => i.id !== id));
   };
 
   const calculateExpectedStock = useCallback(
@@ -1355,6 +1385,99 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logoutBakery();
   };
 
+  // Category management logic
+  const categories = React.useMemo(() => {
+    const custom = activeCompany?.categoriasCustomizadas;
+    if (custom && Array.isArray(custom) && custom.length > 0) {
+      return custom;
+    }
+    return DEFAULT_CATEGORIES;
+  }, [activeCompany?.categoriasCustomizadas]);
+
+  const addCategory = async (categoryName: string): Promise<boolean> => {
+    const trimmed = categoryName.trim();
+    if (!trimmed) return false;
+    const currentList = activeCompany?.categoriasCustomizadas && activeCompany.categoriasCustomizadas.length > 0
+      ? activeCompany.categoriasCustomizadas
+      : [...DEFAULT_CATEGORIES];
+
+    if (currentList.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      return false;
+    }
+
+    const updated = [...currentList, trimmed];
+    if (activeCompany) {
+      setActiveCompany({ ...activeCompany, categoriasCustomizadas: updated });
+      if (activeCode) {
+        await StorageService.updateCompanyCategories(activeCode, updated);
+      }
+    }
+    return true;
+  };
+
+  const renameCategory = async (oldName: string, newName: string): Promise<boolean> => {
+    const trimmedNew = newName.trim();
+    if (!trimmedNew || trimmedNew.toLowerCase() === oldName.toLowerCase()) return false;
+
+    const currentList = activeCompany?.categoriasCustomizadas && activeCompany.categoriasCustomizadas.length > 0
+      ? activeCompany.categoriasCustomizadas
+      : [...DEFAULT_CATEGORIES];
+
+    const updatedList = currentList.map((c) => (c === oldName ? trimmedNew : c));
+
+    if (activeCompany) {
+      setActiveCompany({ ...activeCompany, categoriasCustomizadas: updatedList });
+      if (activeCode) {
+        await StorageService.updateCompanyCategories(activeCode, updatedList);
+        await StorageService.renameCategoryInProducts(activeCode, oldName, trimmedNew);
+      }
+    }
+
+    setProducts((prev) => prev.map((p) => (p.categoria === oldName ? { ...p, categoria: trimmedNew } : p)));
+    setVipOffers((prev) => prev.map((v) => (v.categoria === oldName ? { ...v, categoria: trimmedNew } : v)));
+    setInventoryItems((prev) => prev.map((i) => (i.category === oldName ? { ...i, category: trimmedNew } : i)));
+
+    return true;
+  };
+
+  const deleteCategory = async (categoryName: string, fallbackCategory?: string): Promise<boolean> => {
+    const currentList = activeCompany?.categoriasCustomizadas && activeCompany.categoriasCustomizadas.length > 0
+      ? activeCompany.categoriasCustomizadas
+      : [...DEFAULT_CATEGORIES];
+
+    let updatedList = currentList.filter((c) => c !== categoryName);
+    if (updatedList.length === 0) {
+      updatedList = ['Geral'];
+    }
+
+    const fallback = fallbackCategory || updatedList[0] || 'Geral';
+
+    if (activeCompany) {
+      setActiveCompany({ ...activeCompany, categoriasCustomizadas: updatedList });
+      if (activeCode) {
+        await StorageService.updateCompanyCategories(activeCode, updatedList);
+        await StorageService.replaceCategoryInProducts(activeCode, categoryName, fallback);
+      }
+    }
+
+    setProducts((prev) => prev.map((p) => (p.categoria === categoryName ? { ...p, categoria: fallback } : p)));
+    setVipOffers((prev) => prev.map((v) => (v.categoria === categoryName ? { ...v, categoria: fallback } : v)));
+    setInventoryItems((prev) => prev.map((i) => (i.category === categoryName ? { ...i, category: fallback } : i)));
+
+    return true;
+  };
+
+  const resetCategories = async (): Promise<boolean> => {
+    const updatedList = [...DEFAULT_CATEGORIES];
+    if (activeCompany) {
+      setActiveCompany({ ...activeCompany, categoriasCustomizadas: updatedList });
+      if (activeCode) {
+        await StorageService.updateCompanyCategories(activeCode, updatedList);
+      }
+    }
+    return true;
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -1405,6 +1528,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addStockCount,
         addInventoryItem,
         updateInventoryItem,
+        deleteInventoryItem,
         calculateExpectedStock,
 
         addOperationalTask,
@@ -1420,7 +1544,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateCompanyPassword,
         updateCompanyCNPJ,
         deleteCompaniesWithoutCNPJ,
-        clearAllSystemData
+        clearAllSystemData,
+
+        // Category management
+        categories,
+        addCategory,
+        renameCategory,
+        deleteCategory,
+        resetCategories
       }}
     >
       {children}

@@ -126,6 +126,7 @@ export interface BakeryCompany {
   ultimoAcesso?: string;
   financeiro?: BillingInfo;
   contrato?: ContractInfo;
+  categoriasCustomizadas?: string[];
 }
 
 export type TicketPriority = 'normal' | 'urgente' | 'critica';
@@ -281,6 +282,7 @@ export interface InventoryItem {
   currentQuantity: number;
   initialQuantity: number;
   unitCost: number;
+  category?: string;
   createdAt: string; // ISO string
   updatedAt: string; // ISO string
   createdBy: string;

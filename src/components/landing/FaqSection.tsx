@@ -11,9 +11,9 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenWhatsApp }) => {
 
   const faqs = [
     {
-      question: 'O Padaria.io substitui o meu sistema de caixa e frente de loja (PDV)?',
+      question: 'O Padariaio substitui o meu sistema de caixa e frente de loja (PDV)?',
       answer:
-        'Não. O Padaria.io é um sistema especializado para retaguarda, focado exclusivamente no controle de validade, gestão de produção, controle de estoque alimentício e redução de desperdícios. Ele trabalha de forma complementar ao seu PDV atual sem necessitar trocar seus caixas.',
+        'Não. O Padariaio é um sistema especializado para retaguarda, focado exclusivamente no controle de validade, gestão de produção, controle de estoque alimentício e redução de desperdícios. Ele trabalha de forma complementar ao seu PDV atual sem necessitar trocar seus caixas.',
     },
     {
       question: 'Minha equipe do balcão e da cozinha terá dificuldade para usar?',
@@ -23,12 +23,12 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenWhatsApp }) => {
     {
       question: 'Como funciona o alerta e relatório de validade?',
       answer:
-        'O Padaria.io monitora as datas de vencimento cadastradas e gera relatórios em tempo real com semáforo de urgência no painel gerencial, apontando quais itens precisam de ação imediata (degustação, promoção, produção ou exposição prioritária).',
+        'O Padariaio monitora as datas de vencimento cadastradas e gera relatórios em tempo real com semáforo de urgência no painel gerencial, apontando quais itens precisam de ação imediata (degustação, promoção, produção ou exposição prioritária).',
     },
     {
       question: 'Preciso instalar algum servidor caro na minha padaria?',
       answer:
-        'Não! O Padaria.io é 100% na nuvem (SaaS). Você e sua equipe acessam de qualquer navegador, tablet ou smartphone com internet, sem custos com servidores locais ou manutenção de TI.',
+        'Não! O Padariaio é 100% na nuvem (SaaS). Você e sua equipe acessam de qualquer navegador, tablet ou smartphone com internet, sem custos com servidores locais ou manutenção de TI.',
     },
     {
       question: 'Como funciona a demonstração gratuita?',
@@ -57,7 +57,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenWhatsApp }) => {
           Perguntas Frequentes
         </h2>
         <p className="text-sm sm:text-base text-gray-600 font-medium">
-          Tudo o que você precisa saber sobre o Padaria.io antes de começar.
+          Tudo o que você precisa saber sobre o Padariaio antes de começar.
         </p>
       </div>
 

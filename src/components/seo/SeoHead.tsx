@@ -66,7 +66,7 @@ export const SeoHead: React.FC<SeoHeadProps> = ({
     updateOg('og:url', canonical);
     updateOg('og:type', ogType);
     updateOg('og:image', ogImage);
-    updateOg('og:site_name', 'Padaria.io');
+    updateOg('og:site_name', 'Padariaio');
     updateOg('og:locale', 'pt_BR');
 
     // 6. Twitter Cards

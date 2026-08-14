@@ -4,6 +4,7 @@ import { Product } from '../types';
 import { formatDateToISO } from '../utils/dateUtils';
 import { BarcodeScanner } from './BarcodeScanner';
 import { ImageScanner } from './ImageScanner';
+import { useData } from '../context/DataContext';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -24,23 +25,13 @@ interface ProductModalProps {
   productToEdit?: Product | null;
 }
 
-const CATEGORIES = [
-  'Panificação',
-  'Confeitaria',
-  'Laticínios',
-  'Frios & Embutidos',
-  'Salgados',
-  'Bebidas',
-  'Embalados',
-  'Geral',
-];
-
 export const ProductModal: React.FC<ProductModalProps> = ({
   isOpen,
   onClose,
   onSave,
   productToEdit,
 }) => {
+  const { categories } = useData();
   const [nome, setNome] = useState<string>('');
   const [quantidade, setQuantidade] = useState<number>(1);
   const [dataValidade, setDataValidade] = useState<string>('');
@@ -306,7 +297,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 onChange={(e) => setCategoria(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A574] text-sm bg-white box-border"
               >
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
                   </option>

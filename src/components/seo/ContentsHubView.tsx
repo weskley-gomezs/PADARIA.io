@@ -46,25 +46,25 @@ export const ContentsHubView: React.FC<ContentsHubViewProps> = ({
   const hubSchema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    'name': 'Centro de Conteúdos e Guias para Padarias | Padaria.io',
+    'name': 'Centro de Conteúdos e Guias para Padarias | Padariaio',
     'description': 'Guias práticos, artigos técnicos e checklists para gestão de estoque, controle de validade e redução de perdas em padarias e confeitarias.',
-    'url': 'https://padaria.io/conteudos'
+    'url': 'https://padariaio.com.br/conteudos'
   };
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-gray-900 pt-20 pb-16">
       <SeoHead
-        title="Centro de Conteúdos e Guias para Padarias | Padaria.io"
+        title="Centro de Conteúdos e Guias para Padarias | Padariaio"
         description="Aprenda a controlar estoque de farinhas e frios, reduzir desperdício de fornadas, evitar multas sanitárias e zerar divergências na sua padaria."
-        canonical="https://padaria.io/conteudos"
+        canonical="https://padariaio.com.br/conteudos"
         schema={hubSchema}
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <Breadcrumbs
           items={[
-            { name: 'Início', url: 'https://padaria.io/' },
-            { name: 'Conteúdos e Guias', url: 'https://padaria.io/conteudos' }
+            { name: 'Início', url: 'https://padariaio.com.br/' },
+            { name: 'Conteúdos e Guias', url: 'https://padariaio.com.br/conteudos' }
           ]}
           onNavigate={onNavigate}
         />
@@ -222,7 +222,7 @@ export const ContentsHubView: React.FC<ContentsHubViewProps> = ({
         {/* Conversion Banner */}
         <ConversionBanner
           onOpenDemo={onOpenDemo}
-          title="Leve o método do Padaria.io para a sua operação"
+          title="Leve o método do Padariaio para a sua operação"
           subtitle="Pare de perder dinheiro com insumos vencidos e quebras não auditadas. Agende uma apresentação personalizada."
           contextTag="Demonstração Gratuita"
         />

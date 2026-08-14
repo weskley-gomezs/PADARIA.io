@@ -5,7 +5,7 @@
                             http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <!-- Homepage -->
   <url>
-    <loc>https://padaria.io/</loc>
+    <loc>https://padariaio.com.br/</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -13,49 +13,49 @@
 
   <!-- Topic Cluster Pillar Pages -->
   <url>
-    <loc>https://padaria.io/software-para-padarias</loc>
+    <loc>https://padariaio.com.br/software-para-padarias</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://padaria.io/controle-de-estoque-para-padarias</loc>
+    <loc>https://padariaio.com.br/controle-de-estoque-para-padarias</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://padaria.io/controle-de-perdas-para-padarias</loc>
+    <loc>https://padariaio.com.br/controle-de-perdas-para-padarias</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://padaria.io/desperdicio-em-padarias</loc>
+    <loc>https://padariaio.com.br/desperdicio-em-padarias</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://padaria.io/controle-de-validade-para-padarias</loc>
+    <loc>https://padariaio.com.br/controle-de-validade-para-padarias</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://padaria.io/divergencia-de-estoque</loc>
+    <loc>https://padariaio.com.br/divergencia-de-estoque</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://padaria.io/gestao-de-estoque-para-padarias</loc>
+    <loc>https://padariaio.com.br/gestao-de-estoque-para-padarias</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://padaria.io/reducao-de-desperdicio-em-padarias</loc>
+    <loc>https://padariaio.com.br/reducao-de-desperdicio-em-padarias</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -63,7 +63,7 @@
 
   <!-- Contents Hub -->
   <url>
-    <loc>https://padaria.io/conteudos</loc>
+    <loc>https://padariaio.com.br/conteudos</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -71,151 +71,151 @@
 
   <!-- In-Depth Practical Articles & Guides -->
   <url>
-    <loc>https://padaria.io/conteudos/como-controlar-o-estoque-de-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-controlar-o-estoque-de-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-reduzir-desperdicios-em-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-reduzir-desperdicios-em-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-descobrir-onde-uma-padaria-esta-perdendo-dinheiro</loc>
+    <loc>https://padariaio.com.br/conteudos/como-descobrir-onde-uma-padaria-esta-perdendo-dinheiro</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-controlar-produtos-vencidos-em-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-controlar-produtos-vencidos-em-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/o-que-e-divergencia-de-estoque-e-como-identificar</loc>
+    <loc>https://padariaio.com.br/conteudos/o-que-e-divergencia-de-estoque-e-como-identificar</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-calcular-perdas-de-estoque-em-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-calcular-perdas-de-estoque-em-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-controlar-queijo-presunto-e-outros-frios-no-estoque</loc>
+    <loc>https://padariaio.com.br/conteudos/como-controlar-queijo-presunto-e-outros-frios-no-estoque</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-fazer-conferencia-de-estoque-em-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-fazer-conferencia-de-estoque-em-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/planilha-de-estoque-para-padaria-limitacoes-e-alternativas</loc>
+    <loc>https://padariaio.com.br/conteudos/planilha-de-estoque-para-padaria-limitacoes-e-alternativas</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/checklist-de-controle-de-estoque-para-padarias</loc>
+    <loc>https://padariaio.com.br/conteudos/checklist-de-controle-de-estoque-para-padarias</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-fazer-inventario-de-estoque-em-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-fazer-inventario-de-estoque-em-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/estoque-esperado-x-estoque-real-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/estoque-esperado-x-estoque-real-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-controlar-farinha-acucar-e-outros-insumos-em-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-controlar-farinha-acucar-e-outros-insumos-em-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-controlar-produtos-por-quilo-em-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-controlar-produtos-por-quilo-em-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-evitar-perdas-de-produtos-pereciveis-em-padarias</loc>
+    <loc>https://padariaio.com.br/conteudos/como-evitar-perdas-de-produtos-pereciveis-em-padarias</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/fifo-e-peps-em-padarias-como-usar-na-pratica</loc>
+    <loc>https://padariaio.com.br/conteudos/fifo-e-peps-em-padarias-como-usar-na-pratica</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-saber-quanto-uma-padaria-esta-perdendo-por-mes</loc>
+    <loc>https://padariaio.com.br/conteudos/como-saber-quanto-uma-padaria-esta-perdendo-por-mes</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-criar-uma-rotina-diaria-de-conferencia-de-estoque-em-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-criar-uma-rotina-diaria-de-conferencia-de-estoque-em-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/7-erros-de-controle-de-estoque-que-fazem-padarias-perder-dinheiro</loc>
+    <loc>https://padariaio.com.br/conteudos/7-erros-de-controle-de-estoque-que-fazem-padarias-perder-dinheiro</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-controlar-descartes-e-quebras-em-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-controlar-descartes-e-quebras-em-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-criar-um-checklist-de-fechamento-de-estoque-para-padarias</loc>
+    <loc>https://padariaio.com.br/conteudos/como-criar-um-checklist-de-fechamento-de-estoque-para-padarias</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-controlar-produtos-proximos-do-vencimento-em-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-controlar-produtos-proximos-do-vencimento-em-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/planilha-de-estoque-para-padaria-o-que-controlar-e-quando-migrar</loc>
+    <loc>https://padariaio.com.br/conteudos/planilha-de-estoque-para-padaria-o-que-controlar-e-quando-migrar</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/como-identificar-possiveis-desvios-de-produtos-no-estoque-de-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/como-identificar-possiveis-desvios-de-produtos-no-estoque-de-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://padaria.io/conteudos/quanto-custa-nao-ter-controle-de-estoque-em-uma-padaria</loc>
+    <loc>https://padariaio.com.br/conteudos/quanto-custa-nao-ter-controle-de-estoque-em-uma-padaria</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

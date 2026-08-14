@@ -367,7 +367,7 @@ export function generateSystemManualPDF(companyName?: string) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(31, 41, 55);
-  const valorText = 'O Padaria.io é um sistema feito exclusivamente para padarias, confeitarias e panificadoras. Ele resolve os 2 maiores problemas do setor: o risco de multas pesadas da Vigilância Sanitária (ANVISA) por falta de etiquetas de validade e o desperdício diário de alimentos e insumos caros no estoque.';
+  const valorText = 'O Padariaio é um sistema feito exclusivamente para padarias, confeitarias e panificadoras. Ele resolve os 2 maiores problemas do setor: o risco de multas pesadas da Vigilância Sanitária (ANVISA) por falta de etiquetas de validade e o desperdício diário de alimentos e insumos caros no estoque.';
   const splitValor = doc.splitTextToSize(valorText, 174);
   doc.text(splitValor, 18, y + 11);
   y += 27;
@@ -530,7 +530,7 @@ export function generateSystemManualPDF(companyName?: string) {
   doc.setFontSize(8);
   const obj = [
     '• "Meus funcionários não sabem mexer em sistema": Resposta: "Eles não precisam digitar nada! Nosso sistema aceita comando de voz por celular. É tão simples quanto mandar um áudio no WhatsApp."',
-    '• "Já tenho um sistema de caixa (PDV)": Resposta: "O Padaria.io não substitui seu caixa. Ele é um sistema complementar para a cozinha e estoque, focado na etiquetagem sanitária e prevenção de perdas que o caixa não faz."',
+    '• "Já tenho um sistema de caixa (PDV)": Resposta: "O Padariaio não substitui seu caixa. Ele é um sistema complementar para a cozinha e estoque, focado na etiquetagem sanitária e prevenção de perdas que o caixa não faz."',
     '• "Agora não estou podendo gastar": Resposta: "O sistema não é um gasto, é economia. Se ele evitar que apenas 2 tortas ou 1 peça de presunto estraguem no mês, ele se paga sozinho."'
   ];
   obj.forEach(item => {

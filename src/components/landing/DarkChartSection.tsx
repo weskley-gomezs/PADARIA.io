@@ -54,7 +54,7 @@ export const DarkChartSection: React.FC = () => {
           <div className="flex items-center justify-between border-b border-gray-800 pb-4 text-xs font-bold text-gray-400">
             <span className="flex items-center space-x-2 text-white">
               <ShieldCheck className="w-4 h-4 text-[#FF6B00]" />
-              <span>Evolução do Controle de Perdas no Padaria.io</span>
+              <span>Evolução do Controle de Perdas no Padariaio</span>
             </span>
             <span className="text-emerald-400 font-mono">Simulação de Impacto Operacional</span>
           </div>
@@ -93,7 +93,7 @@ export const DarkChartSection: React.FC = () => {
           <div className="pt-4 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-gray-300">
             <div className="flex items-center space-x-2">
               <Zap className="w-4 h-4 text-[#FF6B00]" />
-              <span>Com o Padaria.io, o descarte de insumos deixa de ser um mistério para virar indicador de gestão.</span>
+              <span>Com o Padariaio, o descarte de insumos deixa de ser um mistério para virar indicador de gestão.</span>
             </div>
             <div className="flex items-center space-x-1 text-[#FF6B00] font-black shrink-0">
               <span>Acompanhe ao vivo</span>

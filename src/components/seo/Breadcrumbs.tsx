@@ -12,7 +12,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items, onNavigate }) =
       <ol className="flex items-center flex-wrap gap-2 text-xs text-gray-500 font-medium">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
-          const path = item.url.replace('https://padaria.io', '') || '/';
+          const path = item.url.replace('https://padariaio.com.br', '') || '/';
 
           return (
             <li key={index} className="flex items-center space-x-2">

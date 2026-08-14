@@ -87,7 +87,7 @@ export const PainsSection: React.FC = () => {
               </div>
 
               <div className="pt-2 text-[11px] font-bold text-[#FF6B00] opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1">
-                <span>Padaria.io resolve esta dor</span>
+                <span>Padariaio resolve esta dor</span>
                 <span>→</span>
               </div>
             </motion.div>

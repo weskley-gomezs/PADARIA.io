@@ -4,8 +4,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 1
   'como-fazer-inventario-de-estoque-em-uma-padaria': {
     slug: 'como-fazer-inventario-de-estoque-em-uma-padaria',
-    url: 'https://padaria.io/conteudos/como-fazer-inventario-de-estoque-em-uma-padaria',
-    title: 'Como Fazer um Inventário de Estoque em uma Padaria: Passo a Passo | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/como-fazer-inventario-de-estoque-em-uma-padaria',
+    title: 'Como Fazer um Inventário de Estoque em uma Padaria: Passo a Passo | Padariaio',
     metaDescription: 'Aprenda como fazer inventário de estoque para padaria passo a passo: contagem de secos, pesagem de frios por quilo, apuração de divergências e boas práticas.',
     h1: 'Como Fazer um Inventário de Estoque em uma Padaria: Passo a Passo',
     subtitle: 'Um roteiro prático e aplicável para donos e gerentes realizarem contagens físicas com rapidez, pesarem itens por quilo e identificarem furos de estoque sem travar a loja.',
@@ -13,12 +13,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '8 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Inventário de Estoque para Padaria', url: 'https://padaria.io/conteudos/como-fazer-inventario-de-estoque-em-uma-padaria' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Inventário de Estoque para Padaria', url: 'https://padariaio.com.br/conteudos/como-fazer-inventario-de-estoque-em-uma-padaria' }
     ],
     summary: 'O inventário de estoque para padaria é o procedimento de contagem física de matérias-primas, produtos de revenda e itens em transformação para confrontar com os registros teóricos do sistema. Descubra como estruturar essa rotina com precisão.',
     sections: [
@@ -45,7 +45,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
           'Organize as prateleiras agrupando produtos iguais e alinhando os lotes pelo método FIFO/PEPS.',
           'Zere as pendências de notas fiscais: todas as mercadorias recebidas no dia devem estar registradas no sistema.',
           'Lance todos os descartes e quebras do dia antes de iniciar a contagem física.',
-          'Defina duplas de trabalho: uma pessoa realiza a contagem física e outra faz o registro no aplicativo Padaria.io.'
+          'Defina duplas de trabalho: uma pessoa realiza a contagem física e outra faz o registro no aplicativo Padariaio.'
         ]
       },
       {
@@ -94,8 +94,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
         answer: 'Recomenda-se que a contagem seja feita por um encarregado de turno ou conferente, sob supervisão do gerente, preferencialmente em sistema de dupla checagem.'
       },
       {
-        question: 'Como o Padaria.io simplifica o inventário?',
-        answer: 'O Padaria.io permite que o operador digite os quilos ou unidades diretamente no celular, calculando a divergência em tempo real e gerando relatórios imediatos para o proprietário.'
+        question: 'Como o Padariaio simplifica o inventário?',
+        answer: 'O Padariaio permite que o operador digite os quilos ou unidades diretamente no celular, calculando a divergência em tempo real e gerando relatórios imediatos para o proprietário.'
       }
     ],
     relatedArticles: [
@@ -108,8 +108,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 2
   'estoque-esperado-x-estoque-real-padaria': {
     slug: 'estoque-esperado-x-estoque-real-padaria',
-    url: 'https://padaria.io/conteudos/estoque-esperado-x-estoque-real-padaria',
-    title: 'Estoque Esperado x Estoque Real: Como Encontrar Diferenças em uma Padaria | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/estoque-esperado-x-estoque-real-padaria',
+    title: 'Estoque Esperado x Estoque Real: Como Encontrar Diferenças em uma Padaria | Padariaio',
     metaDescription: 'Entenda a fórmula: Estoque Inicial + Entradas - Saídas - Descartes = Estoque Esperado. Saiba como identificar e investigar diferenças no estoque da padaria.',
     h1: 'Estoque Esperado x Estoque Real: Como Encontrar Diferenças em uma Padaria',
     subtitle: 'Compreenda a matemática do controle de estoque na panificação, descubra por que ocorrem divergências e aprenda a investigar causas reais sem conclusões precipitadas.',
@@ -117,12 +117,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '8 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Estoque Esperado x Estoque Real', url: 'https://padaria.io/conteudos/estoque-esperado-x-estoque-real-padaria' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Estoque Esperado x Estoque Real', url: 'https://padariaio.com.br/conteudos/estoque-esperado-x-estoque-real-padaria' }
     ],
     summary: 'A comparação entre o estoque teórico esperado e o estoque físico real é o coração da gestão de perdas. Entenda a equação exata e os passos para investigar discrepâncias.',
     sections: [
@@ -172,9 +172,9 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
         ]
       },
       {
-        heading: 'Como o Padaria.io automatiza o cálculo do estoque esperado',
+        heading: 'Como o Padariaio automatiza o cálculo do estoque esperado',
         level: 'h2',
-        text: 'O Padaria.io processa as baixas de vendas, requisições de produção e registros de perdas com foto em tempo real. No momento em que o gerente ou estoquista digita a contagem física, a divergência é calculada instantaneamente com o impacto financeiro em reais.'
+        text: 'O Padariaio processa as baixas de vendas, requisições de produção e registros de perdas com foto em tempo real. No momento em que o gerente ou estoquista digita a contagem física, a divergência é calculada instantaneamente com o impacto financeiro em reais.'
       }
     ],
     faq: [
@@ -197,8 +197,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 3
   'como-controlar-farinha-acucar-e-outros-insumos-em-uma-padaria': {
     slug: 'como-controlar-farinha-acucar-e-outros-insumos-em-uma-padaria',
-    url: 'https://padaria.io/conteudos/como-controlar-farinha-acucar-e-outros-insumos-em-uma-padaria',
-    title: 'Como Controlar Farinha, Açúcar e Outros Insumos em uma Padaria | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/como-controlar-farinha-acucar-e-outros-insumos-em-uma-padaria',
+    title: 'Como Controlar Farinha, Açúcar e Outros Insumos em uma Padaria | Padariaio',
     metaDescription: 'Aprenda o método prático para controlar o estoque de farinha de trigo, açúcar, fermentos e insumos na padaria: recebimento, requisição, fichas técnicas e perdas.',
     h1: 'Como Controlar Farinha, Açúcar e Outros Insumos em uma Padaria',
     subtitle: 'Um guia técnico e objetivo para gerenciar a matéria-prima essencial da panificação, monitorar o rendimento das masseiras e estancar furos na produção.',
@@ -206,12 +206,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '7 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Controle de Insumos para Padaria', url: 'https://padaria.io/conteudos/como-controlar-farinha-acucar-e-outros-insumos-em-uma-padaria' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Controle de Insumos para Padaria', url: 'https://padariaio.com.br/conteudos/como-controlar-farinha-acucar-e-outros-insumos-em-uma-padaria' }
     ],
     summary: 'A farinha de trigo, o açúcar e os fermentos representam a maior parte do custo de insumos da panificação. Saiba como estruturar o ciclo de controle desde a chegada do caminhão até a fornada.',
     sections: [
@@ -257,7 +257,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
       {
         heading: 'Como calcular o ponto de reposição sem deixar faltar farinha',
         level: 'h2',
-        text: 'Ficar sem farinha no meio de um fim de semana gera prejuízo imediato de vendas. Configure o Estoque Mínimo no Padaria.io calculando: Consumo Médio Diário × Prazo de Entrega do Fornecedor + 2 dias de margem de segurança.'
+        text: 'Ficar sem farinha no meio de um fim de semana gera prejuízo imediato de vendas. Configure o Estoque Mínimo no Padariaio calculando: Consumo Médio Diário × Prazo de Entrega do Fornecedor + 2 dias de margem de segurança.'
       }
     ],
     faq: [
@@ -280,8 +280,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 4
   'como-controlar-produtos-por-quilo-em-uma-padaria': {
     slug: 'como-controlar-produtos-por-quilo-em-uma-padaria',
-    url: 'https://padaria.io/conteudos/como-controlar-produtos-por-quilo-em-uma-padaria',
-    title: 'Como Controlar Produtos por Quilo em uma Padaria | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/como-controlar-produtos-por-quilo-em-uma-padaria',
+    title: 'Como Controlar Produtos por Quilo em uma Padaria | Padariaio',
     metaDescription: 'Aprenda a controlar queijo, presunto, mortadela, farinhas e recheios por peso na padaria. Veja cálculo de perdas, aparas e divergências em quilos.',
     h1: 'Como Controlar Produtos por Quilo em uma Padaria',
     subtitle: 'Frios fatiados, queijos, carnes, farinhas e recheios possuem dinâmicas específicas de peso, aparas e desidratação. Saiba como blindar esses itens de alto valor.',
@@ -289,12 +289,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '8 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Controle de Produtos por Quilo', url: 'https://padaria.io/conteudos/como-controlar-produtos-por-quilo-em-uma-padaria' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Controle de Produtos por Quilo', url: 'https://padariaio.com.br/conteudos/como-controlar-produtos-por-quilo-em-uma-padaria' }
     ],
     summary: 'Os produtos por quilo representam a maior margem de vulnerabilidade e custo em padarias. Entenda a metodologia para monitorar pesos, aparas de corte e identificar furos na balança.',
     sections: [
@@ -368,8 +368,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 5
   'como-evitar-perdas-de-produtos-pereciveis-em-padarias': {
     slug: 'como-evitar-perdas-de-produtos-pereciveis-em-padarias',
-    url: 'https://padaria.io/conteudos/como-evitar-perdas-de-produtos-pereciveis-em-padarias',
-    title: 'Como Evitar Perdas de Produtos Perecíveis em Padarias | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/como-evitar-perdas-de-produtos-pereciveis-em-padarias',
+    title: 'Como Evitar Perdas de Produtos Perecíveis em Padarias | Padariaio',
     metaDescription: 'Aprenda a evitar perdas e desperdício de perecíveis em padarias: controle de temperatura, validade secundária, método FIFO e planejamento de compras.',
     h1: 'Como Evitar Perdas de Produtos Perecíveis em Padarias',
     subtitle: 'Laticínios, frutas, ovos, carnes e doces confeitados possuem alta perecibilidade. Conheça as ações preventivas para não jogar dinheiro no lixo.',
@@ -377,12 +377,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '8 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Perdas de Produtos Perecíveis', url: 'https://padaria.io/conteudos/como-evitar-perdas-de-produtos-pereciveis-em-padarias' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Perdas de Produtos Perecíveis', url: 'https://padariaio.com.br/conteudos/como-evitar-perdas-de-produtos-pereciveis-em-padarias' }
     ],
     summary: 'Os produtos perecíveis exigem disciplina rigorosa de refrigeração, rotação de lote e previsão de demanda. Descubra os 8 passos essenciais para zerar perdas por deterioração.',
     sections: [
@@ -419,7 +419,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
       {
         heading: 'Ações imediatas ao identificar produtos próximos do vencimento',
         level: 'h2',
-        text: 'Quando o Padaria.io emitir o alerta amarelo de produto vencendo em 1 a 3 dias:',
+        text: 'Quando o Padariaio emitir o alerta amarelo de produto vencendo em 1 a 3 dias:',
         list: [
           'Direcione o insumo imediatamente para receitas de alto giro (ex: queijo vira recheio de salgado assado).',
           'Crie promoções no balcão de atendimento ou no Clube VIP de Clientes com desconto especial de venda rápida.',
@@ -433,7 +433,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
         answer: 'Mantenha as portas fechadas para segurar a temperatura. Ao restabelecer a energia, meça a temperatura interna com termômetro espeto. Se os alimentos tiverem permanecido acima de 10°C por mais de 2 horas, devem ser descartados por risco sanitário.'
       },
       {
-        question: 'Como a tecnologia do Padaria.io auxilia no controle de perecíveis?',
+        question: 'Como a tecnologia do Padariaio auxilia no controle de perecíveis?',
         answer: 'O sistema classifica os itens por cor de risco e notifica a gerência sobre produtos que precisam ser utilizados nas próximas 24 a 72 horas.'
       }
     ],
@@ -447,8 +447,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 6
   'fifo-e-peps-em-padarias-como-usar-na-pratica': {
     slug: 'fifo-e-peps-em-padarias-como-usar-na-pratica',
-    url: 'https://padaria.io/conteudos/fifo-e-peps-em-padarias-como-usar-na-pratica',
-    title: 'FIFO e PEPS em Padarias: Como Usar na Prática | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/fifo-e-peps-em-padarias-como-usar-na-pratica',
+    title: 'FIFO e PEPS em Padarias: Como Usar na Prática | Padariaio',
     metaDescription: 'Descubra o que é FIFO e PEPS em padarias, as diferenças com o método PVPS/FEFO, organização de prateleiras e câmara fria para reduzir vencimentos.',
     h1: 'FIFO e PEPS em Padarias: Como Usar na Prática para Reduzir Vencimentos',
     subtitle: 'Entenda os conceitos indispensáveis de organização de estoque, aprenda a treinar repositores e use a tecnologia para garantir que nenhum produto expire no fundo da prateleira.',
@@ -456,12 +456,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '7 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'FIFO e PEPS em Padarias', url: 'https://padaria.io/conteudos/fifo-e-peps-em-padarias-como-usar-na-pratica' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'FIFO e PEPS em Padarias', url: 'https://padariaio.com.br/conteudos/fifo-e-peps-em-padarias-como-usar-na-pratica' }
     ],
     summary: 'O método PEPS (Primeiro que Entra, Primeiro que Sai) ou FIFO é a espinha dorsal da prevenção de perdas na panificação. Conheça a aplicação prática no armazém seco e nas câmaras frias.',
     sections: [
@@ -492,7 +492,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
       {
         heading: 'Como a tecnologia auxilia no acompanhamento de lotes',
         level: 'h2',
-        text: 'Com o Padaria.io, o operador cadastra a data de validade de cada lote recebido. O sistema organiza a lista de separação e avisa o padeiro qual lote deve ser utilizado na receita do dia, eliminando falhas de comunicação.'
+        text: 'Com o Padariaio, o operador cadastra a data de validade de cada lote recebido. O sistema organiza a lista de separação e avisa o padeiro qual lote deve ser utilizado na receita do dia, eliminando falhas de comunicação.'
       }
     ],
     faq: [
@@ -515,8 +515,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 7
   'como-saber-quanto-uma-padaria-esta-perdendo-por-mes': {
     slug: 'como-saber-quanto-uma-padaria-esta-perdendo-por-mes',
-    url: 'https://padaria.io/conteudos/como-saber-quanto-uma-padaria-esta-perdendo-por-mes',
-    title: 'Como Saber Quanto uma Padaria Está Perdendo por Mês | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/como-saber-quanto-uma-padaria-esta-perdendo-por-mes',
+    title: 'Como Saber Quanto uma Padaria Está Perdendo por Mês | Padariaio',
     metaDescription: 'Aprenda a calcular as perdas totais da sua padaria: Perdas por Vencimento + Descartes + Quebras + Divergências. Diagnóstico financeiro completo.',
     h1: 'Como Saber Quanto uma Padaria Está Perdendo por Mês: Diagnóstico Real',
     subtitle: 'Descubra a equação financeira para quantificar o desperdício oculto, analise exemplos hipotéticos e saiba onde estancar o sangramento do seu caixa.',
@@ -524,12 +524,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '8 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Quanto uma Padaria Perde por Mês', url: 'https://padaria.io/conteudos/como-saber-quanto-uma-padaria-esta-perdendo-por-mes' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Quanto uma Padaria Perde por Mês', url: 'https://padariaio.com.br/conteudos/como-saber-quanto-uma-padaria-esta-perdendo-por-mes' }
     ],
     summary: 'A maioria dos proprietários subestima o custo do descarte e das quebras. Conheça a metodologia para somar todas as perdas operacionais e enxergar o valor exato em reais.',
     sections: [
@@ -560,9 +560,9 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
         text: 'Se essa mesma padaria hipotética fatura R$ 120.000,00 por mês, uma perda de R$ 4.800,00 representa exatamente 4,0% do faturamento bruto. Como a margem de lucro líquido da panificação costuma oscilar entre 12% e 18%, perder 4% em desperdício significa jogar fora quase um terço de todo o lucro líquido do dono.'
       },
       {
-        heading: 'Como estruturar o registro no Padaria.io para apuração automática',
+        heading: 'Como estruturar o registro no Padariaio para apuração automática',
         level: 'h2',
-        text: 'Em vez de passar horas no fim do mês tentando somar cadernos de anotações rasurados, o Padaria.io consolida o painel financeiro de perdas em tempo real. Cada foto de descarte tirada no balcão e cada contagem diária alimentam os gráficos instantaneamente.'
+        text: 'Em vez de passar horas no fim do mês tentando somar cadernos de anotações rasurados, o Padariaio consolida o painel financeiro de perdas em tempo real. Cada foto de descarte tirada no balcão e cada contagem diária alimentam os gráficos instantaneamente.'
       }
     ],
     faq: [
@@ -585,8 +585,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 8
   'como-criar-uma-rotina-diaria-de-conferencia-de-estoque-em-uma-padaria': {
     slug: 'como-criar-uma-rotina-diaria-de-conferencia-de-estoque-em-uma-padaria',
-    url: 'https://padaria.io/conteudos/como-criar-uma-rotina-diaria-de-conferencia-de-estoque-em-uma-padaria',
-    title: 'Como Criar uma Rotina Diária de Conferência de Estoque em uma Padaria | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/como-criar-uma-rotina-diaria-de-conferencia-de-estoque-em-uma-padaria',
+    title: 'Como Criar uma Rotina Diária de Conferência de Estoque em uma Padaria | Padariaio',
     metaDescription: 'Aprenda a estruturar a rotina diária de conferência de estoque na padaria: procedimentos de manhã, tarde e fechamento em 15 minutos por turno.',
     h1: 'Como Criar uma Rotina Diária de Conferência de Estoque em uma Padaria',
     subtitle: 'Um roteiro operacional dividido por turnos para manter o estoque 100% auditado, sem estressar a equipe e sem precisar parar as vendas no balcão.',
@@ -594,12 +594,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '7 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Rotina Diária de Conferência', url: 'https://padaria.io/conteudos/como-criar-uma-rotina-diaria-de-conferencia-de-estoque-em-uma-padaria' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Rotina Diária de Conferência', url: 'https://padariaio.com.br/conteudos/como-criar-uma-rotina-diaria-de-conferencia-de-estoque-em-uma-padaria' }
     ],
     summary: 'A conferência diária é o hábito que separa padarias lucrativas de padarias endividadas. Saiba como dividir as responsabilidades ao longo do dia em etapas rápidas.',
     sections: [
@@ -637,7 +637,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     faq: [
       {
         question: 'Quanto tempo leva a conferência diária de fechamento?',
-        answer: 'Com a lista rotativa do Padaria.io, a contagem dos 5 a 10 itens críticos do dia leva entre 10 e 15 minutos.'
+        answer: 'Com a lista rotativa do Padariaio, a contagem dos 5 a 10 itens críticos do dia leva entre 10 e 15 minutos.'
       },
       {
         question: 'O que fazer se o funcionário esquecer de registrar uma baixa durante o dia?',
@@ -654,8 +654,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 9
   '7-erros-de-controle-de-estoque-que-fazem-padarias-perder-dinheiro': {
     slug: '7-erros-de-controle-de-estoque-que-fazem-padarias-perder-dinheiro',
-    url: 'https://padaria.io/conteudos/7-erros-de-controle-de-estoque-que-fazem-padarias-perder-dinheiro',
-    title: '7 Erros de Controle de Estoque que Fazem Padarias Perder Dinheiro | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/7-erros-de-controle-de-estoque-que-fazem-padarias-perder-dinheiro',
+    title: '7 Erros de Controle de Estoque que Fazem Padarias Perder Dinheiro | Padariaio',
     metaDescription: 'Conheça os 7 maiores erros de estoque em padarias: não contar estoque, não registrar perdas, confiar na memória e ignorar divergências.',
     h1: '7 Erros de Controle de Estoque que Fazem Padarias Perder Dinheiro',
     subtitle: 'Descubra as falhas silenciosas que drenam a lucratividade da sua empresa e aprenda a corrigir cada uma com procedimentos simples e diretos.',
@@ -663,12 +663,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '8 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Erros de Estoque em Padarias', url: 'https://padaria.io/conteudos/7-erros-de-controle-de-estoque-que-fazem-padarias-perder-dinheiro' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Erros de Estoque em Padarias', url: 'https://padariaio.com.br/conteudos/7-erros-de-controle-de-estoque-que-fazem-padarias-perder-dinheiro' }
     ],
     summary: 'A gestão de estoque na panificação é repleta de armadilhas. Conheça os 7 principais erros cometidos por proprietários e gerentes e saiba como blindar sua operação.',
     sections: [
@@ -714,7 +714,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
         answer: 'Não registrar perdas e não investigar divergências. Esses dois erros combinados mascaram vazamentos contínuos de milhares de reais todos os meses.'
       },
       {
-        question: 'Como o Padaria.io ajuda a eliminar esses 7 erros?',
+        question: 'Como o Padariaio ajuda a eliminar esses 7 erros?',
         answer: 'O sistema padroniza as rotinas com checklists fáceis no celular, auditoria por foto, cálculo automático de CMV e relatórios detalhados no painel gerencial.'
       }
     ],
@@ -728,8 +728,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 10
   'como-controlar-descartes-e-quebras-em-uma-padaria': {
     slug: 'como-controlar-descartes-e-quebras-em-uma-padaria',
-    url: 'https://padaria.io/conteudos/como-controlar-descartes-e-quebras-em-uma-padaria',
-    title: 'Como Controlar Descartes e Quebras em uma Padaria | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/como-controlar-descartes-e-quebras-em-uma-padaria',
+    title: 'Como Controlar Descartes e Quebras em uma Padaria | Padariaio',
     metaDescription: 'Entenda a diferença entre descarte, quebra, vencimento, perda operacional e divergência na padaria. Veja como auditar e registrar corretamente.',
     h1: 'Como Controlar Descartes e Quebras em uma Padaria',
     subtitle: 'Classifique corretamente cada tipo de perda, padronize os registros fotográficos de baixa e transforme desperdício em dados para tomada de decisão.',
@@ -737,12 +737,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '7 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Controle de Descartes e Quebras', url: 'https://padaria.io/conteudos/como-controlar-descartes-e-quebras-em-uma-padaria' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Controle de Descartes e Quebras', url: 'https://padariaio.com.br/conteudos/como-controlar-descartes-e-quebras-em-uma-padaria' }
     ],
     summary: 'Misturar quebras de transporte com erros de receita ou produtos vencidos impede de saber onde está o problema. Conheça as diferenças conceituais e a forma correta de registro.',
     sections: [
@@ -774,9 +774,9 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
         }
       },
       {
-        heading: 'Como registrar descartes e quebras no Padaria.io',
+        heading: 'Como registrar descartes e quebras no Padariaio',
         level: 'h2',
-        text: 'No Padaria.io, o operador fotografa o produto que será descartado diretamente na câmera do celular, seleciona a categoria correta e indica a quantidade. A foto serve de comprovação visual para a gerência, eliminando baixas falsas e criando um histórico auditável.'
+        text: 'No Padariaio, o operador fotografa o produto que será descartado diretamente na câmera do celular, seleciona a categoria correta e indica a quantidade. A foto serve de comprovação visual para a gerência, eliminando baixas falsas e criando um histórico auditável.'
       }
     ],
     faq: [
@@ -799,8 +799,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 11
   'como-criar-um-checklist-de-fechamento-de-estoque-para-padarias': {
     slug: 'como-criar-um-checklist-de-fechamento-de-estoque-para-padarias',
-    url: 'https://padaria.io/conteudos/como-criar-um-checklist-de-fechamento-de-estoque-para-padarias',
-    title: 'Como Criar um Checklist de Fechamento de Estoque para Padarias | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/como-criar-um-checklist-de-fechamento-de-estoque-para-padarias',
+    title: 'Como Criar um Checklist de Fechamento de Estoque para Padarias | Padariaio',
     metaDescription: 'Checklist completo de fechamento de estoque para padaria: conferência de frios, ingredientes críticos, descartes, validades e divergências.',
     h1: 'Como Criar um Checklist de Fechamento de Estoque para Padarias',
     subtitle: 'Um roteiro definitivo com 11 passos práticos para os encarregados e gerentes encerrarem o expediente com estoque 100% conciliado e sem pontas soltas.',
@@ -808,12 +808,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '6 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Checklist de Fechamento de Estoque', url: 'https://padaria.io/conteudos/como-criar-um-checklist-de-fechamento-de-estoque-para-padarias' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Checklist de Fechamento de Estoque', url: 'https://padariaio.com.br/conteudos/como-criar-um-checklist-de-fechamento-de-estoque-para-padarias' }
     ],
     summary: 'O fechamento noturno é o momento da verdade no controle de estoque. Utilize este checklist adaptável para não deixar passar nenhum erro ou descarte não registrado.',
     sections: [
@@ -830,7 +830,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
           '□ 6. Confirmar se todos os descartes, quebras e sobras de balcão foram pesados e fotografados',
           '□ 7. Checar a lista de produtos com vencimento previsto para os próximos 1 a 3 dias',
           '□ 8. Realizar a contagem física cega dos itens escalados no dia',
-          '□ 9. Comparar o estoque físico apurado com o estoque esperado no Padaria.io',
+          '□ 9. Comparar o estoque físico apurado com o estoque esperado no Padariaio',
           '□ 10. Registrar as divergências encontradas e coletar justificativas imediatas',
           '□ 11. Registrar observações para a equipe do turno da manhã do dia seguinte'
         ]
@@ -841,9 +841,9 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
         text: 'Padarias pequenas podem executar o checklist completo em apenas 10 minutos focando nos frios e nos sacos de farinha. Padarias de grande porte devem dividir o checklist entre encarregados de confeitaria, panificação e balcão, com validação final do gerente geral.'
       },
       {
-        heading: 'Execução digital pelo smartphone no Padaria.io',
+        heading: 'Execução digital pelo smartphone no Padariaio',
         level: 'h2',
-        text: 'No Padaria.io, o checklist é interativo. O encarregado vai marcando as etapas concluídas e o proprietário acompanha relatórios em tempo real no sistema com o status do fechamento e os alertas pendentes.'
+        text: 'No Padariaio, o checklist é interativo. O encarregado vai marcando as etapas concluídas e o proprietário acompanha relatórios em tempo real no sistema com o status do fechamento e os alertas pendentes.'
       }
     ],
     faq: [
@@ -853,7 +853,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
       },
       {
         question: 'Quem deve validar o preenchimento do checklist?',
-        answer: 'O gerente de loja ou o próprio proprietário através do painel administrativo do Padaria.io.'
+        answer: 'O gerente de loja ou o próprio proprietário através do painel administrativo do Padariaio.'
       }
     ],
     relatedArticles: [
@@ -866,8 +866,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 12
   'como-controlar-produtos-proximos-do-vencimento-em-uma-padaria': {
     slug: 'como-controlar-produtos-proximos-do-vencimento-em-uma-padaria',
-    url: 'https://padaria.io/conteudos/como-controlar-produtos-proximos-do-vencimento-em-uma-padaria',
-    title: 'Como Controlar Produtos Próximos do Vencimento em uma Padaria | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/como-controlar-produtos-proximos-do-vencimento-em-uma-padaria',
+    title: 'Como Controlar Produtos Próximos do Vencimento em uma Padaria | Padariaio',
     metaDescription: 'Aprenda a controlar produtos próximos do vencimento em padarias: identificação, organização por cores, prioridade de uso em receitas e conformidade sanitária.',
     h1: 'Como Controlar Produtos Próximos do Vencimento em uma Padaria',
     subtitle: 'Medidas preventivas para não perder mercadorias, proteger a saúde dos clientes e manter sua padaria em 100% de conformidade com a Vigilância Sanitária.',
@@ -875,12 +875,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '7 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Produtos Próximos do Vencimento', url: 'https://padaria.io/conteudos/como-controlar-produtos-proximos-do-vencimento-em-uma-padaria' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Produtos Próximos do Vencimento', url: 'https://padariaio.com.br/conteudos/como-controlar-produtos-proximos-do-vencimento-em-uma-padaria' }
     ],
     summary: 'Produtos próximos da data limite não devem ser motivo de desespero nem de descarte prematuro. Saiba como agir de forma segura e legal para utilizá-los a tempo.',
     sections: [
@@ -893,7 +893,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
           '2. Organização Visual de Destaque: Posicionar os itens na prateleira de ação rápida na câmara fria.',
           '3. Prioridade Absoluta de Utilização: O cozinheiro ou confeiteiro deve usar obrigatoriamente esse lote na produção do dia.',
           '4. Exposição Promocional de Revenda: Se for item de mercearia, criar ofertas de venda rápida com desconto no balcão.',
-          '5. Acompanhamento Diário pelo Sistema: Monitorar o painel de validades do Padaria.io todos os dias na abertura.',
+          '5. Acompanhamento Diário pelo Sistema: Monitorar o painel de validades do Padariaio todos os dias na abertura.',
           '6. Descarte Obrigatório se Expirar: Se atingir a data de vencimento, o produto NUNCA pode ser vendido ou manipulado (descarte imediato).',
           '7. Análise de Causa Raiz: Descobrir por que aquele produto sobrou para ajustar a quantidade nos próximos pedidos de compra.'
         ]
@@ -904,9 +904,9 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
         text: 'A legislação brasileira proíbe estritamente a comercialização ou o uso culinário de qualquer produto que já tenha ultrapassado a data de validade informada na rotulagem ou na etiqueta secundária. Manter produtos vencidos na área de manipulação é infração sanitária grave sujeita a multas pesadas e interdição.'
       },
       {
-        heading: 'Como o Padaria.io organiza os alertas por cores de risco',
+        heading: 'Como o Padariaio organiza os alertas por cores de risco',
         level: 'h2',
-        text: 'O Padaria.io adota um semáforo inteligente de validades:',
+        text: 'O Padariaio adota um semáforo inteligente de validades:',
         list: [
           'Verde (Seguro): Validade acima de 7 dias.',
           'Amarelo (Atenção / Ação Prioritária): Validade entre 1 e 3 dias — entra na lista prioritária de receitas e ofertas.',
@@ -934,8 +934,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 13
   'planilha-de-estoque-para-padaria-o-que-controlar-e-quando-migrar': {
     slug: 'planilha-de-estoque-para-padaria-o-que-controlar-e-quando-migrar',
-    url: 'https://padaria.io/conteudos/planilha-de-estoque-para-padaria-o-que-controlar-e-quando-migrar',
-    title: 'Planilha de Estoque para Padaria: O que Controlar e Quando Migrar | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/planilha-de-estoque-para-padaria-o-que-controlar-e-quando-migrar',
+    title: 'Planilha de Estoque para Padaria: O que Controlar e Quando Migrar | Padariaio',
     metaDescription: 'Aprenda o que controlar em uma planilha de estoque para padaria, suas vantagens iniciais e os 9 sinais claros de que chegou a hora de migrar para um sistema.',
     h1: 'Planilha de Estoque para Padaria: O que Controlar e Quando Migrar para um Sistema',
     subtitle: 'Uma análise equilibrada sobre o uso de planilhas de Excel na panificação, seus campos fundamentais e o momento certo de evoluir para uma plataforma especializada.',
@@ -943,12 +943,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '8 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Planilha de Estoque para Padaria', url: 'https://padaria.io/conteudos/planilha-de-estoque-para-padaria-o-que-controlar-e-quando-migrar' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Planilha de Estoque para Padaria', url: 'https://padariaio.com.br/conteudos/planilha-de-estoque-para-padaria-o-que-controlar-e-quando-migrar' }
     ],
     summary: 'Planilhas em Excel ou Google Sheets são úteis na fase de abertura de um negócio. Descubra como estruturá-las e identifique quando a complexidade operacional exige um sistema em nuvem.',
     sections: [
@@ -974,11 +974,11 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
         text: 'Planilhas funcionam bem em operações unipessoais com pouca variedade de itens (menos de 30 produtos) e sem equipe no balcão. Porém, à medida que a padaria contrata funcionários, opera em múltiplos turnos e manipula dezenas de insumos perecíveis, a planilha passa a apresentar gargalos graves.'
       },
       {
-        heading: 'Comparativo Detalhado: Planilha vs. Padaria.io',
+        heading: 'Comparativo Detalhado: Planilha vs. Padariaio',
         level: 'h2',
         text: 'Analise os 9 critérios fundamentais para a sua tomada de decisão:',
         table: {
-          headers: ['Critério Operacional', 'Planilha (Excel / Sheets)', 'Sistema Padaria.io'],
+          headers: ['Critério Operacional', 'Planilha (Excel / Sheets)', 'Sistema Padariaio'],
           rows: [
             ['1. Atualização de Dados', 'Manual e dependente de digitação no PC', 'Instantânea via smartphone no balcão/cozinha'],
             ['2. Acesso da Equipe', 'Limitado (fórmulas quebram facilmente)', 'Multi-usuário intuitivo sem permissões de risco'],
@@ -995,17 +995,17 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
       {
         heading: 'Como fazer a transição para um sistema sem complicar a loja',
         level: 'h2',
-        text: 'A migração para o Padaria.io leva poucos minutos. Não é necessário instalar servidores locais nem pausar a rotina. Você cadastra os insumos principais e inicia as primeiras conferências rotativas no mesmo dia.'
+        text: 'A migração para o Padariaio leva poucos minutos. Não é necessário instalar servidores locais nem pausar a rotina. Você cadastra os insumos principais e inicia as primeiras conferências rotativas no mesmo dia.'
       }
     ],
     faq: [
       {
-        question: 'Preciso de um computador potente para usar o Padaria.io?',
-        answer: 'Não. O Padaria.io roda 100% em nuvem e pode ser acessado de qualquer smartphone, tablet ou computador simples conectado à internet.'
+        question: 'Preciso de um computador potente para usar o Padariaio?',
+        answer: 'Não. O Padariaio roda 100% em nuvem e pode ser acessado de qualquer smartphone, tablet ou computador simples conectado à internet.'
       },
       {
         question: 'Vou perder o histórico de dados se parar de usar a planilha?',
-        answer: 'Não. Você pode cadastrar seus saldos atuais diretamente no Padaria.io e manter sua planilha arquivada como histórico anterior.'
+        answer: 'Não. Você pode cadastrar seus saldos atuais diretamente no Padariaio e manter sua planilha arquivada como histórico anterior.'
       }
     ],
     relatedArticles: [
@@ -1018,8 +1018,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 14
   'como-identificar-possiveis-desvios-de-produtos-no-estoque-de-uma-padaria': {
     slug: 'como-identificar-possiveis-desvios-de-produtos-no-estoque-de-uma-padaria',
-    url: 'https://padaria.io/conteudos/como-identificar-possiveis-desvios-de-produtos-no-estoque-de-uma-padaria',
-    title: 'Como Identificar Possíveis Desvios de Produtos no Estoque da Padaria | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/como-identificar-possiveis-desvios-de-produtos-no-estoque-de-uma-padaria',
+    title: 'Como Identificar Possíveis Desvios de Produtos no Estoque da Padaria | Padariaio',
     metaDescription: 'Aprenda a investigar divergências no estoque de padaria com método ético em 9 passos: entradas, saídas, descartes, histórico e rastreabilidade.',
     h1: 'Como Identificar Possíveis Desvios de Produtos no Estoque de uma Padaria',
     subtitle: 'Um processo investigativo estruturado em 9 etapas para identificar causas de perdas anormais com base em dados, transparência e sem acusações injustas.',
@@ -1027,12 +1027,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '8 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Desvio de Estoque em Padaria', url: 'https://padaria.io/conteudos/como-identificar-possiveis-desvios-de-produtos-no-estoque-de-uma-padaria' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Desvio de Estoque em Padaria', url: 'https://padariaio.com.br/conteudos/como-identificar-possiveis-desvios-de-produtos-no-estoque-de-uma-padaria' }
     ],
     summary: 'Constatar que faltam produtos no estoque exige investigação metódica. Aprenda a auditar cada elo da cadeia operacional antes de tirar conclusões precipitadas.',
     sections: [
@@ -1054,11 +1054,11 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
           '6. Fazer Nova Contagem Cega Imediata: Realize uma recontagem com um segundo conferente em horário de pouco movimento.',
           '7. Analisar o Histórico de 30 Dias: Verifique se a divergência ocorre apenas em dias específicos da semana.',
           '8. Identificar Padrões por Turno: Analise se a falta coincide com a escala de trabalho de equipes ou horários específicos.',
-          '9. Investigar a Causa Raiz com Fatos e Diálogo: Apresente os relatórios do Padaria.io em reunião individual com os encarregados.'
+          '9. Investigar a Causa Raiz com Fatos e Diálogo: Apresente os relatórios do Padariaio em reunião individual com os encarregados.'
         ]
       },
       {
-        heading: 'O papel da rastreabilidade e histórico do Padaria.io',
+        heading: 'O papel da rastreabilidade e histórico do Padariaio',
         level: 'h2',
         text: 'Quando o estabelecimento possui controle diário com fotos de baixas e conferência cíclica, a oportunidade para desvios é praticamente eliminada. A transparência do sistema protege os colaboradores honestos e inibe comportamentos inadequados.'
       }
@@ -1083,8 +1083,8 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
   // ARTIGO 15
   'quanto-custa-nao-ter-controle-de-estoque-em-uma-padaria': {
     slug: 'quanto-custa-nao-ter-controle-de-estoque-em-uma-padaria',
-    url: 'https://padaria.io/conteudos/quanto-custa-nao-ter-controle-de-estoque-em-uma-padaria',
-    title: 'Quanto Custa Não Ter Controle de Estoque em uma Padaria? | Padaria.io',
+    url: 'https://padariaio.com.br/conteudos/quanto-custa-nao-ter-controle-de-estoque-em-uma-padaria',
+    title: 'Quanto Custa Não Ter Controle de Estoque em uma Padaria? | Padariaio',
     metaDescription: 'Descubra os custos invisíveis do descontrole de estoque em padarias: produtos vencidos, compras em duplicidade, rupturas e perda de margem de lucro.',
     h1: 'Quanto Custa Não Ter Controle de Estoque em uma Padaria?',
     subtitle: 'Uma análise financeira sobre os ralos ocultos da desorganização operacional e uma simulação matemática que mostra o impacto real no bolso do proprietário.',
@@ -1092,12 +1092,12 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
     readTime: '7 min de leitura',
     datePublished: '2026-08-14',
     dateModified: '2026-08-14',
-    author: 'Equipe Editorial Padaria.io',
+    author: 'Equipe Editorial Padariaio',
     authorRole: 'Especialistas em Gestão e Operação de Panificação',
     breadcrumbs: [
-      { name: 'Início', url: 'https://padaria.io/' },
-      { name: 'Conteúdos', url: 'https://padaria.io/conteudos' },
-      { name: 'Custo da Falta de Controle de Estoque', url: 'https://padaria.io/conteudos/quanto-custa-nao-ter-controle-de-estoque-em-uma-padaria' }
+      { name: 'Início', url: 'https://padariaio.com.br/' },
+      { name: 'Conteúdos', url: 'https://padariaio.com.br/conteudos' },
+      { name: 'Custo da Falta de Controle de Estoque', url: 'https://padariaio.com.br/conteudos/quanto-custa-nao-ter-controle-de-estoque-em-uma-padaria' }
     ],
     summary: 'A falta de controle de estoque não custa apenas o produto jogado no lixo: ela consome capital de giro, gera compras emergenciais caras e corrói a margem líquida.',
     sections: [
@@ -1135,7 +1135,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
       {
         heading: 'Custo do Controle vs. Custo do Descontrole',
         level: 'h2',
-        text: 'Implantar o Padaria.io custa uma fração minúscula do valor recuperado logo na primeira semana de auditoria. Ao estancar o descarte de queijos, pães e produtos vencidos, a economia gerada paga o sistema e aumenta diretamente a margem líquida da empresa.'
+        text: 'Implantar o Padariaio custa uma fração minúscula do valor recuperado logo na primeira semana de auditoria. Ao estancar o descarte de queijos, pães e produtos vencidos, a economia gerada paga o sistema e aumenta diretamente a margem líquida da empresa.'
       }
     ],
     faq: [
@@ -1144,7 +1144,7 @@ export const NEW_15_ARTICLES_DATA: Record<string, ArticleData> = {
         answer: 'Geralmente nos primeiros 15 a 30 dias de uso, ao identificar e eliminar as principais fontes de descarte e furos de balança.'
       },
       {
-        question: 'O Padaria.io exige contratação de novo funcionário para controlar estoque?',
+        question: 'O Padariaio exige contratação de novo funcionário para controlar estoque?',
         answer: 'Não. O sistema foi desenvolvido para ser utilizado pelos próprios funcionários atuais (atendentes, padeiros e gerentes) em menos de 15 minutos por dia.'
       }
     ],

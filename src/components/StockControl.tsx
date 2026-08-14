@@ -25,11 +25,14 @@ import {
   Check,
   Plus,
   Edit,
-  Save
+  Save,
+  Folder,
+  Trash2
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { MovementType } from '../types';
 import { formatDateToBR } from '../utils/dateUtils';
+import { CategorySettings } from './CategorySettings';
 
 export const StockControl: React.FC = () => {
   const {
@@ -41,10 +44,13 @@ export const StockControl: React.FC = () => {
     addStockCount,
     addInventoryItem,
     updateInventoryItem,
+    deleteInventoryItem,
     updateProduct,
+    deleteProduct,
     calculateExpectedStock,
     activeCompany,
-    activeCode
+    activeCode,
+    categories
   } = useData();
 
   // Sub-tab selection inside Stock Control
@@ -54,7 +60,8 @@ export const StockControl: React.FC = () => {
   // 'history'    = Histórico de Divergências
   // 'recurrent'  = Itens Reincidentes
   // 'edit'       = Editar Nome do Produto
-  const [subTab, setSubTab] = useState<'conference' | 'register' | 'movement' | 'history' | 'recurrent' | 'edit'>('register');
+  // 'categories' = Configurações de Categorias
+  const [subTab, setSubTab] = useState<'conference' | 'register' | 'movement' | 'history' | 'recurrent' | 'edit' | 'categories'>('register');
 
   // Search and Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,12 +74,19 @@ export const StockControl: React.FC = () => {
   const [regName, setRegName] = useState<string>('');
   const [regCost, setRegCost] = useState<string>('');
   const [regUnit, setRegUnit] = useState<string>('kg');
+  const [regCategory, setRegCategory] = useState<string>(categories[0] || 'Panificação');
   const [regInitialQty, setRegInitialQty] = useState<string>('');
   const [isSubmittingRegister, setIsSubmittingRegister] = useState<boolean>(false);
   const [registerSuccessMsg, setRegisterSuccessMsg] = useState<string | null>(null);
 
-  // Quick Inline Register Toggle inside Conference Form
-  const [isQuickRegisterOpen, setIsQuickRegisterOpen] = useState<boolean>(false);
+  // Sync regCategory if categories load or update
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      if (!regCategory || !categories.includes(regCategory)) {
+        setRegCategory(categories[0]);
+      }
+    }
+  }, [categories]);
 
   // Handle Product Registration
   const handleRegisterProduct = async (e: React.FormEvent) => {
@@ -88,25 +102,26 @@ export const StockControl: React.FC = () => {
     try {
       const initialQty = parseFloat(regInitialQty.replace(',', '.')) || 0;
       const unitCost = parseFloat(regCost.replace(',', '.')) || 0;
+      const chosenCat = regCategory || categories[0] || 'Panificação';
 
       const created = await addInventoryItem(
         regName.trim(),
         regUnit,
         initialQty,
-        unitCost
+        unitCost,
+        chosenCat
       );
 
       // Auto-select the newly created item for Conference & Movements
       setSelectedProductId(created.id);
       setMovProductId(created.id);
 
-      setRegisterSuccessMsg(`Produto "${created.name}" cadastrado com sucesso com ${initialQty} ${regUnit} em estoque!`);
+      setRegisterSuccessMsg(`Produto "${created.name}" cadastrado com sucesso na categoria "${chosenCat}" com ${initialQty} ${regUnit} em estoque!`);
 
       // Clear register form
       setRegName('');
       setRegCost('');
       setRegInitialQty('');
-      setIsQuickRegisterOpen(false);
 
       // Redirect to conference if registered from the register tab
       if (subTab === 'register') {
@@ -129,7 +144,10 @@ export const StockControl: React.FC = () => {
   const [editName, setEditName] = useState<string>('');
   const [editCost, setEditCost] = useState<string>('');
   const [editUnit, setEditUnit] = useState<string>('kg');
+  const [editCategory, setEditCategory] = useState<string>('Geral');
   const [isSavingEdit, setIsSavingEdit] = useState<boolean>(false);
+  const [isDeletingEdit, setIsDeletingEdit] = useState<boolean>(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [editSuccessMsg, setEditSuccessMsg] = useState<string | null>(null);
   const [editErrorMsg, setEditErrorMsg] = useState<string | null>(null);
   const [searchEditTerm, setSearchEditTerm] = useState<string>('');
@@ -139,6 +157,7 @@ export const StockControl: React.FC = () => {
     setEditingItemType(type);
     setEditSuccessMsg(null);
     setEditErrorMsg(null);
+    setShowConfirmDelete(false);
 
     if (type === 'inventory') {
       const item = inventoryItems.find((i) => i.id === id);
@@ -146,6 +165,7 @@ export const StockControl: React.FC = () => {
         setEditName(item.name);
         setEditCost(String(item.unitCost || 0));
         setEditUnit(item.unit || 'kg');
+        setEditCategory(item.category || 'Panificação');
       }
     } else {
       const item = products.find((p) => p.id === id);
@@ -153,7 +173,33 @@ export const StockControl: React.FC = () => {
         setEditName(item.nome);
         setEditCost(String(item.valorKg || 0));
         setEditUnit(item.unidade || 'kg');
+        setEditCategory(item.categoria || 'Panificação');
       }
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!editingItemId) return;
+    setIsDeletingEdit(true);
+    setEditSuccessMsg(null);
+    setEditErrorMsg(null);
+
+    try {
+      const deletedName = editName.trim() || 'Produto';
+      if (editingItemType === 'inventory') {
+        await deleteInventoryItem(editingItemId);
+      } else {
+        await deleteProduct(editingItemId);
+      }
+      setEditingItemId('');
+      setEditingItemType('inventory');
+      setShowConfirmDelete(false);
+      setEditSuccessMsg(`"${deletedName}" foi excluído do estoque com sucesso!`);
+    } catch (err: any) {
+      console.error(err);
+      setEditErrorMsg('Ocorreu um erro ao excluir o produto.');
+    } finally {
+      setIsDeletingEdit(false);
     }
   };
 
@@ -172,7 +218,7 @@ export const StockControl: React.FC = () => {
     try {
       const costNum = parseFloat(editCost.replace(',', '.')) || 0;
       if (editingItemType === 'inventory') {
-        await updateInventoryItem(editingItemId, editName.trim(), costNum, editUnit);
+        await updateInventoryItem(editingItemId, editName.trim(), costNum, editUnit, editCategory);
         setEditSuccessMsg(`Produto de estoque "${editName.trim()}" atualizado com sucesso!`);
       } else {
         const original = products.find((p) => p.id === editingItemId);
@@ -182,7 +228,7 @@ export const StockControl: React.FC = () => {
             editName.trim(),
             original.quantidade,
             original.dataValidade,
-            original.categoria,
+            editCategory,
             original.barcode,
             costNum,
             original.dataFabricacao,
@@ -663,7 +709,7 @@ export const StockControl: React.FC = () => {
           }`}
         >
           <Edit className="w-4 h-4 text-purple-500" />
-          <span>Editar Nome</span>
+          <span>Editar</span>
         </button>
 
         <button
@@ -706,6 +752,18 @@ export const StockControl: React.FC = () => {
             </span>
           )}
         </button>
+
+        <button
+          onClick={() => setSubTab('categories')}
+          className={`flex items-center space-x-1.5 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all whitespace-nowrap cursor-pointer min-h-[44px] flex-1 justify-center ${
+            subTab === 'categories'
+              ? 'bg-[#111111] text-white shadow-xs'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <Folder className="w-4 h-4 text-amber-500" />
+          <span>Categorias</span>
+        </button>
       </div>
 
       {/* ========================================================================= */}
@@ -725,15 +783,6 @@ export const StockControl: React.FC = () => {
                   Puxe o produto cadastrado e informe quanto encontrou no final do dia.
                 </p>
               </div>
-
-              <button
-                type="button"
-                onClick={() => setSubTab('register')}
-                className="hidden sm:flex items-center space-x-1 text-xs font-black text-[#FF6B00] hover:underline cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>+ Novo Produto</span>
-              </button>
             </div>
 
             <form onSubmit={handleConfirmStockCount} className="space-y-4">
@@ -743,110 +792,7 @@ export const StockControl: React.FC = () => {
                   <label className="block text-xs font-extrabold text-gray-800 uppercase tracking-wider">
                     1. Selecione o Produto Cadastrado
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsQuickRegisterOpen(!isQuickRegisterOpen)}
-                    className="text-xs font-black text-[#FF6B00] hover:underline cursor-pointer flex items-center gap-1"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    <span>{isQuickRegisterOpen ? 'Fechar Cadastro Rápido' : '+ Cadastrar Novo Produto'}</span>
-                  </button>
                 </div>
-
-                {/* Quick Register Inline Panel */}
-                {isQuickRegisterOpen && (
-                  <div className="bg-orange-50/70 border border-orange-200 p-4 rounded-xl space-y-3 mb-4 animate-scale-in">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-black uppercase text-gray-800">
-                        Cadastro Rápido de Produto
-                      </h3>
-                      <span className="text-[10px] text-gray-500 font-bold uppercase bg-white px-2 py-0.5 rounded border border-orange-200">
-                        Tenant {activeCode}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-extrabold text-gray-700 uppercase mb-1">
-                          Nome do Produto *
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Ex: Queijo Muçarela, Farinha de Trigo, Leite..."
-                          value={regName}
-                          onChange={(e) => setRegName(e.target.value)}
-                          className="w-full h-11 px-3 bg-white border border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:ring-2 focus:ring-[#FF6B00]"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-extrabold text-gray-700 uppercase mb-1">
-                          Tipo de Pesagem / Unidade *
-                        </label>
-                        <select
-                          value={regUnit}
-                          onChange={(e) => setRegUnit(e.target.value)}
-                          className="w-full h-11 px-3 bg-white border border-gray-300 rounded-xl text-xs font-extrabold text-gray-900 focus:ring-2 focus:ring-[#FF6B00] cursor-pointer"
-                        >
-                          <option value="kg">kg (Quilograma)</option>
-                          <option value="l">l (Litro)</option>
-                          <option value="ml">ml (Mililitro)</option>
-                          <option value="g">g (Grama)</option>
-                          <option value="unidade">unidade (Unid)</option>
-                          <option value="embalagem">embalagem (Emb)</option>
-                          <option value="caixa">caixa (Cx)</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-extrabold text-gray-700 uppercase mb-1">
-                          Valor R$ (Custo Unitário) *
-                        </label>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="Ex: 28.50"
-                          value={regCost}
-                          onChange={(e) => setRegCost(e.target.value)}
-                          className="w-full h-11 px-3 bg-white border border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:ring-2 focus:ring-[#FF6B00]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-extrabold text-gray-700 uppercase mb-1">
-                          Estoque Inicial *
-                        </label>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="Ex: 10.5"
-                          value={regInitialQty}
-                          onChange={(e) => setRegInitialQty(e.target.value)}
-                          className="w-full h-11 px-3 bg-white border border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:ring-2 focus:ring-[#FF6B00]"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleRegisterProduct}
-                      disabled={isSubmittingRegister || !regName.trim()}
-                      className="w-full h-11 bg-[#FF6B00] hover:bg-[#E8571A] text-white text-xs font-black uppercase rounded-xl shadow-xs cursor-pointer transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
-                    >
-                      {isSubmittingRegister ? (
-                        <span>Cadastrando...</span>
-                      ) : (
-                        <>
-                          <Check className="w-4 h-4" />
-                          <span>Salvar Produto e Iniciar Conferência</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
 
                 {/* Main Product Select Dropdown */}
                 <select
@@ -1233,7 +1179,7 @@ export const StockControl: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Campo 2: Valor R$ */}
               <div>
                 <label className="block text-xs font-extrabold text-gray-800 uppercase tracking-wider mb-1.5">
@@ -1287,6 +1233,24 @@ export const StockControl: React.FC = () => {
                   onChange={(e) => setRegInitialQty(e.target.value)}
                   className="w-full h-12 px-3.5 bg-gray-50 border border-gray-300 rounded-xl text-sm font-extrabold text-[#2C2C2C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00]"
                 />
+              </div>
+
+              {/* Campo 5: Categoria do Produto */}
+              <div>
+                <label className="block text-xs font-extrabold text-gray-800 uppercase tracking-wider mb-1.5">
+                  5. Categoria *
+                </label>
+                <select
+                  value={regCategory}
+                  onChange={(e) => setRegCategory(e.target.value)}
+                  className="w-full h-12 px-3 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-[#2C2C2C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00] cursor-pointer"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -1367,8 +1331,13 @@ export const StockControl: React.FC = () => {
                           }`}
                         >
                           <div>
-                            <span className="text-xs font-black text-gray-900 block">{item.name}</span>
-                            <span className="text-[10px] font-bold text-gray-500 block uppercase">
+                            <div className="flex items-center space-x-1.5">
+                              <span className="text-xs font-black text-gray-900 block">{item.name}</span>
+                              <span className="text-[9px] font-black text-orange-600 bg-orange-50 px-1.5 py-0.2 rounded border border-orange-200 uppercase">
+                                {item.category || 'Panificação'}
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-bold text-gray-500 block uppercase mt-0.5">
                               Estoque atual: {item.currentQuantity} {item.unit} • R$ {item.unitCost.toFixed(2)}/{item.unit}
                             </span>
                           </div>
@@ -1402,8 +1371,13 @@ export const StockControl: React.FC = () => {
                           }`}
                         >
                           <div>
-                            <span className="text-xs font-black text-gray-900 block">{prod.nome}</span>
-                            <span className="text-[10px] font-bold text-gray-500 block uppercase">
+                            <div className="flex items-center space-x-1.5">
+                              <span className="text-xs font-black text-gray-900 block">{prod.nome}</span>
+                              <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 uppercase">
+                                {prod.categoria || 'Panificação'}
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-bold text-gray-500 block uppercase mt-0.5">
                               Lote de Validade: {prod.quantidade} {prod.unidade || 'unid'} • Val: {formatDateToBR(prod.dataValidade)}
                             </span>
                           </div>
@@ -1504,27 +1478,96 @@ export const StockControl: React.FC = () => {
                       <option value="caixa">caixa (Cx)</option>
                     </select>
                   </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold text-gray-800 uppercase tracking-wider mb-1.5">
+                      Categoria do Produto
+                    </label>
+                    <select
+                      value={editCategory}
+                      onChange={(e) => setEditCategory(e.target.value)}
+                      className="w-full h-12 px-3 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-[#2C2C2C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00] cursor-pointer"
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={isSavingEdit || !editName.trim()}
-                    className="w-full h-13 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs sm:text-sm uppercase rounded-xl shadow-xs transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-1.5"
-                  >
-                    {isSavingEdit ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Salvando Alterações...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4" />
-                        <span>Salvar Dados do Produto</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                {showConfirmDelete ? (
+                  <div className="p-4 bg-red-50 border-2 border-red-200 rounded-xl space-y-3 animate-fade-in">
+                    <div className="flex items-start space-x-2.5">
+                      <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-xs font-black text-red-900 uppercase">Confirmar Exclusão de Produto</h4>
+                        <p className="text-xs font-extrabold text-red-700 mt-0.5">
+                          Tem certeza que deseja excluir o produto "{editName}"? Esta ação removerá o item do estoque permanentemente.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleDeleteProduct}
+                        disabled={isDeletingEdit}
+                        className="flex-1 h-11 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs uppercase rounded-lg shadow-xs transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+                      >
+                        {isDeletingEdit ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Excluindo...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4" />
+                            <span>Sim, Excluir Produto</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmDelete(false)}
+                        disabled={isDeletingEdit}
+                        className="px-4 h-11 bg-white hover:bg-gray-100 text-gray-700 font-extrabold text-xs border border-gray-300 rounded-lg transition-all cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="submit"
+                      disabled={isSavingEdit || !editName.trim()}
+                      className="flex-1 h-13 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs sm:text-sm uppercase rounded-xl shadow-xs transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-1.5"
+                    >
+                      {isSavingEdit ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Salvando Alterações...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          <span>Salvar Dados do Produto</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmDelete(true)}
+                      disabled={isSavingEdit}
+                      className="h-13 px-5 bg-red-50 hover:bg-red-100 text-red-600 font-extrabold text-xs sm:text-sm uppercase border border-red-200 rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1.5 shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                      <span>Excluir Produto</span>
+                    </button>
+                  </div>
+                )}
               </form>
             )}
           </div>
@@ -1770,6 +1813,28 @@ export const StockControl: React.FC = () => {
               ))
             )}
           </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SUB-TAB 7: CONFIGURAÇÕES DE CATEGORIAS                                    */}
+      {/* ========================================================================= */}
+      {subTab === 'categories' && (
+        <div className="animate-scale-in">
+          <CategorySettings
+            onNavigateToRegister={(cat) => {
+              setRegCategory(cat);
+              setSubTab('register');
+            }}
+            onNavigateToEdit={(id, type) => {
+              handleSelectEditItem(id, type);
+              setSubTab('edit');
+            }}
+            onNavigateToConference={(id) => {
+              setSelectedProductId(id);
+              setSubTab('conference');
+            }}
+          />
         </div>
       )}
     </div>

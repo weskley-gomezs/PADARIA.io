@@ -35,7 +35,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const openWhatsApp = (customMessage?: string) => {
     const text = encodeURIComponent(
-      customMessage || 'Olá! Gostaria de agendar uma demonstração gratuita do Padaria.io para minha padaria.'
+      customMessage || 'Olá! Gostaria de agendar uma demonstração gratuita do Padariaio para minha padaria.'
     );
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
@@ -52,13 +52,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    'name': 'Padaria.io',
-    'legalName': 'AEGIS Tecnologia e Gestão Ltda',
-    'url': 'https://padaria.io',
+    'name': 'Padariaio',
+    'legalName': 'Padariaio',
+    'url': 'https://padariaio.com.br',
     'logo': 'https://i.imgur.com/HSJoe7l.png',
     'description': 'Software para padarias especializado em controle de estoque, perdas, validade e divergências para panificação e confeitaria.',
     'telephone': '+55-61-99650-7712',
-    'email': 'contato@padaria.io',
+    'email': 'contato@padariaio.com.br',
     'address': {
       '@type': 'PostalAddress',
       'addressLocality': 'Brasília',
@@ -74,11 +74,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    'name': 'Padaria.io',
-    'url': 'https://padaria.io',
+    'name': 'Padariaio',
+    'url': 'https://padariaio.com.br',
     'potentialAction': {
       '@type': 'SearchAction',
-      'target': 'https://padaria.io/conteudos?q={search_term_string}',
+      'target': 'https://padariaio.com.br/conteudos?q={search_term_string}',
       'query-input': 'required name=search_term_string'
     }
   };
@@ -86,7 +86,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const softwareSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    'name': 'Padaria.io',
+    'name': 'Padariaio',
     'operatingSystem': 'Web, Android, iOS, Windows, macOS',
     'applicationCategory': 'BusinessApplication',
     'description': 'Software completo para gestão de estoque, controle de validade, prevenção de desperdício e auditoria fotográfica de perdas em padarias.',
@@ -103,9 +103,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     <div className="min-h-screen bg-[#FAFAF8] text-[#111827] font-sans selection:bg-[#FF6B00] selection:text-white overflow-x-hidden antialiased">
       {/* Dynamic SEO Meta Tags & JSON-LD */}
       <SeoHead
-        title="Software para Padarias | Controle de Estoque, Perdas e Validades | Padaria.io"
+        title="Software para Padarias | Controle de Estoque, Perdas e Validades | Padariaio"
         description="O software para padaria completo para controle de estoque, redução de perdas, alertas de validade e divergências de contagem. Agende sua demonstração gratuita."
-        canonical="https://padaria.io/"
+        canonical="https://padariaio.com.br/"
         schema={homeSchema}
       />
 
@@ -172,13 +172,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             >
               <img
                 src="https://i.imgur.com/ZGsjvWy.png"
-                alt="Padaria.io"
+                alt="Padariaio"
                 className="h-10 object-contain"
                 referrerPolicy="no-referrer"
               />
             </button>
             <p className="text-gray-400 leading-relaxed max-w-sm text-xs sm:text-sm">
-              O <strong className="text-white">Padaria.io</strong> é a plataforma especializada em controle de estoque, prevenção de perdas, auditoria de descarte e gestão de validade para padarias, confeitarias e food service em todo o Brasil.
+              O <strong className="text-white">Padariaio</strong> é a plataforma especializada em controle de estoque, prevenção de perdas, auditoria de descarte e gestão de validade para padarias, confeitarias e food service em todo o Brasil.
             </p>
             <div className="space-y-2 pt-2 text-xs text-gray-400">
               <p className="flex items-center space-x-2">
@@ -191,11 +191,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </p>
               <p className="flex items-center space-x-2">
                 <Mail className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-                <span>E-mail: contato@padaria.io</span>
+                <span>E-mail: contato@padariaio.com.br</span>
               </p>
               <p className="flex items-center space-x-2 text-gray-500">
                 <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0" />
-                <span>Razão Social: AEGIS Tecnologia e Gestão Ltda</span>
+                <span>Plataforma Segura e Confiável</span>
               </p>
             </div>
           </div>
@@ -281,7 +281,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* Bottom Legal Bar */}
         <div className="max-w-7xl mx-auto pt-8 border-t border-gray-800/80 flex flex-col sm:flex-row items-center justify-between text-gray-500 gap-4 text-center sm:text-left text-xs">
           <div>
-            © {new Date().getFullYear()} Padaria.io — AEGIS Tecnologia e Gestão Ltda. Todos os direitos reservados.
+            © {new Date().getFullYear()} Padariaio. Todos os direitos reservados.
           </div>
           <div className="flex flex-wrap items-center justify-center gap-6 text-gray-400 font-semibold">
             <button

@@ -48,7 +48,7 @@ export const ClusterPageView: React.FC<ClusterPageViewProps> = ({
   const softwareSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    'name': 'Padaria.io',
+    'name': 'Padariaio',
     'operatingSystem': 'Web, Android, iOS, Windows, macOS',
     'applicationCategory': 'BusinessApplication',
     'description': data.metaDescription,
@@ -172,7 +172,7 @@ export const ClusterPageView: React.FC<ClusterPageViewProps> = ({
           <ConversionBanner
             onOpenDemo={onOpenDemo}
             title="Pronto para acabar com as perdas e divergências na sua padaria?"
-            subtitle="Veja como o Padaria.io automatiza o controle de estoque, validades e registro fotográfico de quebras na rotina real da sua loja."
+            subtitle="Veja como o Padariaio automatiza o controle de estoque, validades e registro fotográfico de quebras na rotina real da sua loja."
             contextTag="Demonstração Gratuita"
           />
 

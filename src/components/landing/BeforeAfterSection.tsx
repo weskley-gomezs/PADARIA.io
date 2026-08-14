@@ -30,7 +30,7 @@ export const BeforeAfterSection: React.FC = () => {
           A diferença no dia a dia da sua padaria
         </h2>
         <p className="text-sm sm:text-base text-gray-600 font-medium">
-          Compare a gestão sem controle com a tranquilidade de operar com o Padaria.io.
+          Compare a gestão sem controle com a tranquilidade de operar com o Padariaio.
         </p>
       </div>
 

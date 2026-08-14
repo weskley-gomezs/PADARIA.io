@@ -707,7 +707,7 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar você a tomar decis�
             <div className="flex items-center space-x-2">
               <h2 className="text-lg sm:text-2xl font-black tracking-tight text-white truncate">PadeIA™</h2>
               <span className="bg-orange-500/20 text-[#FF6B00] border border-orange-500/30 text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full tracking-wider shrink-0">
-                IA Oficial Padaria.io
+                IA Oficial Padariaio
               </span>
             </div>
             <p className="text-[11px] sm:text-xs text-gray-300 font-medium mt-0.5 truncate">
@@ -1099,7 +1099,7 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar você a tomar decis�
               </button>
             </form>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[10px] text-gray-400 mt-2 px-1 gap-1 leading-normal w-full max-w-full">
-              <span className="break-words">PadeIA™ v2.5 • Inteligência nativa de panificação do Padaria.io</span>
+              <span className="break-words">PadeIA™ v2.5 • Inteligência nativa de panificação do Padariaio</span>
               {messages.length > 2 && (
                 <button
                   type="button"

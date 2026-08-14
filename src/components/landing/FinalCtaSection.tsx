@@ -49,7 +49,7 @@ export const FinalCtaSection: React.FC<FinalCtaSectionProps> = ({
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-base sm:text-xl text-gray-300 font-medium max-w-2xl mx-auto leading-relaxed"
         >
-          Agende uma demonstração e descubra como o Padaria.io pode ajudar sua equipe a identificar, acompanhar e reduzir perdas.
+          Agende uma demonstração e descubra como o Padariaio pode ajudar sua equipe a identificar, acompanhar e reduzir perdas.
         </motion.p>
 
         {/* CTAs */}
@@ -61,7 +61,7 @@ export const FinalCtaSection: React.FC<FinalCtaSectionProps> = ({
           className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
         >
           <button
-            onClick={() => onOpenWhatsApp('Olá! Gostaria de agendar uma demonstração gratuita do Padaria.io.')}
+            onClick={() => onOpenWhatsApp('Olá! Gostaria de agendar uma demonstração gratuita do Padariaio.')}
             className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#FF6B00] hover:bg-[#E8571A] text-white font-black text-base transition-all duration-200 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center space-x-3 cursor-pointer group"
           >
             <MessageCircle className="w-5 h-5 fill-white text-[#FF6B00] group-hover:scale-110 transition-transform" />

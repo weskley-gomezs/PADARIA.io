@@ -58,7 +58,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
   const [loginPasswordInput, setLoginPasswordInput] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
 
-  const isAdminEmail = (email?: string | null) => email === 'admin@padaria.io' || email === 'weskleyg4000@gmail.com';
+  const isAdminEmail = (email?: string | null) => email === 'admin@padariaio.com.br' || email === 'weskleyg4000@gmail.com';
 
   // Sidebar & Navigation
   const [activeTab, setActiveTab] = useState<AdminTab>('empresas');
@@ -458,7 +458,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLoginAsBakery, isAdmin
                   type="email"
                   value={loginEmailInput}
                   onChange={(e) => setLoginEmailInput(e.target.value)}
-                  placeholder="admin@padaria.io"
+                  placeholder="admin@padariaio.com.br"
                   className="w-full px-4 py-3.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B00] text-sm font-bold"
                   required
                 />

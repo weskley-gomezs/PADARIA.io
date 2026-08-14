@@ -13,7 +13,7 @@ async function startServer() {
 
   // Helper to inject SEO tags into raw index.html for bots & SSR fallback
   const getInjectedHtml = (originalHtml: string, reqPath: string) => {
-    let title = 'Software para Padarias | Controle de Estoque, Perdas e Validades | Padaria.io';
+    let title = 'Software para Padarias | Controle de Estoque, Perdas e Validades | Padariaio';
     let description = 'Software para padarias focado em controle de estoque de insumos e perecíveis, auditoria de perdas por foto, controle de validade preventivo e resolução de divergências.';
     let canonical = `https://padaria.io${reqPath === '/' ? '' : reqPath}`;
 
@@ -33,7 +33,7 @@ async function startServer() {
         canonical = a.url;
       }
     } else if (reqPath === '/conteudos' || reqPath === '/conteudos/') {
-      title = 'Centro de Conteúdos e Guias para Padarias | Padaria.io';
+      title = 'Centro de Conteúdos e Guias para Padarias | Padariaio';
       description = 'Aprenda a controlar estoque de farinhas e frios, reduzir desperdício de fornadas, evitar multas sanitárias e zerar divergências na sua padaria.';
       canonical = 'https://padaria.io/conteudos';
     }

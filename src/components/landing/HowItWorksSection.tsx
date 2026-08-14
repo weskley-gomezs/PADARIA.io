@@ -63,7 +63,7 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onOpenWhat
           PROCESSO INTUITIVO
         </span>
         <h2 className="text-2xl sm:text-4xl font-black text-[#0B0F17] tracking-tight">
-          Como o Padaria.io transforma sua rotina em 4 passos
+          Como o Padariaio transforma sua rotina em 4 passos
         </h2>
         <p className="text-sm sm:text-base text-gray-600 font-medium">
           Sua equipe ganha velocidade e controle sem complicar a operação do balcão ou da cozinha.

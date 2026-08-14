@@ -19,7 +19,7 @@ export const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose, onOpenWha
     e.preventDefault();
     const message = `Olá! Meu nome é ${name || 'Gestor(a)'}, da padaria ${
       bakeryName || 'Panificação'
-    }. Gostaria de agendar uma demonstração gratuita do Padaria.io. Meu telefone: ${
+    }. Gostaria de agendar uma demonstração gratuita do Padariaio. Meu telefone: ${
       phone || 'não informado'
     }.`;
     onOpenWhatsApp(message);
