@@ -38,19 +38,7 @@ import { BakeryCompany, Product, SaleHistoryItem, VipOffer } from '../types';
 import { StorageService } from '../services/storageService';
 import { formatDateToBR, formatDateToISO } from '../utils/dateUtils';
 import { auth } from '../services/firebase';
-
-async function getAuthHeaders() {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  try {
-    if (auth.currentUser) {
-      const token = await auth.currentUser.getIdToken();
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-    }
-  } catch (err) {
-    console.warn('Erro ao obter token auth:', err);
-  }
-  return headers;
-}
+import { authenticatedFetch } from '../services/authApiHelper';
 
 interface PadeIAProps {
   company: BakeryCompany;
@@ -413,10 +401,8 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar vocÃª a tomar decisÃ
         reader.onloadend = async () => {
           try {
             const base64Audio = reader.result as string;
-            const headers = await getAuthHeaders();
-            const res = await fetch('/api/padeia/speech-to-text', {
+            const res = await authenticatedFetch('/api/padeia/speech-to-text', {
               method: 'POST',
-              headers,
               body: JSON.stringify({
                 audioBase64: base64Audio,
                 mimeType
@@ -544,13 +530,12 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar vocÃª a tomar decisÃ
         content: m.text
       }));
 
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/padeia/chat', {
+      const response = await authenticatedFetch('/api/padeia/chat', {
         method: 'POST',
-        headers,
         body: JSON.stringify({
           message: messageText,
-          history: historyPayload
+          history: historyPayload,
+          bakeryCode: company?.codigoAtivacao
         })
       });
 

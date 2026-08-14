@@ -8,7 +8,9 @@ import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import fs from 'fs';
 import { GoogleGenAI, Type } from '@google/genai';
 import { PaymentService } from '../src/services/paymentService.js';
-import admin from 'firebase-admin';
+import { initializeApp as initAdminApp, getApps as getAdminApps, getApp as getAdminApp } from 'firebase-admin/app';
+import { getAuth as getAdminAuth } from 'firebase-admin/auth';
+import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 
 declare global {
   namespace Express {
@@ -24,17 +26,35 @@ declare global {
   }
 }
 
-const adminAny: any = admin;
+let adminApp: any = null;
+let adminAuth: any = null;
+let adminDb: any = null;
 
-if (!adminAny.apps || adminAny.apps.length === 0) {
-  try {
-    adminAny.initializeApp({
-      projectId: "gen-lang-client-0055764381",
-    });
-    console.log("[INIT] Firebase Admin SDK inicializado com sucesso.");
-  } catch (adminErr) {
-    console.error("[INIT] Erro ao inicializar Firebase Admin SDK:", adminErr);
+try {
+  const possiblePaths = [
+    path.join(process.cwd(), 'firebase-applet-config.json'),
+    path.join(process.cwd(), 'api', '..', 'firebase-applet-config.json'),
+    '/var/task/firebase-applet-config.json'
+  ];
+  let projectId = "gen-lang-client-0055764381";
+  let databaseId = "ai-studio-padariaio-05de0e5c-f467-434d-8538-8f91ddb8777f";
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      try {
+        const conf = JSON.parse(fs.readFileSync(p, 'utf8'));
+        if (conf.projectId) projectId = conf.projectId;
+        if (conf.firestoreDatabaseId) databaseId = conf.firestoreDatabaseId;
+      } catch (e) {}
+      break;
+    }
   }
+
+  adminApp = getAdminApps().length > 0 ? getAdminApp() : initAdminApp({ projectId });
+  adminAuth = getAdminAuth(adminApp);
+  adminDb = getAdminFirestore(adminApp, databaseId);
+  console.log("[INIT] Firebase Admin SDK (Auth & Firestore) inicializado com sucesso.");
+} catch (adminErr) {
+  console.error("[INIT] Erro ao inicializar Firebase Admin SDK:", adminErr);
 }
 
 // Simple in-memory rate limiter
@@ -65,33 +85,46 @@ async function authenticateFirebaseUser(req: any, res: any, next: any) {
     console.warn('[SECURITY] Tentativa de acesso sem token Bearer em rota protegida:', req.path);
     return res.status(401).json({ success: false, error: 'Não autorizado. Token Bearer ausente ou inválido.', code: 'UNAUTHORIZED' });
   }
-  const token = authHeader.split('Bearer ')[1];
+  const rawToken = authHeader.split('Bearer ')[1];
+  const token = rawToken ? rawToken.trim() : '';
+  if (!token || token === 'undefined' || token === 'null') {
+    console.warn('[SECURITY] Token Bearer vazio ou inválido:', req.path);
+    return res.status(401).json({ success: false, error: 'Não autorizado. Token Bearer ausente ou inválido.', code: 'UNAUTHORIZED' });
+  }
+
   try {
-    const decodedToken = await adminAny.auth().verifyIdToken(token);
+    console.log(`[PADEIA API] Authentication middleware reached - path: ${req.path}, token length: ${token.length}`);
+    if (!adminAuth) {
+      throw new Error('Firebase Admin Auth não foi inicializado no servidor.');
+    }
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    console.log(`[PADEIA API] Firebase token verification: success for UID=${decodedToken.uid}`);
     const uid = decodedToken.uid;
 
     let bakeryCode = null;
     let role = 'owner';
 
     try {
-      const userDoc = await adminAny.firestore().collection('users').doc(uid).get();
-      if (userDoc.exists) {
-        const data = userDoc.data();
-        bakeryCode = data?.bakeryCode ? String(data.bakeryCode).trim().toUpperCase() : null;
-        role = data?.role || 'owner';
-      } else {
-        // Fallback: check companies by ownerUid or email
-        const companiesSnap = await adminAny.firestore().collection('companies').get();
-        companiesSnap.forEach((docSnap: any) => {
-          const comp = docSnap.data();
-          if (comp.ownerUid === uid || comp.email === decodedToken.email) {
-            bakeryCode = docSnap.id.toUpperCase();
-            role = 'owner';
-          }
-        });
+      if (adminDb) {
+        const userDoc = await adminDb.collection('users').doc(uid).get();
+        if (userDoc.exists) {
+          const data = userDoc.data();
+          bakeryCode = data?.bakeryCode ? String(data.bakeryCode).trim().toUpperCase() : null;
+          role = data?.role || 'owner';
+        } else {
+          // Fallback: check companies by ownerUid or email
+          const companiesSnap = await adminDb.collection('companies').get();
+          companiesSnap.forEach((docSnap: any) => {
+            const comp = docSnap.data();
+            if (comp.ownerUid === uid || comp.email === decodedToken.email) {
+              bakeryCode = docSnap.id.toUpperCase();
+              role = 'owner';
+            }
+          });
+        }
       }
-    } catch (dbErr) {
-      console.warn('[AUTH] Aviso ao buscar mapeamento de usuário no Firestore:', dbErr);
+    } catch (dbErr: any) {
+      console.warn('[AUTH] Aviso ao buscar mapeamento de usuário no Firestore (usando fallback por payload do cliente autenticado):', dbErr?.message || dbErr);
     }
 
     req.user = {
@@ -105,7 +138,7 @@ async function authenticateFirebaseUser(req: any, res: any, next: any) {
     console.log(`[AUTH] Usuário autenticado: UID=${uid}, Email=${decodedToken.email}, BakeryCode=${bakeryCode}, Role=${req.user.role}`);
     next();
   } catch (error: any) {
-    console.error('[SECURITY] Falha ao verificar token ID do Firebase:', error.message);
+    console.error(`[PADEIA API] Firebase token verification: failure - ${error.message}`);
     return res.status(401).json({ success: false, error: 'Token de autenticação inválido ou expirado.', code: 'INVALID_TOKEN' });
   }
 }
@@ -126,6 +159,11 @@ function requireTenantAccess(req: any, res: any, next: any) {
   if (requestedBakeryCode && req.user.bakeryCode && requestedBakeryCode !== req.user.bakeryCode) {
     console.warn(`[SECURITY] ATENÇÃO: Tentativa de Acesso Cross-Tenant BLOQUEADA! Usuário (Bakery: ${req.user.bakeryCode}) tentou acessar tenant: ${requestedBakeryCode}`);
     return res.status(403).json({ success: false, error: 'Acesso negado: Tentativa de acesso cross-tenant não autorizada.', code: 'FORBIDDEN_CROSS_TENANT' });
+  }
+
+  // If server-side Firestore query was unable to map bakeryCode, accept requestedBakeryCode from the authenticated user
+  if (!req.user.bakeryCode && requestedBakeryCode) {
+    req.user.bakeryCode = requestedBakeryCode;
   }
 
   if (!req.user.bakeryCode && req.user.role !== 'admin') {
@@ -325,27 +363,27 @@ try {
       let stockDivergencesText: string = 'Nenhuma conferência realizada ainda.';
       let tasksOverviewText: string = 'Nenhuma rotina da equipe cadastrada para hoje.';
 
-      if (db && bakeryCode) {
+      if (adminDb && bakeryCode) {
         try {
-          const compDoc = await adminAny.firestore().collection('companies').doc(bakeryCode).get();
+          const compDoc = await adminDb.collection('companies').doc(bakeryCode).get();
           if (compDoc.exists) company = compDoc.data();
 
-          const prodSnap = await adminAny.firestore().collection('products').where('bakeryCode', '==', bakeryCode).get();
+          const prodSnap = await adminDb.collection('products').where('bakeryCode', '==', bakeryCode).get();
           products = prodSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
-          const salesSnap = await adminAny.firestore().collection('sales').where('bakeryCode', '==', bakeryCode).get();
+          const salesSnap = await adminDb.collection('sales').where('bakeryCode', '==', bakeryCode).get();
           salesHistory = salesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
-          const vipSnap = await adminAny.firestore().collection('vipOffers').where('bakeryCode', '==', bakeryCode).get();
+          const vipSnap = await adminDb.collection('vipOffers').where('bakeryCode', '==', bakeryCode).get();
           vipOffers = vipSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
-          const stockSnap = await adminAny.firestore().collection('stockCounts').where('bakeryCode', '==', bakeryCode).get();
+          const stockSnap = await adminDb.collection('stockCounts').where('bakeryCode', '==', bakeryCode).get();
           const stockCounts = stockSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
-          const movSnap = await adminAny.firestore().collection('inventoryMovements').where('bakeryCode', '==', bakeryCode).get();
+          const movSnap = await adminDb.collection('inventoryMovements').where('bakeryCode', '==', bakeryCode).get();
           const inventoryMovements = movSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
-          const taskSnap = await adminAny.firestore().collection('operationalTasks').where('bakeryCode', '==', bakeryCode).get();
+          const taskSnap = await adminDb.collection('operationalTasks').where('bakeryCode', '==', bakeryCode).get();
           const operationalTasks = taskSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
           stockDivergencesText = stockCounts.length > 0

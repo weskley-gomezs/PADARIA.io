@@ -32,20 +32,7 @@ import {
 import { BakeryCompany, BillingStatus, FinancialStats } from '../../types';
 import { StorageService } from '../../services/storageService';
 import { calculateDaysRemaining, formatDateToBR, formatDateToISO } from '../../utils/dateUtils';
-import { auth } from '../../services/firebase';
-
-async function getAuthHeaders() {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  try {
-    if (auth.currentUser) {
-      const token = await auth.currentUser.getIdToken();
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-    }
-  } catch (err) {
-    console.warn('Erro ao obter token auth:', err);
-  }
-  return headers;
-}
+import { authenticatedFetch } from '../../services/authApiHelper';
 import { WhatsAppMessageModal } from './WhatsAppMessageModal';
 
 interface AdminBillingProps {
@@ -125,10 +112,8 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
     if (!sendSubModalCompany) return;
     setIsSendingSub(true);
     try {
-      const headers = await getAuthHeaders();
-      const res = await fetch('/api/asaas/send-monthly-subscription', {
+      const res = await authenticatedFetch('/api/asaas/send-monthly-subscription', {
         method: 'POST',
-        headers,
         body: JSON.stringify({
           codigoAtivacao: sendSubModalCompany.codigoAtivacao,
           empresa: sendSubModalCompany.empresa,
@@ -179,10 +164,8 @@ export const AdminBilling: React.FC<AdminBillingProps> = ({ companies, stats, on
 
     try {
       showToast(`🔄 Obtendo link do Asaas para ${company.empresa}...`);
-      const headers = await getAuthHeaders();
-      const res = await fetch('/api/asaas/get-payment-link', {
+      const res = await authenticatedFetch('/api/asaas/get-payment-link', {
         method: 'POST',
-        headers,
         body: JSON.stringify({
           codigoAtivacao: company.codigoAtivacao,
           empresa: company.empresa,
