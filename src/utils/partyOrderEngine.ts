@@ -363,25 +363,25 @@ export function calculateOrderPrice(
 
 /**
  * Gera a URL oficial de encomenda da padaria.
- * Em produção: https://padariaio.com.br/encomendas/{slug}
+ * Em produção: https://padariaio.com.br/cardapio/{slug}
  * Em desenvolvimento/preview: utiliza a origem atual da aplicação.
  */
 export function getPublicOrderingUrl(slug: string, forceProduction: boolean = false): string {
   const cleanSlug = slug ? slug.trim().toLowerCase() : 'padaria';
   
   if (forceProduction) {
-    return `https://padariaio.com.br/encomendas/${cleanSlug}`;
+    return `https://padariaio.com.br/cardapio/${cleanSlug}`;
   }
 
   if (typeof window !== 'undefined' && window.location) {
     const origin = window.location.origin;
     // Se estiver em localhost ou domínio de desenvolvimento, gera link funcional no ambiente atual
     if (origin.includes('localhost') || origin.includes('run.app') || origin.includes('web.app') || origin.includes('ais-')) {
-      return `${origin}/#/encomendas/${cleanSlug}`;
+      return `${origin}/#/cardapio/${cleanSlug}`;
     }
   }
 
-  return `https://padariaio.com.br/encomendas/${cleanSlug}`;
+  return `https://padariaio.com.br/cardapio/${cleanSlug}`;
 }
 
 /**
@@ -389,7 +389,7 @@ export function getPublicOrderingUrl(slug: string, forceProduction: boolean = fa
  */
 export function getProductionOrderingUrl(slug: string): string {
   const cleanSlug = slug ? slug.trim().toLowerCase() : 'padaria';
-  return `https://padariaio.com.br/encomendas/${cleanSlug}`;
+  return `https://padariaio.com.br/cardapio/${cleanSlug}`;
 }
 
 /**
@@ -599,6 +599,52 @@ export function getDefaultPublicConfig(bakeryCode: string, bakeryName: string): 
     exibirTelefone: true,
     exibirWhatsApp: true,
     exibirInstagram: true,
+    opcoesMassaBolo: [
+      'Massa Branca (Pão de Ló Tradicional)',
+      'Massa de Chocolate 50% Cacau',
+      'Massa Fofinha Amanteigada',
+      'Massa Red Velvet Velvet',
+      'Massa de Cenoura Especial'
+    ],
+    opcoesRecheioBolo: [
+      'Brigadeiro Tradicional Gourmet',
+      'Ninho Cremoso com Morango',
+      'Doce de Leite com Nozes',
+      'Beijinho de Coco Fresco',
+      'Prestígio com Chocolate',
+      'Mousse de Maracujá',
+      'Nutella Pura',
+      'Abacaxi com Coco Artesanal',
+      'Dois Amores (Preto e Branco)'
+    ],
+    opcoesSalgados: [
+      'Coxinha de Frango com Catupiry',
+      'Kibe Tradicional com Hortelã',
+      'Bolinha de Queijo Crocante',
+      'Empadinha de Palmito Assada',
+      'Esfiha de Carne Temperada',
+      'Enroladinho de Salsicha',
+      'Risoles de Presunto e Queijo'
+    ],
+    opcoesDocinhos: [
+      'Brigadeiro Tradicional Gourmet',
+      'Beijinho de Coco Fresco',
+      'Cajuzinho com Amendoim',
+      'Bicho de Pé (Moranguinho)',
+      'Ninho com Nutella',
+      'Olho de Sogra'
+    ],
+    personalizacaoBoloGlobal: {
+      allowTheme: true,
+      allowColor: true,
+      allowName: true,
+      nameRequired: true,
+      allowAge: true,
+      ageRequired: false,
+      allowMessage: true,
+      allowDetails: true,
+      allowWhatsAppInspiration: true,
+    },
     regras: {
       antecedenciaMinimaDias: 2,
       horarioLimite: '18:00',

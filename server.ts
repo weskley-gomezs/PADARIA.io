@@ -24,6 +24,10 @@ async function startServer() {
       title = p.title;
       description = p.metaDescription;
       canonical = p.url;
+    } else if (reqPath.startsWith('/cardapio') || reqPath.startsWith('/kitfesta') || reqPath.startsWith('/kit-festa') || reqPath.startsWith('/encomendas') || reqPath.startsWith('/encomenda')) {
+      title = 'Cardápio de Encomendas & Kit Festa | Padariaio';
+      description = 'Monte seu Kit Festa online com bolos decorados, salgadinhos fritos na hora e docinhos artesanais.';
+      canonical = `https://padariaio.com.br${reqPath}`;
     } else if (reqPath.startsWith('/conteudos/')) {
       const artSlug = reqPath.replace('/conteudos/', '').replace(/\/$/, '');
       if (ARTICLES_DATA[artSlug]) {

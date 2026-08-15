@@ -139,24 +139,27 @@ export default function App() {
     );
   }
 
-  // Check if current route is a Public Party Order Page (/encomendas/:slug, /encomenda/:slug, /pedido-festa/:slug)
-  const isHashPartyOrder = typeof window !== 'undefined' && (
-    window.location.hash.startsWith('#/encomendas/') ||
-    window.location.hash.startsWith('#/encomenda/') || 
-    window.location.hash.startsWith('#/pedido-festa/')
-  );
+  // Check if current route is a Public Party Order Page (/cardapio/:slug, /kitfesta/:slug, /encomendas/:slug, /encomenda/:slug, /pedido-festa/:slug)
+  const partyPrefixes = ['cardapio', 'kitfesta', 'kit-festa', 'encomendas', 'encomenda', 'pedido-festa'];
+  const checkIsPartyRoute = (p: string) => {
+    const cleanP = p.replace(/^#/, '').replace(/^\//, '');
+    return partyPrefixes.some(prefix => cleanP === prefix || cleanP.startsWith(`${prefix}/`));
+  };
 
-  if (currentPath.startsWith('/encomendas/') || currentPath.startsWith('/encomenda/') || currentPath.startsWith('/pedido-festa/') || isHashPartyOrder) {
+  const isHashPartyOrder = typeof window !== 'undefined' && checkIsPartyRoute(window.location.hash);
+  const isPathPartyOrder = checkIsPartyRoute(currentPath);
+
+  if (isHashPartyOrder || isPathPartyOrder) {
     let partySlug = '';
-    if (isHashPartyOrder) {
-      partySlug = window.location.hash.replace(/^#\/(encomendas|encomenda|pedido-festa)\//, '').split('?')[0].replace(/\/$/, '');
-    } else {
-      partySlug = currentPath.replace(/^\/(encomendas|encomenda|pedido-festa)\//, '').split('?')[0].replace(/\/$/, '');
+    const rawTarget = isHashPartyOrder ? window.location.hash.replace(/^#/, '') : currentPath;
+    const parts = rawTarget.replace(/^\//, '').split('/');
+    if (parts.length > 1 && parts[1]) {
+      partySlug = parts[1].split('?')[0].replace(/\/$/, '');
     }
 
     return (
       <PublicPartyOrderPage
-        bakerySlug={partySlug}
+        bakerySlug={partySlug || undefined}
         onBackToApp={() => handleNavigate('app')}
       />
     );

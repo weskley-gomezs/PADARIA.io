@@ -502,6 +502,11 @@ export interface PartyBakeryPublicConfig {
   diasBloqueados?: string[];
   permiteEntrega?: boolean;
   permiteRetirada?: boolean;
+  opcoesMassaBolo?: string[];
+  opcoesRecheioBolo?: string[];
+  opcoesSalgados?: string[];
+  opcoesDocinhos?: string[];
+  personalizacaoBoloGlobal?: CakePersonalizationConfig;
   regras: PartyOrderRules;
   updatedAt: string;
 }

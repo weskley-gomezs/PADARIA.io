@@ -41,17 +41,44 @@ interface PublicPartyOrderPageProps {
   bakerySlug?: string;
   bakeryCode?: string;
   onBackToApp?: () => void;
+  overrideConfig?: PartyBakeryPublicConfig | null;
+  overrideKits?: PartyKit[];
+  isLivePreviewMode?: boolean;
+  previewDevice?: 'mobile' | 'desktop';
 }
 
 export const PublicPartyOrderPage: React.FC<PublicPartyOrderPageProps> = ({
   bakerySlug,
   bakeryCode: initialBakeryCode,
-  onBackToApp
+  onBackToApp,
+  overrideConfig,
+  overrideKits,
+  isLivePreviewMode = false,
+  previewDevice = 'mobile'
 }) => {
-  const [loading, setLoading] = useState(true);
-  const [config, setConfig] = useState<PartyBakeryPublicConfig | null>(null);
-  const [kits, setKits] = useState<PartyKit[]>([]);
-  const [resolvedBakeryCode, setResolvedBakeryCode] = useState<string | null>(initialBakeryCode || null);
+  const isMobileSim = isLivePreviewMode && previewDevice === 'mobile';
+  const [loading, setLoading] = useState(!overrideConfig);
+  const [config, setConfig] = useState<PartyBakeryPublicConfig | null>(overrideConfig || null);
+  const [kits, setKits] = useState<PartyKit[]>(overrideKits || []);
+  const [resolvedBakeryCode, setResolvedBakeryCode] = useState<string | null>(initialBakeryCode || overrideConfig?.bakeryCode || null);
+
+  // Sync if override props update in live editor mode
+  useEffect(() => {
+    if (overrideConfig) {
+      setConfig(overrideConfig);
+      setLoading(false);
+    }
+  }, [overrideConfig]);
+
+  useEffect(() => {
+    if (overrideKits) {
+      setKits(overrideKits);
+      if (overrideKits.length > 0 && (!selectedKit || !overrideKits.some(k => k.id === selectedKit.id))) {
+        setSelectedKit(overrideKits[0]);
+      }
+      setLoading(false);
+    }
+  }, [overrideKits]);
 
   // Stepper state
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
@@ -410,8 +437,9 @@ export const PublicPartyOrderPage: React.FC<PublicPartyOrderPageProps> = ({
     );
   }
 
-  const bakeryTitle = config?.nomeExibicao || 'Padaria & Confeitaria Artesanal';
-  const bakeryPhone = config?.telefoneWhatsapp || '11999999999';
+  const bakeryTitle = config?.nomeExibicao || config?.nomePublico || 'Padaria & Confeitaria Artesanal';
+  const bakeryLogo = config?.logoUrl;
+  const bakeryPhone = config?.telefoneWhatsapp || config?.whatsapp || '11999999999';
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-gray-900 pb-28">
@@ -420,9 +448,15 @@ export const PublicPartyOrderPage: React.FC<PublicPartyOrderPageProps> = ({
         <div className="max-w-3xl mx-auto px-4 py-6 sm:py-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/20 backdrop-blur-xs border border-white/30 flex items-center justify-center shadow-inner">
-                <Cake className="w-7 h-7 text-white" />
-              </div>
+              {bakeryLogo ? (
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white p-1 border border-white/40 shadow-md flex items-center justify-center shrink-0 overflow-hidden">
+                  <img src={bakeryLogo} alt={bakeryTitle} className="w-full h-full object-contain rounded-xl" />
+                </div>
+              ) : (
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/20 backdrop-blur-xs border border-white/30 flex items-center justify-center shadow-inner shrink-0">
+                  <Cake className="w-7 h-7 text-white" />
+                </div>
+              )}
               <div>
                 <span className="inline-block px-2.5 py-0.5 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-wider text-amber-100 mb-1">
                   Cardápio de Encomendas
@@ -566,7 +600,7 @@ export const PublicPartyOrderPage: React.FC<PublicPartyOrderPageProps> = ({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className={`grid gap-4 ${isMobileSim ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
                   {kits.map((kit) => {
                     const isSelected = selectedKit?.id === kit.id;
                     return (
@@ -578,40 +612,40 @@ export const PublicPartyOrderPage: React.FC<PublicPartyOrderPageProps> = ({
                         }`}
                       >
                         {/* Header Badge Strip without photo */}
-                        <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-gray-100 flex items-center justify-between">
-                          <span className="px-3 py-1 bg-white border border-gray-200 text-gray-800 rounded-full text-xs font-black flex items-center space-x-1.5 shadow-2xs">
-                            <Cake className="w-3.5 h-3.5 text-[#E8571A]" />
+                        <div className="p-3 sm:p-4 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-gray-100 flex items-center justify-between gap-2 flex-wrap">
+                          <span className="px-2.5 py-1 bg-white border border-gray-200 text-gray-800 rounded-full text-[11px] sm:text-xs font-black flex items-center space-x-1.5 shadow-2xs shrink-0">
+                            <Cake className="w-3.5 h-3.5 text-[#E8571A] shrink-0" />
                             <span>Serve ~{kit.quantidadePessoas} Pessoas</span>
                           </span>
 
                           {isSelected ? (
-                            <span className="px-3 py-1 bg-[#E8571A] text-white rounded-full text-xs font-black flex items-center space-x-1 shadow-xs">
-                              <Check className="w-3.5 h-3.5" />
+                            <span className="px-2.5 py-1 bg-[#E8571A] text-white rounded-full text-[11px] sm:text-xs font-black flex items-center space-x-1 shadow-xs shrink-0">
+                              <Check className="w-3.5 h-3.5 shrink-0" />
                               <span>Selecionado</span>
                             </span>
                           ) : (
-                            <span className="text-xs font-bold text-gray-400">
+                            <span className="text-[11px] sm:text-xs font-bold text-gray-400 shrink-0">
                               Clique p/ escolher
                             </span>
                           )}
                         </div>
 
-                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                        <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-3">
                           <div>
-                            <h3 className="text-base font-black text-gray-900 leading-tight">{kit.nome}</h3>
+                            <h3 className="text-sm sm:text-base font-black text-gray-900 leading-tight">{kit.nome}</h3>
                             <p className="text-xs text-gray-500 line-clamp-2 mt-1">{kit.descricao}</p>
 
                             <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-bold text-gray-600">
-                              <span className="px-2.5 py-1 bg-gray-100 rounded-lg">🎂 {kit.bolo.tamanhoDescricao}</span>
-                              <span className="px-2.5 py-1 bg-orange-50 text-orange-800 rounded-lg">🥟 {kit.salgados.quantidadeTotal} Salgados</span>
-                              <span className="px-2.5 py-1 bg-pink-50 text-pink-800 rounded-lg">🍬 {kit.docinhos.quantidadeTotal} Doces</span>
+                              <span className="px-2 py-0.5 bg-gray-100 rounded-lg">🎂 {kit.bolo.tamanhoDescricao}</span>
+                              <span className="px-2 py-0.5 bg-orange-50 text-orange-800 rounded-lg">🥟 {kit.salgados.quantidadeTotal} Salgados</span>
+                              <span className="px-2 py-0.5 bg-pink-50 text-pink-800 rounded-lg">🍬 {kit.docinhos.quantidadeTotal} Doces</span>
                             </div>
                           </div>
 
-                          <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
-                            <div>
+                          <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+                            <div className="shrink-0">
                               <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">A partir de</span>
-                              <span className="text-lg font-black text-[#E8571A]">
+                              <span className="text-base sm:text-lg font-black text-[#E8571A]">
                                 R$ {kit.precoBase.toFixed(2).replace('.', ',')}
                               </span>
                             </div>
@@ -622,14 +656,14 @@ export const PublicPartyOrderPage: React.FC<PublicPartyOrderPageProps> = ({
                                 setSelectedKit(kit);
                                 setStep(2);
                               }}
-                              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center space-x-1 cursor-pointer ${
+                              className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center space-x-1 shrink-0 cursor-pointer ${
                                 isSelected
                                   ? 'bg-[#E8571A] text-white shadow-xs'
                                   : 'bg-gray-900 hover:bg-black text-white'
                               }`}
                             >
                               <span>Personalizar</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
+                              <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                             </button>
                           </div>
                         </div>
@@ -1207,7 +1241,7 @@ export const PublicPartyOrderPage: React.FC<PublicPartyOrderPageProps> = ({
 
       {/* STICKY BOTTOM SUMMARY BAR */}
       {step !== 7 && selectedKit && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl p-3 sm:p-4">
+        <div className={`${isLivePreviewMode ? 'sticky bottom-0 z-40 shadow-lg p-3' : 'fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md shadow-2xl p-3 sm:p-4'} bg-white/95 border-t border-gray-200`}>
           <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
             <div>
               <p className="text-[11px] text-gray-500 font-medium truncate">

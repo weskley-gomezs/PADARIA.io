@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Cake,
   Utensils,
@@ -25,13 +25,20 @@ import {
   AlertCircle,
   Package,
   Layers,
-  ChefHat
+  ChefHat,
+  Smartphone,
+  Monitor,
+  Save,
+  X,
+  RefreshCw,
+  Upload
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { PartyKit, PartyOrder, PartyOrderStatus, PartyBakeryPublicConfig } from '../../types';
 import { PartyKitModal } from './PartyKitModal';
 import { PartyOrderDetailModal } from './PartyOrderDetailModal';
-import { generatePublicBakerySlug, createBakeryContactClientMessage, getDefaultPublicConfig } from '../../utils/partyOrderEngine';
+import { PublicPartyOrderPage } from './PublicPartyOrderPage';
+import { generatePublicBakerySlug, createBakeryContactClientMessage, getDefaultPublicConfig, getProductionOrderingUrl } from '../../utils/partyOrderEngine';
 
 interface PartyKitsSectionProps {
   onOpenPublicOrderView?: (slug: string) => void;
@@ -50,7 +57,7 @@ export const PartyKitsSection: React.FC<PartyKitsSectionProps> = ({ onOpenPublic
     savePartyPublicConfig
   } = useData();
 
-  const [activeTab, setActiveTab] = useState<'pedidos' | 'kits' | 'configuracoes'>('pedidos');
+  const [activeTab, setActiveTab] = useState<'pedidos' | 'kits' | 'cardapio_editor' | 'configuracoes'>('pedidos');
 
   // Modals
   const [isKitModalOpen, setIsKitModalOpen] = useState(false);
@@ -86,11 +93,158 @@ export const PartyKitsSection: React.FC<PartyKitsSectionProps> = ({ onOpenPublic
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const bakerySlug = useMemo(() => {
-    return partyPublicConfig?.slug || generatePublicBakerySlug(activeCompany?.empresa || 'padaria', activeCode || '01');
-  }, [partyPublicConfig, activeCompany, activeCode]);
+  // Custom Menu Editor States (Live Preview)
+  const [editorMassas, setEditorMassas] = useState<string[]>(
+    partyPublicConfig?.opcoesMassaBolo || [
+      'Massa Branca (Pão de Ló Tradicional)',
+      'Massa de Chocolate 50% Cacau',
+      'Massa Fofinha Amanteigada',
+      'Massa Red Velvet Velvet',
+      'Massa de Cenoura Especial'
+    ]
+  );
+  const [newMassaInput, setNewMassaInput] = useState('');
 
-  const publicUrl = `${window.location.origin}/#/encomenda/${bakerySlug}`;
+  const [editorRecheios, setEditorRecheios] = useState<string[]>(
+    partyPublicConfig?.opcoesRecheioBolo || [
+      'Brigadeiro Tradicional Gourmet',
+      'Ninho Cremoso com Morango',
+      'Doce de Leite com Nozes',
+      'Beijinho de Coco Fresco',
+      'Prestígio com Chocolate',
+      'Mousse de Maracujá',
+      'Nutella Pura',
+      'Abacaxi com Coco Artesanal',
+      'Dois Amores (Preto e Branco)'
+    ]
+  );
+  const [newRecheioInput, setNewRecheioInput] = useState('');
+
+  const [editorSalgados, setEditorSalgados] = useState<string[]>(
+    partyPublicConfig?.opcoesSalgados || [
+      'Coxinha de Frango com Catupiry',
+      'Kibe Tradicional com Hortelã',
+      'Bolinha de Queijo Crocante',
+      'Empadinha de Palmito Assada',
+      'Esfiha de Carne Temperada',
+      'Enroladinho de Salsicha',
+      'Risoles de Presunto e Queijo'
+    ]
+  );
+  const [newSalgadoInput, setNewSalgadoInput] = useState('');
+
+  const [editorDocinhos, setEditorDocinhos] = useState<string[]>(
+    partyPublicConfig?.opcoesDocinhos || [
+      'Brigadeiro Tradicional Gourmet',
+      'Beijinho de Coco Fresco',
+      'Cajuzinho com Amendoim',
+      'Bicho de Pé (Moranguinho)',
+      'Ninho com Nutella',
+      'Olho de Sogra'
+    ]
+  );
+  const [newDocinhoInput, setNewDocinhoInput] = useState('');
+
+  const [editorNome, setEditorNome] = useState(
+    partyPublicConfig?.nomeExibicao || partyPublicConfig?.nomePublico || activeCompany?.empresa || 'Minha Padaria'
+  );
+  const [editorLogoUrl, setEditorLogoUrl] = useState(
+    partyPublicConfig?.logoUrl || ''
+  );
+  const [editorMensagem, setEditorMensagem] = useState(
+    partyPublicConfig?.mensagemApresentacao || '🎉 Monte seu Kit Festa personalizado em poucos passos e receba tudo fresquinho para sua comemoração!'
+  );
+  const [editorWhatsapp, setEditorWhatsapp] = useState(
+    partyPublicConfig?.telefoneWhatsapp || partyPublicConfig?.whatsapp || activeCompany?.telefone || ''
+  );
+  const [editorSlug, setEditorSlug] = useState(
+    partyPublicConfig?.slug || generatePublicBakerySlug(activeCompany?.empresa || 'padaria')
+  );
+
+  const [previewDevice, setPreviewDevice] = useState<'mobile' | 'desktop'>('mobile');
+
+  // Sync editor values when server/context config arrives
+  useEffect(() => {
+    if (partyPublicConfig) {
+      if (partyPublicConfig.opcoesMassaBolo) setEditorMassas(partyPublicConfig.opcoesMassaBolo);
+      if (partyPublicConfig.opcoesRecheioBolo) setEditorRecheios(partyPublicConfig.opcoesRecheioBolo);
+      if (partyPublicConfig.opcoesSalgados) setEditorSalgados(partyPublicConfig.opcoesSalgados);
+      if (partyPublicConfig.opcoesDocinhos) setEditorDocinhos(partyPublicConfig.opcoesDocinhos);
+      if (partyPublicConfig.nomeExibicao || partyPublicConfig.nomePublico) {
+        setEditorNome(partyPublicConfig.nomeExibicao || partyPublicConfig.nomePublico || '');
+      }
+      if (partyPublicConfig.logoUrl !== undefined) {
+        setEditorLogoUrl(partyPublicConfig.logoUrl || '');
+      }
+      if (partyPublicConfig.mensagemApresentacao) setEditorMensagem(partyPublicConfig.mensagemApresentacao);
+      if (partyPublicConfig.telefoneWhatsapp || partyPublicConfig.whatsapp) {
+        setEditorWhatsapp(partyPublicConfig.telefoneWhatsapp || partyPublicConfig.whatsapp || '');
+      }
+      if (partyPublicConfig.slug) setEditorSlug(partyPublicConfig.slug);
+    }
+  }, [partyPublicConfig]);
+
+  const bakerySlug = useMemo(() => {
+    return editorSlug || partyPublicConfig?.slug || generatePublicBakerySlug(activeCompany?.empresa || 'padaria', activeCode || '01');
+  }, [editorSlug, partyPublicConfig, activeCompany, activeCode]);
+
+  const publicUrl = `https://padariaio.com.br/cardapio/${bakerySlug}`;
+  const localPublicUrl = `${window.location.origin}/#/cardapio/${bakerySlug}`;
+
+  // Reactive Live Preview Config
+  const livePreviewConfig = useMemo<PartyBakeryPublicConfig>(() => {
+    const base = partyPublicConfig || getDefaultPublicConfig(activeCode || '01', editorNome);
+    return {
+      ...base,
+      bakeryCode: activeCode || '01',
+      nomePublico: editorNome || 'Minha Padaria',
+      nomeExibicao: editorNome,
+      logoUrl: editorLogoUrl,
+      slug: generatePublicBakerySlug(editorSlug || 'padaria'),
+      whatsapp: editorWhatsapp,
+      telefoneWhatsapp: editorWhatsapp,
+      mensagemApresentacao: editorMensagem,
+      opcoesMassaBolo: editorMassas,
+      opcoesRecheioBolo: editorRecheios,
+      opcoesSalgados: editorSalgados,
+      opcoesDocinhos: editorDocinhos,
+      antecedenciaMinimaHoras: configAntecedencia,
+      taxaEntregaPadrao: configTaxaEntrega,
+      permiteEntrega: configPermiteEntrega,
+      permiteRetirada: configPermiteRetirada,
+      updatedAt: new Date().toISOString()
+    };
+  }, [
+    partyPublicConfig,
+    activeCode,
+    editorNome,
+    editorLogoUrl,
+    editorSlug,
+    editorWhatsapp,
+    editorMensagem,
+    editorMassas,
+    editorRecheios,
+    editorSalgados,
+    editorDocinhos,
+    configAntecedencia,
+    configTaxaEntrega,
+    configPermiteEntrega,
+    configPermiteRetirada
+  ]);
+
+  const handleSaveEditorConfig = async () => {
+    if (!activeCode) return;
+    setIsSavingConfig(true);
+    try {
+      await savePartyPublicConfig(livePreviewConfig);
+      alert('🎉 Cardápio público e tipos de recheio salvos com sucesso!');
+    } catch (err) {
+      console.error('Error saving editor config:', err);
+      alert('Erro ao salvar as alterações do cardápio.');
+    } finally {
+      setIsSavingConfig(false);
+    }
+  };
 
   // Filtered Orders
   const filteredOrders = useMemo(() => {
@@ -287,6 +441,21 @@ export const PartyKitsSection: React.FC<PartyKitsSectionProps> = ({ onOpenPublic
         >
           <Layers className="w-4 h-4" />
           <span>Cardápio de Kits ({partyKits.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('cardapio_editor')}
+          className={`pb-3 px-3 sm:px-4 text-xs sm:text-sm font-black border-b-2 transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap ${
+            activeTab === 'cardapio_editor'
+              ? 'border-[#E8571A] text-[#E8571A]'
+              : 'border-transparent text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          <Eye className="w-4 h-4 text-orange-600" />
+          <span>Editor do Cardápio & Visualização Ao Vivo</span>
+          <span className="px-1.5 py-0.5 bg-orange-100 text-[#E8571A] rounded-full text-[10px] font-black uppercase">
+            Ao Vivo
+          </span>
         </button>
 
         <button
@@ -649,7 +818,473 @@ export const PartyKitsSection: React.FC<PartyKitsSectionProps> = ({ onOpenPublic
         </div>
       )}
 
-      {/* TAB 3: CONFIGURAÇÕES DA PÁGINA PÚBLICA */}
+      {/* TAB 3: EDITOR DO CARDÁPIO & VISUALIZAÇÃO AO VIVO */}
+      {activeTab === 'cardapio_editor' && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-[#E8571A] text-white p-5 rounded-3xl shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center space-x-2">
+                <ChefHat className="w-6 h-6 text-amber-200" />
+                <h2 className="text-lg font-black">Editor de Opções do Cardápio & Preview Ao Vivo</h2>
+              </div>
+              <p className="text-xs text-amber-100 mt-1 max-w-2xl">
+                Personalize as massas de bolo, recheios, sabores de salgados e doces que os clientes verão ao pedir.
+                Veja o resultado em tempo real no simulador ao lado!
+              </p>
+            </div>
+
+            <button
+              onClick={handleSaveEditorConfig}
+              disabled={isSavingConfig}
+              className="px-5 py-3 bg-white text-gray-900 hover:bg-amber-50 rounded-2xl text-xs font-black shadow-lg transition-all flex items-center space-x-2 shrink-0 cursor-pointer disabled:opacity-50"
+            >
+              <Save className="w-4 h-4 text-[#E8571A]" />
+              <span>{isSavingConfig ? 'Salvando...' : 'Salvar Cardápio'}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* LEFT COLUMN: EDITORS (5 COLS ON LG) */}
+            <div className="lg:col-span-5 space-y-5">
+              
+              {/* Card 1: Identidade da Padaria e Link */}
+              <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-2xs space-y-4">
+                <div className="flex items-center space-x-2 border-b border-gray-100 pb-3">
+                  <Settings className="w-5 h-5 text-orange-600" />
+                  <h3 className="text-sm font-black text-gray-900">Identidade do Cardápio & Link</h3>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Nome Exibido no Cardápio</label>
+                  <input
+                    type="text"
+                    value={editorNome}
+                    onChange={(e) => setEditorNome(e.target.value)}
+                    placeholder="Ex: Padaria Doce Sabor"
+                    className="w-full px-3.5 py-2 rounded-xl border border-gray-300 text-xs font-bold text-gray-800 focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Logo da Padaria / Confeitaria</label>
+                  <div className="flex items-center space-x-3">
+                    {editorLogoUrl ? (
+                      <div className="relative w-14 h-14 rounded-2xl border-2 border-orange-200 bg-white p-1 shadow-xs shrink-0">
+                        <img src={editorLogoUrl} alt="Logo" className="w-full h-full object-contain rounded-xl" />
+                        <button
+                          type="button"
+                          onClick={() => setEditorLogoUrl('')}
+                          className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md transition-all cursor-pointer"
+                          title="Remover Logo"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center shrink-0">
+                        <Cake className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
+
+                    <div className="flex-1 space-y-1.5">
+                      <label className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-[#E8571A] border border-orange-200 rounded-xl text-xs font-bold cursor-pointer transition-colors">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Carregar Imagem do Logo</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              if (file.size > 3 * 1024 * 1024) {
+                                alert('A imagem do logo deve ter no máximo 3MB.');
+                                return;
+                              }
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                setEditorLogoUrl(reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+                      <input
+                        type="text"
+                        value={editorLogoUrl}
+                        onChange={(e) => setEditorLogoUrl(e.target.value)}
+                        placeholder="Ou cole a URL da imagem (http...)"
+                        className="w-full px-3 py-1 rounded-lg border border-gray-200 text-[11px] text-gray-700 focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Slug de Acesso no Link</label>
+                  <div className="flex items-center space-x-1 text-xs">
+                    <span className="text-gray-400 font-mono text-[11px] shrink-0">padariaio.com.br/cardapio/</span>
+                    <input
+                      type="text"
+                      value={editorSlug}
+                      onChange={(e) => setEditorSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                      className="w-full px-3 py-1.5 rounded-xl border border-gray-300 font-mono font-bold text-gray-900 focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Link público oficial: <span className="font-bold text-orange-600">https://padariaio.com.br/cardapio/{editorSlug}</span>
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">WhatsApp Oficial para Receber Pedidos</label>
+                  <input
+                    type="text"
+                    value={editorWhatsapp}
+                    onChange={(e) => setEditorWhatsapp(e.target.value)}
+                    placeholder="Ex: (11) 99999-8888"
+                    className="w-full px-3.5 py-2 rounded-xl border border-gray-300 text-xs font-bold text-gray-800 focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Mensagem de Boas-Vindas aos Clientes</label>
+                  <textarea
+                    rows={2}
+                    value={editorMensagem}
+                    onChange={(e) => setEditorMensagem(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-gray-300 text-xs text-gray-800 focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              {/* Card 2: Massas de Bolo */}
+              <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                  <div className="flex items-center space-x-2">
+                    <Cake className="w-4 h-4 text-amber-600" />
+                    <h3 className="text-xs font-black text-gray-900">Massas de Bolo Disponíveis ({editorMassas.length})</h3>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {editorMassas.map((massa) => (
+                    <span
+                      key={massa}
+                      className="px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold flex items-center space-x-1.5"
+                    >
+                      <span>{massa}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditorMassas(editorMassas.filter(i => i !== massa))}
+                        className="text-amber-500 hover:text-red-600 cursor-pointer"
+                        title="Remover"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={newMassaInput}
+                    onChange={(e) => setNewMassaInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newMassaInput.trim() && !editorMassas.includes(newMassaInput.trim())) {
+                          setEditorMassas([...editorMassas, newMassaInput.trim()]);
+                          setNewMassaInput('');
+                        }
+                      }
+                    }}
+                    placeholder="Adicionar massa (ex: Red Velvet, Cenoura)"
+                    className="flex-1 px-3 py-1.5 rounded-xl border border-gray-300 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newMassaInput.trim() && !editorMassas.includes(newMassaInput.trim())) {
+                        setEditorMassas([...editorMassas, newMassaInput.trim()]);
+                        setNewMassaInput('');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 3: Recheios de Bolo */}
+              <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    <h3 className="text-xs font-black text-gray-900">Recheios de Bolo Disponíveis ({editorRecheios.length})</h3>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
+                  {editorRecheios.map((recheio) => (
+                    <span
+                      key={recheio}
+                      className="px-2.5 py-1 bg-amber-50 text-amber-950 border border-amber-300 rounded-xl text-xs font-bold flex items-center space-x-1.5"
+                    >
+                      <span>{recheio}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditorRecheios(editorRecheios.filter(i => i !== recheio))}
+                        className="text-amber-600 hover:text-red-600 cursor-pointer"
+                        title="Remover"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={newRecheioInput}
+                    onChange={(e) => setNewRecheioInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newRecheioInput.trim() && !editorRecheios.includes(newRecheioInput.trim())) {
+                          setEditorRecheios([...editorRecheios, newRecheioInput.trim()]);
+                          setNewRecheioInput('');
+                        }
+                      }
+                    }}
+                    placeholder="Adicionar recheio (ex: Ninho com Nutella)"
+                    className="flex-1 px-3 py-1.5 rounded-xl border border-gray-300 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newRecheioInput.trim() && !editorRecheios.includes(newRecheioInput.trim())) {
+                        setEditorRecheios([...editorRecheios, newRecheioInput.trim()]);
+                        setNewRecheioInput('');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 4: Sabores de Salgados */}
+              <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                  <div className="flex items-center space-x-2">
+                    <Utensils className="w-4 h-4 text-orange-600" />
+                    <h3 className="text-xs font-black text-gray-900">Sabores de Salgados ({editorSalgados.length})</h3>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
+                  {editorSalgados.map((salgado) => (
+                    <span
+                      key={salgado}
+                      className="px-2.5 py-1 bg-orange-50 text-orange-900 border border-orange-200 rounded-xl text-xs font-bold flex items-center space-x-1.5"
+                    >
+                      <span>{salgado}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditorSalgados(editorSalgados.filter(i => i !== salgado))}
+                        className="text-orange-500 hover:text-red-600 cursor-pointer"
+                        title="Remover"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={newSalgadoInput}
+                    onChange={(e) => setNewSalgadoInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newSalgadoInput.trim() && !editorSalgados.includes(newSalgadoInput.trim())) {
+                          setEditorSalgados([...editorSalgados, newSalgadoInput.trim()]);
+                          setNewSalgadoInput('');
+                        }
+                      }
+                    }}
+                    placeholder="Adicionar salgado (ex: Coxinha de Carne)"
+                    className="flex-1 px-3 py-1.5 rounded-xl border border-gray-300 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newSalgadoInput.trim() && !editorSalgados.includes(newSalgadoInput.trim())) {
+                        setEditorSalgados([...editorSalgados, newSalgadoInput.trim()]);
+                        setNewSalgadoInput('');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-[#E8571A] hover:bg-orange-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 5: Sabores de Docinhos */}
+              <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                  <div className="flex items-center space-x-2">
+                    <Candy className="w-4 h-4 text-pink-600" />
+                    <h3 className="text-xs font-black text-gray-900">Sabores de Docinhos ({editorDocinhos.length})</h3>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
+                  {editorDocinhos.map((docinho) => (
+                    <span
+                      key={docinho}
+                      className="px-2.5 py-1 bg-pink-50 text-pink-900 border border-pink-200 rounded-xl text-xs font-bold flex items-center space-x-1.5"
+                    >
+                      <span>{docinho}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditorDocinhos(editorDocinhos.filter(i => i !== docinho))}
+                        className="text-pink-500 hover:text-red-600 cursor-pointer"
+                        title="Remover"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={newDocinhoInput}
+                    onChange={(e) => setNewDocinhoInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newDocinhoInput.trim() && !editorDocinhos.includes(newDocinhoInput.trim())) {
+                          setEditorDocinhos([...editorDocinhos, newDocinhoInput.trim()]);
+                          setNewDocinhoInput('');
+                        }
+                      }
+                    }}
+                    placeholder="Adicionar docinho (ex: Bicho de Pé)"
+                    className="flex-1 px-3 py-1.5 rounded-xl border border-gray-300 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newDocinhoInput.trim() && !editorDocinhos.includes(newDocinhoInput.trim())) {
+                        setEditorDocinhos([...editorDocinhos, newDocinhoInput.trim()]);
+                        setNewDocinhoInput('');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Botão de Salvar Tudo */}
+              <button
+                type="button"
+                onClick={handleSaveEditorConfig}
+                disabled={isSavingConfig}
+                className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-[#E8571A] text-white rounded-2xl text-xs font-black shadow-md hover:opacity-95 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                <span>{isSavingConfig ? 'Salvando...' : 'Salvar Alterações no Cardápio'}</span>
+              </button>
+
+            </div>
+
+            {/* RIGHT COLUMN: LIVE SIMULATOR / PREVIEW (7 COLS ON LG) */}
+            <div className="lg:col-span-7 sticky top-4 space-y-3">
+              <div className="bg-gray-900 text-white p-3.5 rounded-2xl flex items-center justify-between shadow-md text-xs">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="font-extrabold">Simulador do Cardápio Público</span>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <div className="flex bg-gray-800 p-1 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDevice('mobile')}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer ${
+                        previewDevice === 'mobile' ? 'bg-[#E8571A] text-white' : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                      <span>Celular</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDevice('desktop')}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer ${
+                        previewDevice === 'desktop' ? 'bg-[#E8571A] text-white' : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      <Monitor className="w-3.5 h-3.5" />
+                      <span>Expandido</span>
+                    </button>
+                  </div>
+
+                  <a
+                    href={localPublicUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors cursor-pointer flex items-center justify-center"
+                    title="Abrir em Nova Aba"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+
+              {/* FRAME WRAPPER */}
+              <div className="bg-gray-100 p-2 sm:p-4 rounded-3xl border border-gray-300 shadow-inner min-h-[600px] flex items-center justify-center">
+                <div
+                  className={`w-full transition-all duration-300 relative ${
+                    previewDevice === 'mobile'
+                      ? 'max-w-[400px] mx-auto border-[10px] border-slate-900 rounded-[40px] shadow-2xl overflow-y-auto max-h-[700px] bg-white my-2'
+                      : 'w-full rounded-2xl border border-gray-200 shadow-md overflow-y-auto max-h-[750px] bg-white'
+                  }`}
+                >
+                  <PublicPartyOrderPage
+                    bakerySlug={editorSlug}
+                    bakeryCode={activeCode || undefined}
+                    overrideConfig={livePreviewConfig}
+                    overrideKits={partyKits}
+                    isLivePreviewMode={true}
+                    previewDevice={previewDevice}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: CONFIGURAÇÕES DA PÁGINA PÚBLICA */}
       {activeTab === 'configuracoes' && (
         <form onSubmit={handleSavePublicConfig} className="bg-white rounded-3xl p-6 border border-gray-200 shadow-2xs space-y-5 max-w-2xl">
           <div className="border-b border-gray-100 pb-3">
