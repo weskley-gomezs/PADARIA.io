@@ -96,11 +96,28 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
         body: JSON.stringify({ imageBase64 }),
       });
 
-      const data = await response.json();
-
+      const contentType = response.headers.get('content-type') || '';
       if (!response.ok) {
-        throw new Error(data.details || data.error || 'Erro ao analisar imagem.');
+        let errorMessage = 'Erro ao analisar imagem.';
+        if (contentType.includes('application/json')) {
+          try {
+            const errData = await response.json();
+            errorMessage = errData.details || errData.error || errorMessage;
+          } catch (_) {}
+        } else {
+          const rawText = await response.text();
+          console.error('[SCANNER] Non-JSON error response:', rawText);
+        }
+        throw new Error(errorMessage);
       }
+
+      if (!contentType.includes('application/json')) {
+        const rawText = await response.text();
+        console.error('[SCANNER] Non-JSON success response:', rawText);
+        throw new Error('O servidor retornou uma resposta inválida (HTML/Texto) em vez de JSON.');
+      }
+
+      const data = await response.json();
 
       const valDate = data.dataValidade || '';
       const daysRemaining = valDate ? calculateDaysRemaining(valDate) : undefined;

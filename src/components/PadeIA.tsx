@@ -409,6 +409,11 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar voc√™ a tomar decis√
               })
             });
 
+            const contentType = res.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+              throw new Error('Resposta inv√°lida do servidor (formato HTML/Texto).');
+            }
+
             const data = await res.json();
             if (res.ok && data.text) {
               const textResult = data.text.trim();
@@ -558,6 +563,12 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar voc√™ a tomar decis√
         throw new Error(errorMessage);
       }
 
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('[PADEIA] Non-JSON success response:', text);
+        throw new Error('O servidor respondeu com formato inv√°lido (HTML/Texto) em vez de JSON.');
+      }
+
       data = await response.json();
 
       const rawReply = data.reply || 'N√£o consegui obter uma resposta no momento. Tente novamente.';
@@ -657,7 +668,7 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar voc√™ a tomar decis√
   const isBelowCost = promoPrice < numCost;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col h-[calc(100dvh-130px)] sm:h-[750px] w-full max-w-full box-border">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)] sm:h-[750px] min-h-[500px] w-full max-w-full box-border">
       {/* MOBILE APP HEADER */}
       <div className="sm:hidden bg-[#111111] text-white p-3.5 flex items-center justify-between border-b border-gray-800 shrink-0">
         <div className="flex items-center space-x-3 min-w-0">
@@ -770,7 +781,7 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar voc√™ a tomar decis√
 
       {/* TAB 1: CHAT INTELIGENTE */}
       {activeTab === 'chat' && (
-        <div className="flex-1 flex flex-col justify-between bg-gray-50/50 w-full max-w-full">
+        <div className="flex-1 flex flex-col justify-between bg-gray-50/50 w-full max-w-full min-h-0 overflow-hidden">
           {/* Quick Questions & Voice Action Chips */}
           <div className="p-2.5 sm:p-3 bg-white border-b border-gray-100 flex items-center gap-2 overflow-x-auto no-scrollbar w-full max-w-full">
             {/* PROMINENT VOICE BUTTON */}
@@ -806,7 +817,10 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar voc√™ a tomar decis√
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-3 sm:p-6 overflow-y-auto space-y-3.5 sm:space-y-4 min-h-0 w-full max-w-full box-border">
+          <div 
+            className="flex-1 p-3 sm:p-6 overflow-y-auto space-y-3.5 sm:space-y-4 min-h-0 w-full max-w-full box-border overscroll-y-contain"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -1126,7 +1140,7 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar voc√™ a tomar decis√
 
       {/* TAB 2: RESUMO & INDICADORES (KPI DASHBOARD) */}
       {activeTab === 'resumo' && (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="flex-1 p-4 sm:p-6 space-y-6 overflow-y-auto min-h-0">
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
               <h3 className="text-base sm:text-lg font-black text-[#1F2937] flex items-center space-x-2">
@@ -1244,7 +1258,7 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar voc√™ a tomar decis√
 
       {/* TAB 3: PRECIFICA√á√ÉO INTELIGENTE */}
       {activeTab === 'precificacao' && (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="flex-1 p-4 sm:p-6 space-y-6 overflow-y-auto min-h-0">
           <div className="border-b border-gray-100 pb-3">
             <h3 className="text-base sm:text-lg font-black text-[#1F2937] flex items-center space-x-2">
               <Calculator className="w-5 h-5 text-[#FF6B00]" />
@@ -1367,7 +1381,7 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar voc√™ a tomar decis√
 
       {/* TAB 4: ALERTAS INTELIGENTES */}
       {activeTab === 'alertas' && (
-        <div className="p-4 sm:p-6 space-y-4">
+        <div className="flex-1 p-4 sm:p-6 space-y-4 overflow-y-auto min-h-0">
           <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
             <div>
               <h3 className="text-base sm:text-lg font-black text-[#1F2937] flex items-center space-x-2">
