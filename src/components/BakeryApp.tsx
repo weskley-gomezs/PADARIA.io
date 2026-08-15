@@ -41,6 +41,7 @@ import {
   Scale,
   UserCheck,
   Layers,
+  Cake,
   Activity,
   Folder
 } from 'lucide-react';
@@ -65,6 +66,7 @@ import { OwnerSummaryDashboard } from './OwnerSummaryDashboard';
 import { TeamRoutineSection } from './TeamRoutineSection';
 import { DivergencesSection } from './DivergencesSection';
 import { CategorySettings } from './CategorySettings';
+import { PartyKitsSection } from './party/PartyKitsSection';
 
 interface BakeryAppProps {
   presetCode?: string | null;
@@ -79,6 +81,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
     categories,
     salesHistory,
     vipOffers,
+    newPartyOrdersCount,
     setActiveCode,
     loginAsBakeryWithCredentials,
     addProduct,
@@ -103,7 +106,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'summary' | 'divergences' | 'routine' | 'stock' | 'dashboard' | 'vip' | 'padeia' | 'relatorio' | 'config'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'divergences' | 'routine' | 'party' | 'stock' | 'dashboard' | 'vip' | 'padeia' | 'relatorio' | 'config'>('summary');
 
   useEffect(() => {
     const handleOpenPadeia = () => setActiveTab('padeia');
@@ -768,7 +771,24 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           <span>Rotinas da Equipe</span>
         </button>
 
-        {/* 4. Controle de Estoque */}
+        {/* 4. Kit Festa & Encomendas */}
+        <button
+          id="tab-btn-party"
+          onClick={() => setActiveTab('party')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+            activeTab === 'party' ? 'bg-[#E8571A] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+          }`}
+        >
+          <Cake className={`w-3.5 h-3.5 ${activeTab === 'party' ? 'text-amber-200' : 'text-[#E8571A]'}`} />
+          <span>Kit Festa</span>
+          {newPartyOrdersCount > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-400 text-gray-950 animate-pulse">
+              {newPartyOrdersCount} novo{newPartyOrdersCount > 1 ? 's' : ''}
+            </span>
+          )}
+        </button>
+
+        {/* 5. Controle de Estoque */}
         <button
           id="tab-btn-stock"
           onClick={() => setActiveTab('stock')}
@@ -865,6 +885,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
       )}
 
       {activeTab === 'routine' && <TeamRoutineSection />}
+
+      {activeTab === 'party' && <PartyKitsSection />}
 
       {activeTab === 'stock' && <StockControl />}
 

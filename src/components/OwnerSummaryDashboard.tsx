@@ -41,6 +41,7 @@ export const OwnerSummaryDashboard: React.FC<OwnerSummaryDashboardProps> = ({
     stockCounts,
     inventoryMovements,
     operationalTasks,
+    newPartyOrdersCount,
     activeCompany,
     activeCode,
     toggleOperationalTask
@@ -137,6 +138,17 @@ export const OwnerSummaryDashboard: React.FC<OwnerSummaryDashboardProps> = ({
     }> = [];
 
     // Critical Divergences alert
+    if (newPartyOrdersCount > 0) {
+      alerts.push({
+        id: 'party-orders-alert',
+        title: `${newPartyOrdersCount} nova(s) encomenda(s) de Kit Festa recebida(s)`,
+        subtitle: `Verifique os detalhes, confirme os pedidos e encaminhe para a esteira de produção.`,
+        level: 'atencao',
+        actionLabel: 'Ver Encomendas',
+        targetTab: 'party'
+      });
+    }
+
     if (recentDivergences.length > 0) {
       const highestDiv = [...recentDivergences].sort((a, b) => Math.abs(b.varianceValue || 0) - Math.abs(a.varianceValue || 0))[0];
       alerts.push({
@@ -196,7 +208,8 @@ export const OwnerSummaryDashboard: React.FC<OwnerSummaryDashboardProps> = ({
     totalExpiredLossValue,
     expiringProducts,
     totalExpiringAtRiskValue,
-    pendingTodayTasks
+    pendingTodayTasks,
+    newPartyOrdersCount
   ]);
 
   // ----------------------------------------------------

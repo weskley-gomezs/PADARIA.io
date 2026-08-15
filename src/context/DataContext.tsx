@@ -22,7 +22,11 @@ import {
   OperationalTask,
   TaskShift,
   TaskStatus,
-  TaskCategory
+  TaskCategory,
+  PartyKit,
+  PartyOrder,
+  PartyOrderStatus,
+  PartyBakeryPublicConfig
 } from '../types';
 import { Unsubscribe } from 'firebase/firestore';
 import { formatDateToISO } from '../utils/dateUtils';
@@ -52,6 +56,10 @@ interface DataContextType {
   stockCounts: StockCount[];
   inventoryItems: InventoryItem[];
   operationalTasks: OperationalTask[];
+  partyKits: PartyKit[];
+  partyOrders: PartyOrder[];
+  partyPublicConfig: PartyBakeryPublicConfig | null;
+  newPartyOrdersCount: number;
   isAdminLoggedIn: boolean;
   isLoading: boolean;
   authUser: any;
@@ -190,6 +198,13 @@ interface DataContextType {
   toggleOperationalTask: (id: string, completedBy?: string, notes?: string) => Promise<OperationalTask | null>;
   deleteOperationalTask: (id: string) => Promise<void>;
 
+  // Party Orders & Kits (Encomendas de Kit Festa)
+  savePartyKit: (kit: PartyKit) => Promise<PartyKit>;
+  deletePartyKit: (id: string) => Promise<void>;
+  savePartyOrder: (order: PartyOrder) => Promise<PartyOrder>;
+  updatePartyOrderStatus: (id: string, status: PartyOrderStatus, changedBy?: string, nota?: string) => Promise<PartyOrder | null>;
+  savePartyPublicConfig: (config: PartyBakeryPublicConfig) => Promise<PartyBakeryPublicConfig>;
+
   // Admin company actions
   addCompany: (
     empresa: string,
@@ -237,6 +252,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [stockCounts, setStockCounts] = useState<StockCount[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [operationalTasks, setOperationalTasks] = useState<OperationalTask[]>([]);
+  const [partyKits, setPartyKits] = useState<PartyKit[]>([]);
+  const [partyOrders, setPartyOrders] = useState<PartyOrder[]>([]);
+  const [partyPublicConfig, setPartyPublicConfig] = useState<PartyBakeryPublicConfig | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
   const [authUser, setAuthUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -431,6 +449,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Trigger server-side pull for other items immediately upon change
       refreshTenantData(activeCode, true);
+
+      // Party Kits, Orders, and Config Subscriptions
+      try {
+        const unsubKits = StorageService.subscribePartyKits(activeCode, (kits) => {
+          setPartyKits(kits);
+        });
+        unsubs.push(unsubKits);
+
+        const unsubOrders = StorageService.subscribePartyOrders(activeCode, (orders) => {
+          setPartyOrders(orders);
+        });
+        unsubs.push(unsubOrders);
+
+        const unsubConfig = StorageService.subscribePartyPublicConfig(activeCode, (conf) => {
+          setPartyPublicConfig(conf);
+        });
+        unsubs.push(unsubConfig);
+      } catch (err) {
+        console.warn('Error subscribing to party items:', err);
+      }
     } else {
       setActiveCompany(null);
       setProducts([]);
@@ -442,6 +480,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setStockCounts([]);
       setInventoryItems([]);
       setOperationalTasks([]);
+      setPartyKits([]);
+      setPartyOrders([]);
+      setPartyPublicConfig(null);
     }
 
     return () => {
@@ -1478,6 +1519,61 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
+  // Party Kits, Orders, and Config Actions
+  const savePartyKit = async (kit: PartyKit): Promise<PartyKit> => {
+    const saved = await StorageService.savePartyKit(kit);
+    setPartyKits((prev) => {
+      const idx = prev.findIndex((k) => k.id === saved.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = saved;
+        return copy;
+      }
+      return [saved, ...prev];
+    });
+    return saved;
+  };
+
+  const deletePartyKit = async (id: string): Promise<void> => {
+    await StorageService.deletePartyKit(id);
+    setPartyKits((prev) => prev.filter((k) => k.id !== id));
+  };
+
+  const savePartyOrder = async (order: PartyOrder): Promise<PartyOrder> => {
+    const saved = await StorageService.savePartyOrder(order);
+    setPartyOrders((prev) => {
+      const idx = prev.findIndex((o) => o.id === saved.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = saved;
+        return copy;
+      }
+      return [saved, ...prev];
+    });
+    return saved;
+  };
+
+  const updatePartyOrderStatus = async (
+    id: string,
+    status: PartyOrderStatus,
+    changedBy?: string,
+    nota?: string
+  ): Promise<PartyOrder | null> => {
+    const updated = await StorageService.updatePartyOrderStatus(id, status, changedBy, nota);
+    if (updated) {
+      setPartyOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
+    }
+    return updated;
+  };
+
+  const savePartyPublicConfig = async (config: PartyBakeryPublicConfig): Promise<PartyBakeryPublicConfig> => {
+    const saved = await StorageService.savePartyPublicConfig(config);
+    setPartyPublicConfig(saved);
+    return saved;
+  };
+
+  const newPartyOrdersCount = partyOrders.filter((o) => o.status === 'NOVO').length;
+
   return (
     <DataContext.Provider
       value={{
@@ -1493,6 +1589,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         stockCounts,
         inventoryItems,
         operationalTasks,
+        partyKits,
+        partyOrders,
+        partyPublicConfig,
+        newPartyOrdersCount,
         isAdminLoggedIn,
         isLoading,
         authUser,
@@ -1535,6 +1635,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateOperationalTask,
         toggleOperationalTask,
         deleteOperationalTask,
+
+        // Party Kits & Orders Actions
+        savePartyKit,
+        deletePartyKit,
+        savePartyOrder,
+        updatePartyOrderStatus,
+        savePartyPublicConfig,
 
         addCompany,
         toggleCompanyStatus,

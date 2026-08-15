@@ -310,6 +310,202 @@ export interface OperationalTask {
   priority: 'baixa' | 'media' | 'alta' | 'urgente';
 }
 
+// ==========================================
+// MÓDULO DE ENCOMENDAS DE KIT FESTA
+// ==========================================
+
+export type PartyKitStatus = 'rascunho' | 'publicado' | 'pausado' | 'arquivado';
+export type DistributionType = 'equal' | 'free' | 'min_per_flavor';
+
+export interface CakePersonalizationConfig {
+  allowTheme: boolean;
+  allowColor: boolean;
+  allowName: boolean;
+  nameRequired?: boolean;
+  allowAge: boolean;
+  ageRequired?: boolean;
+  allowMessage: boolean;
+  allowDetails: boolean;
+  allowWhatsAppInspiration: boolean;
+  allowMassaChoice?: boolean;
+}
+
+export interface PartyKitAddon {
+  id: string;
+  nome: string;
+  descricao?: string;
+  preco: number;
+  ativo: boolean;
+  imagemUrl?: string;
+}
+
+export interface PartyKit {
+  id: string;
+  bakeryCode: string;
+  nome: string;
+  descricao: string;
+  fotoPrincipal?: string;
+  galeria?: string[];
+  precoBase: number;
+  quantidadePessoas: number;
+  status: PartyKitStatus;
+  bolo: {
+    tamanhoDescricao: string; // e.g. "Bolo de 1.5kg (aprox. 15 a 20 fatias)"
+    maxRecheios: number; // e.g. 1 ou 2
+    recheiosDisponiveis: string[];
+    opcoesMassa?: string[]; // e.g. ["Massa Branca (Pão de Ló)", "Massa de Chocolate 50%"]
+    personalizacao: CakePersonalizationConfig;
+  };
+  salgados: {
+    quantidadeTotal: number; // e.g. 50, 100, 150
+    maxSabores: number; // e.g. 2, 3, 4
+    regraDistribuicao: DistributionType; // 'equal' | 'free' | 'min_per_flavor'
+    minimoPorSabor?: number; // e.g. 25
+    saboresDisponiveis: string[];
+  };
+  docinhos: {
+    quantidadeTotal: number; // e.g. 25, 50, 100
+    maxSabores: number; // e.g. 2, 4
+    regraDistribuicao: DistributionType; // 'equal' | 'free' | 'min_per_flavor'
+    minimoPorSabor?: number; // e.g. 25
+    saboresDisponiveis: string[];
+  };
+  adicionais: PartyKitAddon[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PartyOrderOptionItem {
+  sabor: string;
+  quantidade: number;
+}
+
+export type FlavorDistributionItem = PartyOrderOptionItem;
+
+export interface PartyOrderChosenAddon {
+  id: string;
+  nome: string;
+  preco: number;
+  quantidade: number;
+}
+
+export type PartyOrderStatus = 
+  | 'NOVO' 
+  | 'EM_ANALISE' 
+  | 'CONFIRMADO' 
+  | 'EM_PRODUCAO' 
+  | 'PRONTO' 
+  | 'ENTREGUE' 
+  | 'RETIRADO' 
+  | 'CANCELADO';
+
+export interface PartyOrderStatusHistory {
+  status: PartyOrderStatus;
+  changedAt: string; // ISO string
+  changedBy?: string;
+  nota?: string;
+}
+
+export interface PartyOrder {
+  id: string; // PED-YYYYMMDD-XXXX ou PD-000123
+  numeroPedidoFormatado?: string;
+  bakeryCode: string;
+  kitId: string;
+  kitNome: string;
+  precoBase: number;
+  valorAdicionais: number;
+  taxaEntrega?: number;
+  valorTotal: number;
+  bolo: {
+    massa?: string;
+    recheiosEscolhidos: string[];
+    publicoAlvo?: string;
+    tema?: string;
+    cor?: string;
+    corPersonalizada?: string;
+    nomeAniversariante?: string;
+    idadeAniversariante?: number;
+    mensagem?: string;
+    detalhesEspeciais?: string;
+    enviaraInspiracaoWhatsApp: boolean;
+  };
+  salgados: {
+    distribuicao: PartyOrderOptionItem[];
+    total: number;
+  };
+  docinhos: {
+    distribuicao: PartyOrderOptionItem[];
+    total: number;
+  };
+  adicionaisEscolhidos: PartyOrderChosenAddon[];
+  cliente: {
+    nome: string;
+    whatsapp: string;
+    email?: string;
+    observacoes?: string;
+    tipoEntrega: 'retirada' | 'entrega';
+    enderecoEntrega?: string;
+  };
+  agendamento: {
+    data: string; // YYYY-MM-DD
+    horario: string; // HH:mm
+  };
+  status: PartyOrderStatus;
+  statusHistory: PartyOrderStatusHistory[];
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+}
+
+export interface PartyOrderRules {
+  antecedenciaMinimaDias: number; // 1, 2, 3, 5, 7
+  horarioLimite: string; // "18:00"
+  diasDisponiveis: {
+    segunda: boolean;
+    terca: boolean;
+    quarta: boolean;
+    quinta: boolean;
+    sexta: boolean;
+    sabado: boolean;
+    domingo: boolean;
+  };
+  horariosRetirada: string[]; // ["10:00", "12:00", "14:00", "16:00", "18:00"]
+  maxPedidosPorDia: number; // e.g. 15
+  permitirEntrega: boolean;
+}
+
+export interface PartyBakeryPublicConfig {
+  bakeryCode: string;
+  slug: string; // unique slug e.g. "padaria-do-joao"
+  nomePublico: string;
+  nomeExibicao?: string;
+  logoUrl?: string;
+  capaUrl?: string;
+  descricao: string;
+  telefone: string;
+  whatsapp: string;
+  telefoneWhatsapp?: string;
+  endereco: string;
+  horarioFuncionamento: string;
+  instagram?: string;
+  mensagemApresentacao: string;
+  paginaAtiva: boolean;
+  ativo?: boolean;
+  exibirEndereco: boolean;
+  exibirTelefone: boolean;
+  exibirWhatsApp: boolean;
+  exibirInstagram: boolean;
+  antecedenciaMinimaHoras?: number;
+  taxaEntregaPadrao?: number;
+  valorMinimoEntregaGratis?: number;
+  regioesAtendidas?: string;
+  observacoesEntrega?: string;
+  diasBloqueados?: string[];
+  permiteEntrega?: boolean;
+  permiteRetirada?: boolean;
+  regras: PartyOrderRules;
+  updatedAt: string;
+}
+
 
 
 

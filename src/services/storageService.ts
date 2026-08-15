@@ -1,5 +1,6 @@
-import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing, InventoryMovement, StockCount, MovementType, InventoryItem, OperationalTask, TaskShift, TaskStatus, TaskCategory } from '../types/index.js';
+import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, AdminStats, SupportTicket, TicketPriority, TicketStatus, FinancialStats, BillingInfo, BillingStatus, ContractInfo, VipOffer, DailyClosing, InventoryMovement, StockCount, MovementType, InventoryItem, OperationalTask, TaskShift, TaskStatus, TaskCategory, PartyKit, PartyOrder, PartyOrderStatus, PartyBakeryPublicConfig } from '../types/index.js';
 import { calculateDaysRemaining, getProductStatus, formatDateToISO, generateActivationCode } from '../utils/dateUtils.js';
+import { getDefaultPublicConfig, generatePartyOrderId, calculateOrderPrice } from '../utils/partyOrderEngine.js';
 import { db, auth, testFirestoreConnection } from './firebase.js';
 import { signInAnonymously } from 'firebase/auth';
 import { collection, doc, getDocs, setDoc, deleteDoc, getDoc, onSnapshot, Unsubscribe, query, where } from 'firebase/firestore';
@@ -34,6 +35,9 @@ const KEYS = {
   STOCK_COUNTS: 'padarias_stock_counts_v1',
   INVENTORY_ITEMS: 'padarias_inventory_items_v1',
   OPERATIONAL_TASKS: 'padarias_operational_tasks_v1',
+  PARTY_KITS: 'padarias_party_kits_v1',
+  PARTY_ORDERS: 'padarias_party_orders_v1',
+  PARTY_PUBLIC_CONFIGS: 'padarias_party_public_configs_v1',
 };
 
 const EXCLUDED_CODES = ['AB12CD34', 'PAD8X92M', 'DEMO9999', '6SSHQQTZ', '8FM8XCN6', 'CAVU5FKP'];
@@ -2629,5 +2633,519 @@ export class StorageService {
         console.warn('Warning deleting operational task from Firestore:', e);
       });
     }
+  }
+
+  // ==========================================
+  // MÓDULO DE ENCOMENDAS DE KIT FESTA
+  // ==========================================
+
+  static getDefaultPartyKits(bakeryCode: string): PartyKit[] {
+    const now = new Date().toISOString();
+    return [
+      {
+        id: `kit-familia-${bakeryCode}`,
+        bakeryCode,
+        nome: 'Kit Festa Família (15 a 20 Pessoas)',
+        descricao: 'Perfeito para reuniões familiares e aniversários intimistas. Bolo artesanal decorado, salgadinhos fritos quentinhos e docinhos enrolados à mão.',
+        fotoPrincipal: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?w=600&auto=format&fit=crop&q=80',
+        galeria: [
+          'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=600&auto=format&fit=crop&q=80'
+        ],
+        precoBase: 190.0,
+        quantidadePessoas: 15,
+        status: 'publicado',
+        bolo: {
+          tamanhoDescricao: 'Bolo Artesanal 1.5kg (aprox. 15 fatias generosas)',
+          maxRecheios: 2,
+          recheiosDisponiveis: [
+            'Brigadeiro Tradicional',
+            'Ninho Suave',
+            'Morango Fresco com Creme',
+            'Prestígio Cremoso',
+            'Dois Amores (Preto e Branco)',
+            'Abacaxi com Coco Artesanal'
+          ],
+          personalizacao: {
+            allowTheme: true,
+            allowColor: true,
+            allowName: true,
+            nameRequired: true,
+            allowAge: true,
+            ageRequired: false,
+            allowMessage: true,
+            allowDetails: true,
+            allowWhatsAppInspiration: true,
+          },
+        },
+        salgados: {
+          quantidadeTotal: 60,
+          maxSabores: 3,
+          regraDistribuicao: 'min_per_flavor',
+          minimoPorSabor: 20,
+          saboresDisponiveis: [
+            'Coxinha de Frango com Catupiry',
+            'Bolinha de Queijo Crocante',
+            'Kibe Tradicional com Hortelã',
+            'Risoles de Presunto e Queijo',
+            'Enroladinho de Salsicha',
+            'Empadinha de Frango Assada'
+          ],
+        },
+        docinhos: {
+          quantidadeTotal: 30,
+          maxSabores: 2,
+          regraDistribuicao: 'min_per_flavor',
+          minimoPorSabor: 15,
+          saboresDisponiveis: [
+            'Brigadeiro Tradicional Gourmet',
+            'Beijinho de Coco Fresco',
+            'Cajuzinho com Amendoim Torrado',
+            'Ninho com Nutella'
+          ],
+        },
+        adicionais: [
+          {
+            id: 'add-vela',
+            nome: 'Vela Faísca Vulcânica / Estrela',
+            descricao: 'Efeito luminoso para o momento do Parabéns',
+            preco: 15.0,
+            ativo: true,
+          },
+          {
+            id: 'add-topo',
+            nome: 'Topo de Bolo Personalizado com Nome',
+            descricao: 'Acabamento em papel fotográfico brilhante com o tema escolhido',
+            preco: 28.0,
+            ativo: true,
+          },
+          {
+            id: 'add-refri-coca',
+            nome: 'Refrigerante Coca-Cola 2L (Gelada)',
+            descricao: 'Garrafa 2 Litros gelada',
+            preco: 14.0,
+            ativo: true,
+          },
+          {
+            id: 'add-refri-guarana',
+            nome: 'Refrigerante Guaraná Antarctica 2L (Gelado)',
+            descricao: 'Garrafa 2 Litros gelada',
+            preco: 12.0,
+            ativo: true,
+          },
+          {
+            id: 'add-salgados-extras',
+            nome: 'Cento Extra de Salgados (50 unidades)',
+            descricao: '50 salgados adicionais fritos na hora',
+            preco: 55.0,
+            ativo: true,
+          }
+        ],
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: `kit-galera-${bakeryCode}`,
+        bakeryCode,
+        nome: 'Kit Festa da Galera (30 Pessoas)',
+        descricao: 'Ideal para aniversários infantis, formaturas e celebrações entre amigos. Variedade farta de salgados crocantes e doces artesanais.',
+        fotoPrincipal: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80',
+        galeria: [
+          'https://images.unsplash.com/photo-1535141192574-5d4897c13136?w=600&auto=format&fit=crop&q=80'
+        ],
+        precoBase: 340.0,
+        quantidadePessoas: 30,
+        status: 'publicado',
+        bolo: {
+          tamanhoDescricao: 'Bolo Artesanal 3.0kg (aprox. 30 fatias generosas)',
+          maxRecheios: 2,
+          recheiosDisponiveis: [
+            'Brigadeiro Tradicional',
+            'Ninho com Nutella',
+            'Morango com Chantininho',
+            'Prestígio Cremoso',
+            'Dois Amores',
+            'Doce de Leite com Nozes'
+          ],
+          personalizacao: {
+            allowTheme: true,
+            allowColor: true,
+            allowName: true,
+            nameRequired: true,
+            allowAge: true,
+            ageRequired: false,
+            allowMessage: true,
+            allowDetails: true,
+            allowWhatsAppInspiration: true,
+          },
+        },
+        salgados: {
+          quantidadeTotal: 120,
+          maxSabores: 4,
+          regraDistribuicao: 'min_per_flavor',
+          minimoPorSabor: 30,
+          saboresDisponiveis: [
+            'Coxinha de Frango com Catupiry',
+            'Bolinha de Queijo Crocante',
+            'Kibe com Requeijão',
+            'Risoles de Carne Suave',
+            'Enroladinho de Salsicha',
+            'Empada de Palmito'
+          ],
+        },
+        docinhos: {
+          quantidadeTotal: 60,
+          maxSabores: 3,
+          regraDistribuicao: 'min_per_flavor',
+          minimoPorSabor: 20,
+          saboresDisponiveis: [
+            'Brigadeiro Tradicional Gourmet',
+            'Beijinho de Coco Fresco',
+            'Cajuzinho',
+            'Ninho com Nutella',
+            'Bicho de Pé (Morango)'
+          ],
+        },
+        adicionais: [
+          {
+            id: 'add-topo-30',
+            nome: 'Topo de Bolo Personalizado Premium 3D',
+            preco: 35.0,
+            ativo: true,
+          },
+          {
+            id: 'add-descartaveis',
+            nome: 'Kit Descartáveis Completo (30 pratos, garfos e guardanapos)',
+            preco: 25.0,
+            ativo: true,
+          },
+          {
+            id: 'add-combo-refris',
+            nome: 'Combo 3 Refrigerantes 2L (2 Coca-Cola + 1 Guaraná)',
+            preco: 38.0,
+            ativo: true,
+          }
+        ],
+        createdAt: now,
+        updatedAt: now,
+      }
+    ];
+  }
+
+  // --- PARTY KITS ---
+  static getPartyKits(bakeryCode?: string): PartyKit[] {
+    const all = getItem<PartyKit[]>(KEYS.PARTY_KITS, []);
+    if (!bakeryCode) return all;
+    const filtered = all.filter(k => k.bakeryCode.toUpperCase() === bakeryCode.trim().toUpperCase());
+    if (filtered.length === 0) {
+      // Initialize defaults for this bakery
+      const defaults = StorageService.getDefaultPartyKits(bakeryCode);
+      const combined = [...all, ...defaults];
+      setItem(KEYS.PARTY_KITS, combined);
+      return defaults;
+    }
+    return filtered;
+  }
+
+  static subscribePartyKits(bakeryCode: string, callback: (kits: PartyKit[]) => void): Unsubscribe {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    if (!auth.currentUser) {
+      callback(StorageService.getPartyKits(cleanCode));
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'partyKits'), where('bakeryCode', '==', cleanCode));
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PartyKit));
+            callback(list);
+          } else {
+            callback(StorageService.getPartyKits(cleanCode));
+          }
+        },
+        (err) => {
+          console.warn('Warning subscribing to partyKits in Firestore:', err);
+          callback(StorageService.getPartyKits(cleanCode));
+        }
+      );
+    } catch (e) {
+      console.warn('Firestore subscription error:', e);
+      callback(StorageService.getPartyKits(cleanCode));
+      return () => {};
+    }
+  }
+
+  static async savePartyKit(kit: PartyKit): Promise<PartyKit> {
+    const all = getItem<PartyKit[]>(KEYS.PARTY_KITS, []);
+    const idx = all.findIndex(k => k.id === kit.id);
+    const updatedKit: PartyKit = {
+      ...kit,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (idx >= 0) {
+      all[idx] = updatedKit;
+    } else {
+      all.push(updatedKit);
+    }
+
+    setItem(KEYS.PARTY_KITS, all);
+
+    if (auth.currentUser) {
+      await setDoc(doc(db, 'partyKits', kit.id), removeUndefined(updatedKit)).catch((e) => {
+        console.warn('Warning saving party kit in Firestore:', e);
+      });
+    }
+
+    return updatedKit;
+  }
+
+  static async deletePartyKit(id: string): Promise<void> {
+    const all = getItem<PartyKit[]>(KEYS.PARTY_KITS, []).filter(k => k.id !== id);
+    setItem(KEYS.PARTY_KITS, all);
+
+    if (auth.currentUser) {
+      await deleteDoc(doc(db, 'partyKits', id)).catch((e) => {
+        console.warn('Warning deleting party kit from Firestore:', e);
+      });
+    }
+  }
+
+  // --- PARTY ORDERS ---
+  static getPartyOrders(bakeryCode?: string): PartyOrder[] {
+    const all = getItem<PartyOrder[]>(KEYS.PARTY_ORDERS, []);
+    if (!bakeryCode) return all;
+    return all.filter(o => o.bakeryCode.toUpperCase() === bakeryCode.trim().toUpperCase());
+  }
+
+  static subscribePartyOrders(bakeryCode: string, callback: (orders: PartyOrder[]) => void): Unsubscribe {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    if (!auth.currentUser) {
+      callback(StorageService.getPartyOrders(cleanCode));
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'partyOrders'), where('bakeryCode', '==', cleanCode));
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PartyOrder));
+          callback(list.sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1)));
+        },
+        (err) => {
+          console.warn('Warning subscribing to partyOrders in Firestore:', err);
+          callback(StorageService.getPartyOrders(cleanCode));
+        }
+      );
+    } catch (e) {
+      console.warn('Firestore subscription error:', e);
+      callback(StorageService.getPartyOrders(cleanCode));
+      return () => {};
+    }
+  }
+
+  static async savePartyOrder(order: PartyOrder): Promise<PartyOrder> {
+    const all = getItem<PartyOrder[]>(KEYS.PARTY_ORDERS, []);
+    const idx = all.findIndex(o => o.id === order.id);
+    const updatedOrder: PartyOrder = {
+      ...order,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (idx >= 0) {
+      all[idx] = updatedOrder;
+    } else {
+      all.unshift(updatedOrder);
+    }
+
+    setItem(KEYS.PARTY_ORDERS, all);
+
+    if (auth.currentUser) {
+      await setDoc(doc(db, 'partyOrders', order.id), removeUndefined(updatedOrder)).catch((e) => {
+        console.warn('Warning saving party order in Firestore:', e);
+      });
+    }
+
+    return updatedOrder;
+  }
+
+  static async updatePartyOrderStatus(
+    id: string,
+    newStatus: PartyOrderStatus,
+    changedBy: string = 'Padaria',
+    nota?: string
+  ): Promise<PartyOrder | null> {
+    const all = getItem<PartyOrder[]>(KEYS.PARTY_ORDERS, []);
+    const idx = all.findIndex(o => o.id === id);
+    if (idx === -1) return null;
+
+    const current = all[idx];
+    const now = new Date().toISOString();
+    const updatedHistory = [
+      ...(current.statusHistory || []),
+      {
+        status: newStatus,
+        changedAt: now,
+        changedBy,
+        nota,
+      }
+    ];
+
+    const updatedOrder: PartyOrder = {
+      ...current,
+      status: newStatus,
+      statusHistory: updatedHistory,
+      updatedAt: now,
+    };
+
+    all[idx] = updatedOrder;
+    setItem(KEYS.PARTY_ORDERS, all);
+
+    if (auth.currentUser) {
+      await setDoc(doc(db, 'partyOrders', id), removeUndefined(updatedOrder)).catch((e) => {
+        console.warn('Warning updating party order status in Firestore:', e);
+      });
+    }
+
+    return updatedOrder;
+  }
+
+  // --- PARTY PUBLIC CONFIG ---
+  static getPartyPublicConfig(bakeryCode: string, bakeryName?: string): PartyBakeryPublicConfig {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    const all = getItem<Record<string, PartyBakeryPublicConfig>>(KEYS.PARTY_PUBLIC_CONFIGS, {});
+    if (all[cleanCode]) {
+      return all[cleanCode];
+    }
+
+    // Default configuration
+    const defaultConfig = getDefaultPublicConfig(cleanCode, bakeryName || 'Padaria');
+    all[cleanCode] = defaultConfig;
+    setItem(KEYS.PARTY_PUBLIC_CONFIGS, all);
+    return defaultConfig;
+  }
+
+  static subscribePartyPublicConfig(
+    bakeryCode: string,
+    callback: (config: PartyBakeryPublicConfig | null) => void
+  ): Unsubscribe {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    if (!auth.currentUser) {
+      callback(StorageService.getPartyPublicConfig(cleanCode));
+      return () => {};
+    }
+
+    try {
+      const docRef = doc(db, 'partySettings', cleanCode);
+      return onSnapshot(
+        docRef,
+        (snapshot) => {
+          if (snapshot.exists()) {
+            callback(snapshot.data() as PartyBakeryPublicConfig);
+          } else {
+            callback(StorageService.getPartyPublicConfig(cleanCode));
+          }
+        },
+        (err) => {
+          console.warn('Warning subscribing to partySettings in Firestore:', err);
+          callback(StorageService.getPartyPublicConfig(cleanCode));
+        }
+      );
+    } catch (e) {
+      console.warn('Firestore subscription error:', e);
+      callback(StorageService.getPartyPublicConfig(cleanCode));
+      return () => {};
+    }
+  }
+
+  static async savePartyPublicConfig(config: PartyBakeryPublicConfig): Promise<PartyBakeryPublicConfig> {
+    const cleanCode = config.bakeryCode.trim().toUpperCase();
+    const all = getItem<Record<string, PartyBakeryPublicConfig>>(KEYS.PARTY_PUBLIC_CONFIGS, {});
+    const updated: PartyBakeryPublicConfig = {
+      ...config,
+      bakeryCode: cleanCode,
+      updatedAt: new Date().toISOString(),
+    };
+
+    all[cleanCode] = updated;
+    setItem(KEYS.PARTY_PUBLIC_CONFIGS, all);
+
+    if (auth.currentUser) {
+      await setDoc(doc(db, 'partySettings', cleanCode), removeUndefined(updated)).catch((e) => {
+        console.warn('Warning saving partySettings in Firestore:', e);
+      });
+      // Also save to publicPages collection keyed by slug for fast public lookup
+      if (updated.slug) {
+        await setDoc(doc(db, 'partyPublicPages', updated.slug.toLowerCase()), removeUndefined({
+          slug: updated.slug.toLowerCase(),
+          bakeryCode: cleanCode,
+          nomePublico: updated.nomePublico,
+          logoUrl: updated.logoUrl || '',
+          capaUrl: updated.capaUrl || '',
+          descricao: updated.descricao,
+          telefone: updated.telefone,
+          whatsapp: updated.whatsapp,
+          endereco: updated.endereco,
+          horarioFuncionamento: updated.horarioFuncionamento,
+          instagram: updated.instagram || '',
+          mensagemApresentacao: updated.mensagemApresentacao,
+          paginaAtiva: updated.paginaAtiva,
+          exibirEndereco: updated.exibirEndereco,
+          exibirTelefone: updated.exibirTelefone,
+          exibirWhatsApp: updated.exibirWhatsApp,
+          exibirInstagram: updated.exibirInstagram,
+          regras: updated.regras,
+          updatedAt: updated.updatedAt,
+        })).catch((e) => {
+          console.warn('Warning saving partyPublicPages in Firestore:', e);
+        });
+      }
+    }
+
+    return updated;
+  }
+
+  static findBakeryConfigBySlug(slug: string): { config: PartyBakeryPublicConfig; kits: PartyKit[] } | null {
+    const cleanSlug = slug.trim().toLowerCase();
+    const allConfigs = getItem<Record<string, PartyBakeryPublicConfig>>(KEYS.PARTY_PUBLIC_CONFIGS, {});
+    const foundEntry = Object.values(allConfigs).find(c => c.slug?.toLowerCase() === cleanSlug);
+
+    if (foundEntry) {
+      const kits = StorageService.getPartyKits(foundEntry.bakeryCode).filter(k => k.status === 'publicado');
+      return { config: foundEntry, kits };
+    }
+
+    // Fallback: check companies
+    const companies = StorageService.getCompanies();
+    for (const comp of companies) {
+      const generatedSlug = comp.codigoAtivacao.toLowerCase();
+      if (generatedSlug === cleanSlug || comp.empresa.toLowerCase().replace(/\s+/g, '-') === cleanSlug) {
+        const conf = StorageService.getPartyPublicConfig(comp.codigoAtivacao, comp.empresa);
+        const kits = StorageService.getPartyKits(comp.codigoAtivacao).filter(k => k.status === 'publicado');
+        return { config: conf, kits };
+      }
+    }
+
+    return null;
+  }
+
+  static async getBakeryCodeBySlug(slug: string): Promise<string | null> {
+    const cleanSlug = slug.trim().toLowerCase();
+    const res = StorageService.findBakeryConfigBySlug(cleanSlug);
+    if (res?.config?.bakeryCode) return res.config.bakeryCode;
+
+    try {
+      const snap = await getDoc(doc(db, 'partyPublicPages', cleanSlug));
+      if (snap.exists() && snap.data()?.bakeryCode) {
+        return snap.data().bakeryCode;
+      }
+    } catch (e) {
+      console.warn('Error fetching bakeryCode by slug:', e);
+    }
+    return null;
   }
 }

@@ -13,6 +13,7 @@ import { ContentsHubView } from './components/seo/ContentsHubView';
 import { ArticlePageView } from './components/seo/ArticlePageView';
 import { LandingHeader } from './components/landing/LandingHeader';
 import { DemoModal } from './components/landing/DemoModal';
+import { PublicPartyOrderPage } from './components/party/PublicPartyOrderPage';
 
 export default function App() {
   const {
@@ -48,14 +49,42 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Handle initial scroll if there is a hash in the URL on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const id = window.location.hash.substring(1);
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 500);
+    }
+  }, []);
+
   const handleNavigatePath = (path: string) => {
     if (path.startsWith('http')) {
       window.location.href = path;
       return;
     }
+
+    const parts = path.split('#');
+    const pathname = parts[0] || '/';
+    const hash = parts[1] ? parts[1] : '';
+
     window.history.pushState({}, '', path);
-    setCurrentPath(path);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setCurrentPath(pathname);
+
+    if (hash) {
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 150);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleNavigate = (view: 'landing' | 'app' | 'admin') => {
@@ -107,6 +136,29 @@ export default function App() {
           <span className="text-sm font-semibold text-gray-500">Iniciando Padariaio...</span>
         </div>
       </div>
+    );
+  }
+
+  // Check if current route is a Public Party Order Page (/encomendas/:slug, /encomenda/:slug, /pedido-festa/:slug)
+  const isHashPartyOrder = typeof window !== 'undefined' && (
+    window.location.hash.startsWith('#/encomendas/') ||
+    window.location.hash.startsWith('#/encomenda/') || 
+    window.location.hash.startsWith('#/pedido-festa/')
+  );
+
+  if (currentPath.startsWith('/encomendas/') || currentPath.startsWith('/encomenda/') || currentPath.startsWith('/pedido-festa/') || isHashPartyOrder) {
+    let partySlug = '';
+    if (isHashPartyOrder) {
+      partySlug = window.location.hash.replace(/^#\/(encomendas|encomenda|pedido-festa)\//, '').split('?')[0].replace(/\/$/, '');
+    } else {
+      partySlug = currentPath.replace(/^\/(encomendas|encomenda|pedido-festa)\//, '').split('?')[0].replace(/\/$/, '');
+    }
+
+    return (
+      <PublicPartyOrderPage
+        bakerySlug={partySlug}
+        onBackToApp={() => handleNavigate('app')}
+      />
     );
   }
 
