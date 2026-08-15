@@ -57,7 +57,7 @@ export const PartyKitsSection: React.FC<PartyKitsSectionProps> = ({ onOpenPublic
     savePartyPublicConfig
   } = useData();
 
-  const [activeTab, setActiveTab] = useState<'pedidos' | 'kits' | 'cardapio_editor' | 'configuracoes'>('pedidos');
+  const [activeTab, setActiveTab] = useState<'pedidos' | 'kits' | 'cardapio_editor'>('pedidos');
 
   // Modals
   const [isKitModalOpen, setIsKitModalOpen] = useState(false);
@@ -456,18 +456,6 @@ export const PartyKitsSection: React.FC<PartyKitsSectionProps> = ({ onOpenPublic
           <span className="px-1.5 py-0.5 bg-orange-100 text-[#E8571A] rounded-full text-[10px] font-black uppercase">
             Ao Vivo
           </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('configuracoes')}
-          className={`pb-3 px-3 sm:px-4 text-xs sm:text-sm font-black border-b-2 transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap ${
-            activeTab === 'configuracoes'
-              ? 'border-[#E8571A] text-[#E8571A]'
-              : 'border-transparent text-gray-500 hover:text-gray-900'
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          <span>Configuração & Link</span>
         </button>
       </div>
 
@@ -957,6 +945,76 @@ export const PartyKitsSection: React.FC<PartyKitsSectionProps> = ({ onOpenPublic
                     className="w-full px-3.5 py-2 rounded-xl border border-gray-300 text-xs text-gray-800 focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
                   />
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1">Antecedência Mínima (horas)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={configAntecedencia}
+                      onChange={(e) => setConfigAntecedencia(parseInt(e.target.value) || 24)}
+                      className="w-full px-3 py-1.5 rounded-xl border border-gray-300 text-xs font-bold focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1">Taxa de Entrega Padrão (R$)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={configTaxaEntrega}
+                      onChange={(e) => setConfigTaxaEntrega(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-1.5 rounded-xl border border-gray-300 text-xs font-bold focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 text-xs pt-1">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={configPermiteRetirada}
+                      onChange={(e) => setConfigPermiteRetirada(e.target.checked)}
+                      className="rounded text-orange-600 focus:ring-orange-500"
+                    />
+                    <span className="font-bold text-gray-800 text-[11px]">Permitir retirada no balcão da loja</span>
+                  </label>
+
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={configPermiteEntrega}
+                      onChange={(e) => setConfigPermiteEntrega(e.target.checked)}
+                      className="rounded text-orange-600 focus:ring-orange-500"
+                    />
+                    <span className="font-bold text-gray-800 text-[11px]">Permitir entrega no endereço</span>
+                  </label>
+                </div>
+
+                {/* Quick Link Copy */}
+                <div className="p-3 bg-orange-50/70 rounded-2xl border border-orange-200 space-y-1.5">
+                  <span className="text-[10px] font-black text-orange-900 uppercase tracking-wider block">
+                    Link Público do Cardápio
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={publicUrl}
+                      className="flex-1 px-2.5 py-1.5 bg-white rounded-xl border border-orange-300 text-[11px] font-medium text-gray-700 select-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCopyPublicLink}
+                      className="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shrink-0 flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>{copiedLink ? 'Copiado!' : 'Copiar'}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Card 2: Massas de Bolo */}
@@ -1282,132 +1340,6 @@ export const PartyKitsSection: React.FC<PartyKitsSectionProps> = ({ onOpenPublic
             </div>
           </div>
         </div>
-      )}
-
-      {/* TAB 4: CONFIGURAÇÕES DA PÁGINA PÚBLICA */}
-      {activeTab === 'configuracoes' && (
-        <form onSubmit={handleSavePublicConfig} className="bg-white rounded-3xl p-6 border border-gray-200 shadow-2xs space-y-5 max-w-2xl">
-          <div className="border-b border-gray-100 pb-3">
-            <h2 className="text-base font-black text-gray-900">Configurações da Página Pública & Atendimento</h2>
-            <p className="text-xs text-gray-500">
-              Personalize como seus clientes veem sua loja online e para onde as mensagens de WhatsApp serão enviadas.
-            </p>
-          </div>
-
-          <div className="space-y-4 text-xs">
-            <div>
-              <label className="block font-bold text-gray-700 mb-1">
-                Nome de Exibição da Padaria / Confeitaria *
-              </label>
-              <input
-                type="text"
-                value={configNomeExibicao}
-                onChange={(e) => setConfigNomeExibicao(e.target.value)}
-                required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-gray-700 mb-1">
-                WhatsApp Oficial para Receber Pedidos (com DDD) *
-              </label>
-              <input
-                type="text"
-                value={configWhatsapp}
-                onChange={(e) => setConfigWhatsapp(e.target.value)}
-                required
-                placeholder="(11) 99999-9999"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm font-bold focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">
-                  Antecedência Mínima de Pedido (em horas)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={configAntecedencia}
-                  onChange={(e) => setConfigAntecedencia(parseInt(e.target.value) || 24)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-300 text-xs font-bold focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
-                />
-                <p className="text-[11px] text-gray-400 mt-1">Ex: 24 horas para o cliente não pedir no mesmo dia.</p>
-              </div>
-
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">
-                  Taxa Padrão de Entrega (R$)
-                </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={configTaxaEntrega}
-                  onChange={(e) => setConfigTaxaEntrega(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-300 text-xs font-bold focus:ring-2 focus:ring-orange-500 focus:outline-hidden"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-2 border-t border-gray-100">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={configPermiteRetirada}
-                  onChange={(e) => setConfigPermiteRetirada(e.target.checked)}
-                  className="rounded text-orange-600 focus:ring-orange-500"
-                />
-                <span className="font-bold text-gray-800">Permitir retirada no balcão da loja</span>
-              </label>
-
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={configPermiteEntrega}
-                  onChange={(e) => setConfigPermiteEntrega(e.target.checked)}
-                  className="rounded text-orange-600 focus:ring-orange-500"
-                />
-                <span className="font-bold text-gray-800">Permitir entrega no endereço</span>
-              </label>
-            </div>
-
-            {/* Public URL Showcase */}
-            <div className="p-4 bg-orange-50/60 rounded-2xl border border-orange-200 space-y-2">
-              <span className="text-[11px] font-black text-orange-900 uppercase tracking-wider">
-                Link da sua Página Pública
-              </span>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={publicUrl}
-                  className="flex-1 px-3 py-2 bg-white rounded-xl border border-orange-300 text-xs text-gray-700 select-all"
-                />
-                <button
-                  type="button"
-                  onClick={handleCopyPublicLink}
-                  className="px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shrink-0 flex items-center space-x-1 cursor-pointer"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>{copiedLink ? 'Copiado!' : 'Copiar'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-gray-100 flex justify-end">
-            <button
-              type="submit"
-              disabled={isSavingConfig}
-              className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-[#E8571A] text-white rounded-xl text-xs font-black shadow-md hover:opacity-95 transition-all cursor-pointer disabled:opacity-50"
-            >
-              {isSavingConfig ? 'Salvando...' : 'Salvar Configurações'}
-            </button>
-          </div>
-        </form>
       )}
 
       {/* Kit Modal */}

@@ -67,6 +67,7 @@ import { TeamRoutineSection } from './TeamRoutineSection';
 import { DivergencesSection } from './DivergencesSection';
 import { CategorySettings } from './CategorySettings';
 import { PartyKitsSection } from './party/PartyKitsSection';
+import { BakerySidebar, BakeryTabType } from './BakerySidebar';
 
 interface BakeryAppProps {
   presetCode?: string | null;
@@ -637,7 +638,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
 
   // MAIN DASHBOARD WHEN LOGGED IN
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-8 pb-28 sm:pb-8">
+    <div className="max-w-7xl 2xl:max-w-[1550px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 pb-28 lg:pb-8">
       {/* Reminder Banner */}
       {showReminder && (
         <div className="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-2xl flex items-center justify-between text-xs sm:text-sm font-semibold shadow-xs">
@@ -662,209 +663,229 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         </div>
       )}
 
-      {/* Mobile App Header (Native App Feel) */}
-      <div className="sm:hidden bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-xs flex items-center justify-between gap-3">
-        <div className="flex items-center space-x-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
-            <Boxes className="w-5 h-5 text-[#FF6B00]" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center space-x-1.5">
-              <h1 className="text-sm font-black text-[#2C2C2C] truncate">{company.empresa}</h1>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Online" />
+      {/* Layout Wrapper with PC Sidebar and Content Area */}
+      <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8">
+        {/* PC Sidebar Navigation */}
+        <BakerySidebar
+          activeTab={activeTab}
+          onSelectTab={(tab) => setActiveTab(tab)}
+          newPartyOrdersCount={newPartyOrdersCount}
+          onOpenNewProductModal={() => {
+            setProductToEdit(null);
+            setIsProductModalOpen(true);
+          }}
+          onOpenScanner={() => setIsWasteScannerOpen(true)}
+          onOpenSupport={() => setIsSupportOpen(true)}
+          onOpenPrintReport={() => setIsPrintReportOpen(true)}
+          companyName={company.empresa}
+          companyEmail={company.email}
+        />
+
+        {/* Main Content Area */}
+        <main className="flex-1 min-w-0 w-full space-y-6">
+          {/* Mobile App Header (Native App Feel) */}
+          <div className="sm:hidden bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-xs flex items-center justify-between gap-3">
+            <div className="flex items-center space-x-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
+                <Boxes className="w-5 h-5 text-[#FF6B00]" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center space-x-1.5">
+                  <h1 className="text-sm font-black text-[#2C2C2C] truncate">{company.empresa}</h1>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Online" />
+                </div>
+                <p className="text-[11px] text-gray-500 font-medium truncate">
+                  {company.email || 'App Operacional'}
+                </p>
+              </div>
             </div>
-            <p className="text-[11px] text-gray-500 font-medium truncate">
-              {company.email || 'App Operacional'}
-            </p>
+
+            <div className="flex items-center space-x-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsWasteScannerOpen(true)}
+                className="w-9 h-9 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-white flex items-center justify-center shadow-xs transition-transform cursor-pointer"
+                title="Escanear com Câmera"
+                aria-label="Escanear Câmera"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSupportOpen(true)}
+                className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 flex items-center justify-center transition-transform cursor-pointer"
+                title="Suporte"
+                aria-label="Suporte"
+              >
+                <LifeBuoy className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center space-x-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setIsWasteScannerOpen(true)}
-            className="w-9 h-9 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-white flex items-center justify-center shadow-xs transition-transform cursor-pointer"
-            title="Escanear com Câmera"
-            aria-label="Escanear Câmera"
-          >
-            <Camera className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsSupportOpen(true)}
-            className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 flex items-center justify-center transition-transform cursor-pointer"
-            title="Suporte"
-            aria-label="Suporte"
-          >
-            <LifeBuoy className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+          {/* Desktop Banner Header */}
+          <div className="hidden sm:flex bg-white p-4 sm:p-5 rounded-2xl border border-[#E0E0E0] shadow-xs flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black text-[#2C2C2C]">{company.empresa}</h1>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Monitoramento em tempo real de validades e estoque • {company.email}
+              </p>
+            </div>
 
-      {/* Desktop Banner Header */}
-      <div className="hidden sm:flex bg-white p-4 sm:p-6 rounded-2xl border border-[#E0E0E0] shadow-xs flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black text-[#2C2C2C]">{company.empresa}</h1>
+            {/* Quick Action Buttons Grid */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setIsSupportOpen(true)}
+                className="px-3 py-2 rounded-xl bg-orange-50 hover:bg-[#E8571A] hover:text-white text-[#E8571A] text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer border border-orange-200"
+                title="Solicitar Suporte Técnico"
+              >
+                <LifeBuoy className="w-3.5 h-3.5" />
+                <span>Suporte</span>
+              </button>
+
+              <button
+                onClick={() => setIsPrintReportOpen(true)}
+                className="px-3 py-2 rounded-xl bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Relatório</span>
+              </button>
+            </div>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Monitoramento em tempo real de validades e estoque • {company.email}
-          </p>
-        </div>
 
-        {/* Quick Action Buttons Grid */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setIsSupportOpen(true)}
-            className="px-3 py-2 rounded-xl bg-orange-50 hover:bg-[#E8571A] hover:text-white text-[#E8571A] text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer border border-orange-200"
-            title="Solicitar Suporte Técnico"
-          >
-            <LifeBuoy className="w-3.5 h-3.5" />
-            <span>Suporte</span>
-          </button>
+          {/* Navigation Tabs Bar (Mobile / Tablet Only - Hidden on PC/Desktop because Sidebar is used) */}
+          <div className="lg:hidden flex items-center space-x-2 border-b border-gray-200/80 pb-2.5 overflow-x-auto no-scrollbar scroll-smooth px-0.5">
+            {/* 1. Resumo do Dono */}
+            <button
+              id="tab-btn-summary"
+              onClick={() => setActiveTab('summary')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'summary' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5 text-amber-400" />
+              <span>Resumo do Dono</span>
+            </button>
 
-          <button
-            onClick={() => setIsPrintReportOpen(true)}
-            className="px-3 py-2 rounded-xl bg-[#F5E6D3] hover:bg-[#D4A574] hover:text-white text-[#2C2C2C] text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Relatório</span>
-          </button>
-        </div>
-      </div>
+            {/* 2. Divergências */}
+            <button
+              id="tab-btn-divergences"
+              onClick={() => setActiveTab('divergences')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'divergences' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <Scale className="w-3.5 h-3.5 text-amber-500" />
+              <span>Divergências</span>
+            </button>
 
-      {/* Navigation Tabs Bar (Horizontal Swipeable Pills on Mobile & Desktop) */}
-      <div className="flex items-center space-x-2 border-b border-gray-200/80 pb-2.5 overflow-x-auto no-scrollbar scroll-smooth px-0.5">
-        {/* 1. Resumo do Dono */}
-        <button
-          id="tab-btn-summary"
-          onClick={() => setActiveTab('summary')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'summary' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <Activity className="w-3.5 h-3.5 text-amber-400" />
-          <span>Resumo do Dono</span>
-        </button>
+            {/* 3. Rotinas da Equipe */}
+            <button
+              id="tab-btn-routine"
+              onClick={() => setActiveTab('routine')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'routine' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Rotinas da Equipe</span>
+            </button>
 
-        {/* 2. Divergências */}
-        <button
-          id="tab-btn-divergences"
-          onClick={() => setActiveTab('divergences')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'divergences' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <Scale className="w-3.5 h-3.5 text-amber-500" />
-          <span>Divergências</span>
-        </button>
+            {/* 4. Kit Festa & Encomendas */}
+            <button
+              id="tab-btn-party"
+              onClick={() => setActiveTab('party')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'party' ? 'bg-[#E8571A] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <Cake className={`w-3.5 h-3.5 ${activeTab === 'party' ? 'text-amber-200' : 'text-[#E8571A]'}`} />
+              <span>Kit Festa</span>
+              {newPartyOrdersCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-400 text-gray-950 animate-pulse">
+                  {newPartyOrdersCount} novo{newPartyOrdersCount > 1 ? 's' : ''}
+                </span>
+              )}
+            </button>
 
-        {/* 3. Rotinas da Equipe */}
-        <button
-          id="tab-btn-routine"
-          onClick={() => setActiveTab('routine')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'routine' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <UserCheck className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Rotinas da Equipe</span>
-        </button>
+            {/* 5. Controle de Estoque */}
+            <button
+              id="tab-btn-stock"
+              onClick={() => setActiveTab('stock')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'stock' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <Boxes className="w-3.5 h-3.5 text-[#FF6B00]" />
+              <span>Estoque</span>
+            </button>
 
-        {/* 4. Kit Festa & Encomendas */}
-        <button
-          id="tab-btn-party"
-          onClick={() => setActiveTab('party')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'party' ? 'bg-[#E8571A] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <Cake className={`w-3.5 h-3.5 ${activeTab === 'party' ? 'text-amber-200' : 'text-[#E8571A]'}`} />
-          <span>Kit Festa</span>
-          {newPartyOrdersCount > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-400 text-gray-950 animate-pulse">
-              {newPartyOrdersCount} novo{newPartyOrdersCount > 1 ? 's' : ''}
-            </span>
-          )}
-        </button>
+            {/* 6. Validades & Descartes */}
+            <button
+              id="tab-btn-dashboard"
+              onClick={() => setActiveTab('dashboard')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'dashboard' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Validades</span>
+            </button>
 
-        {/* 5. Controle de Estoque */}
-        <button
-          id="tab-btn-stock"
-          onClick={() => setActiveTab('stock')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'stock' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <Boxes className="w-3.5 h-3.5 text-[#FF6B00]" />
-          <span>Estoque</span>
-        </button>
+            {/* 7. Clube VIP (Em Manutenção) */}
+            <button
+              id="tab-btn-vip"
+              onClick={() => setActiveTab('vip')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'vip' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-500" />
+              <span>Clube VIP</span>
+              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                Em Manutenção
+              </span>
+            </button>
 
-        {/* 5. Validades & Descartes */}
-        <button
-          id="tab-btn-dashboard"
-          onClick={() => setActiveTab('dashboard')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'dashboard' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <BarChart3 className="w-3.5 h-3.5" />
-          <span>Validades</span>
-        </button>
+            {/* 8. PadeIA */}
+            <button
+              id="tab-btn-padeia"
+              onClick={() => setActiveTab('padeia')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'padeia'
+                  ? 'bg-gradient-to-r from-[#FF6B00] to-[#E8571A] text-white shadow-md ring-2 ring-orange-400/40'
+                  : 'bg-orange-50/80 text-[#E8571A] hover:bg-orange-100 border border-orange-200'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+              <span>PadeIA™</span>
+            </button>
 
-        {/* 6. Clube VIP (Em Manutenção) */}
-        <button
-          id="tab-btn-vip"
-          onClick={() => setActiveTab('vip')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'vip' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <Crown className="w-3.5 h-3.5 text-amber-500" />
-          <span>Clube VIP</span>
-          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-            Em Manutenção
-          </span>
-        </button>
+            {/* 9. Relatório */}
+            <button
+              id="tab-btn-relatorio"
+              onClick={() => setActiveTab('relatorio')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'relatorio' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Relatório</span>
+            </button>
 
-        {/* 7. PadeIA */}
-        <button
-          id="tab-btn-padeia"
-          onClick={() => setActiveTab('padeia')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'padeia'
-              ? 'bg-gradient-to-r from-[#FF6B00] to-[#E8571A] text-white shadow-md ring-2 ring-orange-400/40'
-              : 'bg-orange-50/80 text-[#E8571A] hover:bg-orange-100 border border-orange-200'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-          <span>PadeIA™</span>
-        </button>
-
-        {/* 8. Relatório */}
-        <button
-          id="tab-btn-relatorio"
-          onClick={() => setActiveTab('relatorio')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'relatorio' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <Printer className="w-3.5 h-3.5" />
-          <span>Relatório</span>
-        </button>
-
-        {/* 9. Config */}
-        <button
-          id="tab-btn-config"
-          onClick={() => setActiveTab('config')}
-          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-            activeTab === 'config' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <Settings className="w-3.5 h-3.5" />
-          <span>Config</span>
-        </button>
-      </div>
+            {/* 10. Config */}
+            <button
+              id="tab-btn-config"
+              onClick={() => setActiveTab('config')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'config' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>Config</span>
+            </button>
+          </div>
 
       {activeTab === 'summary' && (
         <OwnerSummaryDashboard
@@ -1461,6 +1482,8 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
           <CategorySettings />
         </div>
       )}
+        </main>
+      </div>
 
       {/* MODALS */}
       <ProductModal
