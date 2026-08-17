@@ -13,7 +13,6 @@ import {
   Plus,
   Camera,
   LifeBuoy,
-  Building2,
   CheckCircle2
 } from 'lucide-react';
 
@@ -132,27 +131,15 @@ export const BakerySidebar: React.FC<BakerySidebarProps> = ({
     <aside
       id="desktop-bakery-sidebar"
       aria-label="Barra Lateral de Navegação"
-      className="hidden lg:flex flex-col w-64 xl:w-72 shrink-0 bg-white border border-[#E0E0E0] rounded-2xl shadow-xs p-4 sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto"
+      className="hidden lg:flex flex-col w-64 xl:w-72 shrink-0 bg-white border border-[#E0E0E0] rounded-2xl shadow-xs p-4 sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto"
     >
       {/* Sidebar Header & Company info */}
       <div className="pb-3 border-b border-gray-100 space-y-2">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
-            <Building2 className="w-5 h-5 text-[#FF6B00]" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center space-x-1.5">
-              <h2 className="text-sm font-black text-[#1F2937] truncate" title={companyName}>
-                {companyName}
-              </h2>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Online" />
-            </div>
-            {companyEmail && (
-              <p className="text-[11px] text-gray-500 font-medium truncate" title={companyEmail}>
-                {companyEmail}
-              </p>
-            )}
-          </div>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-black text-[#1F2937] truncate" title={companyName}>
+            {companyName}
+          </h2>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Online" />
         </div>
 
         {/* Action Button: Add Product */}
