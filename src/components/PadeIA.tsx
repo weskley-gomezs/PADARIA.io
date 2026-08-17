@@ -31,7 +31,8 @@ import {
   Edit3,
   ArrowLeft,
   Camera,
-  Plus
+  Plus,
+  Scale
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { BakeryCompany, Product, SaleHistoryItem, VipOffer } from '../types';
@@ -50,31 +51,44 @@ interface PadeIAProps {
   onNavigateBack?: () => void;
 }
 
+export interface RegisteredActionItem {
+  type: 'produto' | 'descarte' | 'divergencia';
+  nome: string;
+  quantidade: number;
+  valorKg?: number;
+  valorTotal?: number;
+  dataValidade?: string;
+  motivo?: string;
+  expectedQuantity?: number;
+  physicalQuantity?: number;
+  varianceQuantity?: number;
+  unit?: string;
+}
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'model';
   text: string;
   timestamp: string;
-  registeredProducts?: Array<{
-    nome: string;
-    quantidade: number;
-    valorKg?: number;
-    valorTotal?: number;
-    dataValidade: string;
-  }>;
+  registeredProducts?: RegisteredActionItem[];
 }
 
 const cleanDisplayText = (text: string) => {
   if (!text) return '';
   return text
     .replace(/```(?:json:action|json)[\s\S]*?```/gi, '')
-    .replace(/\{\s*"action"\s*:\s*"REGISTER_PRODUCT"[\s\S]*?\}/gi, '')
+    .replace(/\{\s*"action"\s*:\s*"(?:REGISTER_PRODUCT|REGISTER_PRODUCTS|REGISTER_DISCARD|REGISTER_DISCARDS|REGISTER_EXPIRED|REGISTER_DIVERGENCE|REGISTER_STOCK_COUNT)"[\s\S]*?\}/gi, '')
     .trim();
 };
 
-const extractProductActions = (text: string): any[] => {
-  const productsToRegister: any[] = [];
-  if (!text) return productsToRegister;
+interface ExtractedAction {
+  type: 'product' | 'discard' | 'divergence';
+  data: any;
+}
+
+const extractAllActions = (text: string): ExtractedAction[] => {
+  const actions: ExtractedAction[] = [];
+  if (!text) return actions;
 
   // 1. Search for ```json:action ... ``` or ```json ... ``` blocks
   const blockRegex = /```(?:json:action|json)\s*([\s\S]*?)\s*```/gi;
@@ -83,12 +97,18 @@ const extractProductActions = (text: string): any[] => {
     try {
       const parsed = JSON.parse(match[1]);
       if (parsed) {
-        if (parsed.action === 'REGISTER_PRODUCT' && parsed.product) {
-          productsToRegister.push(parsed.product);
+        if ((parsed.action === 'REGISTER_PRODUCT' || parsed.action === 'REGISTER_PROD') && parsed.product) {
+          actions.push({ type: 'product', data: parsed.product });
         } else if (parsed.action === 'REGISTER_PRODUCTS' && Array.isArray(parsed.products)) {
-          productsToRegister.push(...parsed.products);
+          parsed.products.forEach((p: any) => actions.push({ type: 'product', data: p }));
+        } else if ((parsed.action === 'REGISTER_DISCARD' || parsed.action === 'REGISTER_EXPIRED') && (parsed.discard || parsed.product)) {
+          actions.push({ type: 'discard', data: parsed.discard || parsed.product });
+        } else if (parsed.action === 'REGISTER_DISCARDS' && Array.isArray(parsed.discards)) {
+          parsed.discards.forEach((d: any) => actions.push({ type: 'discard', data: d }));
+        } else if ((parsed.action === 'REGISTER_DIVERGENCE' || parsed.action === 'REGISTER_STOCK_COUNT') && (parsed.divergence || parsed.stockCount)) {
+          actions.push({ type: 'divergence', data: parsed.divergence || parsed.stockCount });
         } else if (parsed.nome && (parsed.quantidade || parsed.valorKg || parsed.dataValidade)) {
-          productsToRegister.push(parsed);
+          actions.push({ type: 'product', data: parsed });
         }
       }
     } catch (e) {
@@ -96,22 +116,26 @@ const extractProductActions = (text: string): any[] => {
     }
   }
 
-  // 2. Fallback: Search for any raw JSON object containing "action": "REGISTER_PRODUCT"
-  if (productsToRegister.length === 0) {
-    const rawMatches = text.match(/\{\s*"action"\s*:\s*"REGISTER_PRODUCT"[\s\S]*?\}/gi);
+  // 2. Fallback: Search for any raw JSON object containing "action"
+  if (actions.length === 0) {
+    const rawMatches = text.match(/\{\s*"action"\s*:\s*"(?:REGISTER_PRODUCT|REGISTER_PRODUCTS|REGISTER_DISCARD|REGISTER_DISCARDS|REGISTER_EXPIRED|REGISTER_DIVERGENCE|REGISTER_STOCK_COUNT)"[\s\S]*?\}/gi);
     if (rawMatches) {
       for (const m of rawMatches) {
         try {
           const parsed = JSON.parse(m);
-          if (parsed && parsed.product) {
-            productsToRegister.push(parsed.product);
+          if (parsed.action === 'REGISTER_PRODUCT' && parsed.product) {
+            actions.push({ type: 'product', data: parsed.product });
+          } else if (parsed.action === 'REGISTER_DISCARD' && (parsed.discard || parsed.product)) {
+            actions.push({ type: 'discard', data: parsed.discard || parsed.product });
+          } else if (parsed.action === 'REGISTER_DIVERGENCE' && (parsed.divergence || parsed.stockCount)) {
+            actions.push({ type: 'divergence', data: parsed.divergence || parsed.stockCount });
           }
         } catch (_) {}
       }
     }
   }
 
-  return productsToRegister;
+  return actions;
 };
 
 export const PadeIA: React.FC<PadeIAProps> = ({
@@ -362,11 +386,23 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar você a tomar decis�
       recognitionRef.current = null;
     }
 
-    // Stop MediaRecorder
+    // Stop MediaRecorder and wait for onstop
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      try {
-        mediaRecorderRef.current.stop();
-      } catch (_) {}
+      await new Promise<void>((resolve) => {
+        const recorder = mediaRecorderRef.current;
+        if (!recorder) {
+          resolve();
+          return;
+        }
+        recorder.onstop = () => {
+          resolve();
+        };
+        try {
+          recorder.stop();
+        } catch (_) {
+          resolve();
+        }
+      });
     }
 
     stopMediaStream();
@@ -535,37 +571,66 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar você a tomar decis�
         content: m.text
       }));
 
-      const response = await authenticatedFetch('/api/padeia/chat', {
-        method: 'POST',
-        body: JSON.stringify({
-          message: messageText,
-          history: historyPayload,
-          bakeryCode: company?.codigoAtivacao
-        })
-      });
-
-      const contentType = response.headers.get('content-type') || '';
+      let response: Response | null = null;
+      let contentType = '';
       let data: any = {};
+      let text = '';
 
-      if (!response.ok) {
-        let errorMessage = `Erro HTTP ${response.status}`;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          response = await authenticatedFetch('/api/padeia/chat', {
+            method: 'POST',
+            body: JSON.stringify({
+              message: messageText,
+              history: historyPayload,
+              bakeryCode: company?.codigoAtivacao
+            })
+          });
 
-        if (contentType.includes('application/json')) {
+          contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            break;
+          }
+
+          text = await response.text();
+          if (attempt === 0 && (text.includes('Please wait while your application starts') || text.includes('<!doctype html>'))) {
+            console.warn('[PADEIA] Servidor aquecendo (Warmup). Tentando novamente em 3 segundos...');
+            await new Promise((r) => setTimeout(r, 3000));
+            continue;
+          }
+          break;
+        } catch (fetchErr) {
+          if (attempt === 0) {
+            await new Promise((r) => setTimeout(r, 3000));
+            continue;
+          }
+          throw fetchErr;
+        }
+      }
+
+      if (!response || !response.ok) {
+        let errorMessage = `Erro HTTP ${response?.status || 500}`;
+
+        if (contentType.includes('application/json') && response) {
           try {
             data = await response.json();
             errorMessage = data?.message || data?.error || errorMessage;
           } catch (_) {}
         } else {
-          const text = await response.text();
           console.error('[PADEIA] Non-JSON error response:', text);
+          if (text.includes('Please wait while your application starts')) {
+            errorMessage = 'O servidor da aplicação está inicializando. Por favor, tente novamente em alguns segundos.';
+          }
         }
 
         throw new Error(errorMessage);
       }
 
       if (!contentType.includes('application/json')) {
-        const text = await response.text();
         console.error('[PADEIA] Non-JSON success response:', text);
+        if (text.includes('Please wait while your application starts')) {
+          throw new Error('O servidor da aplicação está inicializando. Por favor, tente novamente em alguns segundos.');
+        }
         throw new Error('O servidor respondeu com formato inválido (HTML/Texto) em vez de JSON.');
       }
 
@@ -573,54 +638,290 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar você a tomar decis�
 
       const rawReply = data.reply || 'Não consegui obter uma resposta no momento. Tente novamente.';
 
-      // Extract and execute product registration actions
-      const extractedProducts = extractProductActions(rawReply);
-      const registeredItems: Array<{
-        nome: string;
-        quantidade: number;
-        valorKg?: number;
-        valorTotal?: number;
-        dataValidade: string;
-      }> = [];
+      // Extract and execute actions (Products, Discards/Losses, Divergences)
+      let extractedActions = extractAllActions(rawReply);
 
-      if (extractedProducts.length > 0 && company?.codigoAtivacao) {
-        for (const p of extractedProducts) {
-          if (!p.nome) continue;
-          const qty = Math.max(1, Number(p.quantidade) || 1);
-          const unitPrice = Number(p.valorKg) || Number(p.precoUnitario) || 0;
-          const lotValue = Number(p.valorTotal) || (qty * unitPrice);
+      // Fallback: If user message indicated registration/loss/divergence and AI didn't return structured JSON
+      if (extractedActions.length === 0 && company?.codigoAtivacao) {
+        const lowerMsg = messageText.toLowerCase();
 
-          let validDate = p.dataValidade || '';
-          if (!validDate || !/^\d{4}-\d{2}-\d{2}$/.test(validDate)) {
-            const target = new Date();
-            target.setDate(target.getDate() + 2);
-            validDate = formatDateToISO(target);
+        // Check 1: Discard / Expired / Loss
+        if (/\b(descart|perdi|venc|estrag|jogou fora|sobra|perda|lixo)\b/i.test(lowerMsg)) {
+          let qty = 1;
+          const qtyMatch = messageText.match(/(\d+)\s*(?:unidades?|kg|litros?|pcts?|pacotes?|caixas?|g|gramas?|un)?/i);
+          if (qtyMatch && qtyMatch[1]) qty = parseInt(qtyMatch[1]) || 1;
+
+          let unitPrice = 5.0;
+          if (lowerMsg.includes('centavo')) {
+            const centMatch = lowerMsg.match(/(\d+)\s*centavos?/);
+            if (centMatch) unitPrice = parseInt(centMatch[1]) / 100;
+          } else {
+            const priceMatch = lowerMsg.match(/(?:r\$)?\s*(\d+[.,]?\d*)\s*(?:reais|real)?/i);
+            if (priceMatch) {
+              const pVal = parseFloat(priceMatch[1].replace(',', '.'));
+              if (!isNaN(pVal) && pVal > 0 && pVal !== qty) unitPrice = pVal;
+            }
           }
 
-          try {
-            await StorageService.addProduct(
-              company.codigoAtivacao,
-              p.nome,
-              qty,
-              validDate,
-              p.categoria || 'Geral',
-              p.barcode || '',
-              unitPrice,
-              p.dataFabricacao || formatDateToISO(new Date()),
-              lotValue,
-              'Cadastro via PadeIA'
-            );
+          let cleanName = messageText
+            .replace(/\b(descarte|descartar|perdi|perda|vencido|venceu|estragou|estragado|jogou fora|sobra|sobras|cadastre|cadastrar|registre|registrar)\b/gi, '')
+            .replace(/\b(\d+)\s*(?:unidades?|kg|litros?|pcts?|pacotes?|caixas?|g|gramas?|un)?\b/gi, '')
+            .replace(/\b(?:de|o|a|os|as|cada|um|uma|custando|por|reais|centavos|r\$)\b/gi, '')
+            .replace(/[\d.,]+\s*centavos?/gi, '')
+            .replace(/[\d.,]+/g, '')
+            .trim();
+          if (cleanName.length < 2) cleanName = 'Produto Descartado';
 
-            registeredItems.push({
-              nome: p.nome,
+          // Try matching price with existing product in stock
+          const matchExisting = products.find(p => p.nome.toLowerCase().includes(cleanName.toLowerCase()));
+          if (matchExisting) {
+            unitPrice = matchExisting.valorKg || (matchExisting.valorTotal ? matchExisting.valorTotal / matchExisting.quantidade : unitPrice);
+            cleanName = matchExisting.nome;
+          }
+
+          extractedActions.push({
+            type: 'discard',
+            data: {
+              nome: cleanName.charAt(0).toUpperCase() + cleanName.slice(1),
               quantidade: qty,
+              dataValidade: formatDateToISO(new Date()),
+              categoria: matchExisting?.categoria || 'Geral',
               valorKg: unitPrice,
-              valorTotal: lotValue,
-              dataValidade: validDate
-            });
-            console.log(`✅ [PadeIA] Produto registrado com sucesso: ${p.nome} (Qtd: ${qty}, Lote: R$ ${lotValue})`);
-          } catch (err) {
-            console.error('Erro ao registrar produto no StorageService:', err);
+              valorTotal: qty * unitPrice,
+              motivo: 'Descarte'
+            }
+          });
+        }
+        // Check 2: Divergence / Stock Count
+        else if (/\b(diverg[eê]ncia|diferen[cç]a no estoque|contagem f[íi]sica|confer[eê]ncia|invent[áa]rio)\b/i.test(lowerMsg)) {
+          let physicalQty = 0;
+          let expectedQty = 0;
+
+          const numMatches = messageText.match(/\d+/g);
+          if (numMatches && numMatches.length >= 2) {
+            physicalQty = parseInt(numMatches[0]) || 0;
+            expectedQty = parseInt(numMatches[1]) || 0;
+          } else if (numMatches && numMatches.length === 1) {
+            physicalQty = parseInt(numMatches[0]) || 0;
+            expectedQty = physicalQty + 5;
+          }
+
+          let cleanName = messageText
+            .replace(/\b(divergência|divergencia|diferença|estoque|contagem|física|conferência|conferencia|inventário|inventario|cadastre|registre)\b/gi, '')
+            .replace(/\b(\d+)\s*(?:unidades?|kg|litros?|pcts?|pacotes?|caixas?|g|gramas?|un)?\b/gi, '')
+            .replace(/\b(?:de|o|a|os|as|na|no|em|com|para)\b/gi, '')
+            .trim();
+          if (cleanName.length < 2) cleanName = 'Item de Estoque';
+
+          const matchExisting = products.find(p => p.nome.toLowerCase().includes(cleanName.toLowerCase()));
+
+          extractedActions.push({
+            type: 'divergence',
+            data: {
+              productName: matchExisting ? matchExisting.nome : cleanName.charAt(0).toUpperCase() + cleanName.slice(1),
+              expectedQuantity: expectedQty || 20,
+              physicalQuantity: physicalQty || 15,
+              unit: 'kg',
+              unitCost: matchExisting?.valorKg || 5.0,
+              notes: 'Conferência física registrada via PadeIA'
+            }
+          });
+        }
+        // Check 3: Regular Product Registration
+        else if (/\b(cadastr|registr|adicione|coloque|novo produto|entrou|produzi|fiz|comprei)\b/i.test(lowerMsg)) {
+          let qty = 1;
+          const qtyMatch = messageText.match(/(\d+)\s*(?:unidades?|kg|litros?|pcts?|pacotes?|caixas?|g|gramas?|un)?/i);
+          if (qtyMatch && qtyMatch[1]) qty = parseInt(qtyMatch[1]) || 1;
+
+          let unitPrice = 1.0;
+          if (lowerMsg.includes('centavo')) {
+            const centMatch = lowerMsg.match(/(\d+)\s*centavos?/);
+            if (centMatch) unitPrice = parseInt(centMatch[1]) / 100;
+          } else {
+            const priceMatch = lowerMsg.match(/(?:r\$)?\s*(\d+[.,]?\d*)\s*(?:reais|real)?/i);
+            if (priceMatch) {
+              const pVal = parseFloat(priceMatch[1].replace(',', '.'));
+              if (!isNaN(pVal) && pVal > 0 && pVal !== qty) unitPrice = pVal;
+            }
+          }
+
+          let cleanName = messageText
+            .replace(/\b(cadastre|cadastrar|registre|registrar|adicione|adicionar|coloque|colocar|novo produto|entrou|produzi|fiz|comprei)\b/gi, '')
+            .replace(/\b(\d+)\s*(?:unidades?|kg|litros?|pcts?|pacotes?|caixas?|g|gramas?|un)?\b/gi, '')
+            .replace(/\b(?:de|o|a|os|as|cada|um|uma|custando|por|reais|centavos|r\$)\b/gi, '')
+            .replace(/[\d.,]+\s*centavos?/gi, '')
+            .replace(/[\d.,]+/g, '')
+            .trim();
+          if (cleanName.length < 2) cleanName = 'Produto Geral';
+
+          const target = new Date();
+          target.setDate(target.getDate() + 2);
+          extractedActions.push({
+            type: 'product',
+            data: {
+              nome: cleanName.charAt(0).toUpperCase() + cleanName.slice(1),
+              quantidade: qty,
+              dataValidade: formatDateToISO(target),
+              categoria: 'Geral',
+              valorKg: unitPrice,
+              valorTotal: qty * unitPrice
+            }
+          });
+        }
+      }
+
+      const registeredItems: RegisteredActionItem[] = [];
+
+      if (extractedActions.length > 0 && company?.codigoAtivacao) {
+        for (const act of extractedActions) {
+          try {
+            if (act.type === 'discard') {
+              const d = act.data;
+              const prodName = (d.nome || d.productName || 'Produto Descartado').trim();
+              const qty = Math.max(1, Number(d.quantidade) || 1);
+              const unitPrice = Number(d.valorKg) || Number(d.precoUnitario) || Number(d.unitCost) || 0;
+              const lotValue = Number(d.valorTotal) || (qty * unitPrice);
+              const todayStr = formatDateToISO(new Date());
+
+              // Add discarded product with status 'vencido' and past/today date so it feeds losses & expired items
+              const addedWasteProd = await StorageService.addProduct(
+                company.codigoAtivacao,
+                prodName,
+                qty,
+                todayStr,
+                d.categoria || 'Geral',
+                d.barcode || '',
+                unitPrice,
+                todayStr,
+                lotValue,
+                d.motivo || 'Descarte',
+                'Descarte/Vencido registrado via PadeIA',
+                undefined,
+                'vencido'
+              );
+
+              // Also record Inventory Movement of type WASTE
+              await StorageService.addInventoryMovement(
+                addedWasteProd.id,
+                prodName,
+                company.codigoAtivacao,
+                'WASTE',
+                qty,
+                'un',
+                unitPrice,
+                d.motivo || 'Descarte via PadeIA'
+              ).catch((e) => console.warn('Movement waste record non-blocking error:', e));
+
+              // If product exists in active stock, reconcile it
+              const activeExisting = products.find(p => p.nome.toLowerCase() === prodName.toLowerCase() && p.status !== 'vencido');
+              if (activeExisting) {
+                const newQty = Math.max(0, activeExisting.quantidade - qty);
+                if (newQty > 0) {
+                  await StorageService.updateProduct(
+                    activeExisting.id,
+                    activeExisting.nome,
+                    newQty,
+                    activeExisting.dataValidade,
+                    activeExisting.categoria,
+                    activeExisting.barcode,
+                    activeExisting.valorKg,
+                    activeExisting.dataFabricacao,
+                    activeExisting.valorKg ? newQty * activeExisting.valorKg : undefined,
+                    activeExisting.motivo,
+                    activeExisting.notas,
+                    activeExisting.peso
+                  );
+                }
+              }
+
+              window.dispatchEvent(new CustomEvent('padaria-data-changed', { detail: { key: 'products' } }));
+
+              registeredItems.push({
+                type: 'descarte',
+                nome: prodName,
+                quantidade: qty,
+                valorKg: unitPrice,
+                valorTotal: lotValue,
+                dataValidade: todayStr,
+                motivo: d.motivo || 'Descarte'
+              });
+              console.log(`✅ [PadeIA] Descarte registrado: ${prodName} (Qtd: ${qty}, Perda: R$ ${lotValue})`);
+            } else if (act.type === 'divergence') {
+              const div = act.data;
+              const prodName = (div.productName || div.nome || 'Item de Estoque').trim();
+              const expected = Number(div.expectedQuantity) || 0;
+              const physical = Number(div.physicalQuantity) || 0;
+              const unit = div.unit || 'kg';
+              const unitCost = Number(div.unitCost) || Number(div.valorKg) || 0;
+              const matchingProd = products.find(p => p.nome.toLowerCase().includes(prodName.toLowerCase()));
+              const prodId = matchingProd ? matchingProd.id : 'div_' + Date.now();
+
+              await StorageService.addStockCount(
+                company.codigoAtivacao,
+                prodId,
+                prodName,
+                expected,
+                0,
+                0,
+                0,
+                expected,
+                physical,
+                unit,
+                unitCost,
+                div.notes || 'Registrado via PadeIA'
+              );
+
+              registeredItems.push({
+                type: 'divergencia',
+                nome: prodName,
+                quantidade: physical,
+                expectedQuantity: expected,
+                physicalQuantity: physical,
+                varianceQuantity: physical - expected,
+                unit,
+                valorKg: unitCost
+              });
+              console.log(`✅ [PadeIA] Divergência registrada: ${prodName} (Físico: ${physical}, Esperado: ${expected})`);
+            } else {
+              // Regular Product Registration
+              const p = act.data;
+              const prodName = (p.nome || p.productName || 'Produto Geral').trim();
+              const qty = Math.max(1, Number(p.quantidade) || 1);
+              const unitPrice = Number(p.valorKg) || Number(p.precoUnitario) || 0;
+              const lotValue = Number(p.valorTotal) || (qty * unitPrice);
+
+              let validDate = p.dataValidade || '';
+              if (!validDate || !/^\d{4}-\d{2}-\d{2}$/.test(validDate)) {
+                const target = new Date();
+                target.setDate(target.getDate() + 2);
+                validDate = formatDateToISO(target);
+              }
+
+              await StorageService.addProduct(
+                company.codigoAtivacao,
+                prodName,
+                qty,
+                validDate,
+                p.categoria || 'Geral',
+                p.barcode || '',
+                unitPrice,
+                p.dataFabricacao || formatDateToISO(new Date()),
+                lotValue,
+                'Cadastro via PadeIA'
+              );
+
+              registeredItems.push({
+                type: 'produto',
+                nome: prodName,
+                quantidade: qty,
+                valorKg: unitPrice,
+                valorTotal: lotValue,
+                dataValidade: validDate
+              });
+              console.log(`✅ [PadeIA] Produto cadastrado: ${prodName} (Qtd: ${qty}, Lote: R$ ${lotValue})`);
+            }
+          } catch (actionErr) {
+            console.error('Erro ao executar ação PadeIA no StorageService:', actionErr);
           }
         }
       }
@@ -863,25 +1164,79 @@ Posso analisar suas perdas, vencimentos, descartes e ajudar você a tomar decis�
                   </div>
 
                   {msg.registeredProducts && msg.registeredProducts.length > 0 && (
-                    <div className="mt-3 p-3 bg-emerald-50 border border-emerald-300 rounded-xl space-y-2 text-xs text-emerald-950 shadow-xs">
-                      <div className="flex items-center space-x-1.5 font-extrabold text-emerald-800 border-b border-emerald-200 pb-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Produto Cadastrado com Sucesso no Sistema</span>
-                      </div>
-                      {msg.registeredProducts.map((p, idx) => (
-                        <div key={idx} className="bg-white p-2.5 rounded-lg border border-emerald-200 flex flex-col space-y-1 shadow-2xs">
-                          <div className="flex justify-between items-center font-bold text-gray-900">
-                            <span className="text-sm">{p.nome}</span>
-                            <span className="text-emerald-700 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-md text-[11px]">
-                              Lote Total: R$ {(p.valorTotal || 0).toFixed(2)}
-                            </span>
+                    <div className="mt-3 space-y-2 text-xs">
+                      {msg.registeredProducts.map((p, idx) => {
+                        if (p.type === 'descarte') {
+                          return (
+                            <div key={idx} className="p-3 bg-red-50 border border-red-300 rounded-xl space-y-1.5 text-red-950 shadow-xs">
+                              <div className="flex items-center space-x-1.5 font-black text-red-800 border-b border-red-200 pb-1">
+                                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                                <span>Descarte / Vencido Registrado no Sistema</span>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-lg border border-red-200 flex flex-col space-y-1 shadow-2xs">
+                                <div className="flex justify-between items-center font-bold text-gray-900">
+                                  <span className="text-sm text-red-900">{p.nome}</span>
+                                  <span className="text-red-700 font-black bg-red-100 px-2 py-0.5 rounded-md text-[11px]">
+                                    Perda: R$ {(p.valorTotal || 0).toFixed(2)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center text-[11px] text-gray-600 pt-0.5">
+                                  <span>Qtd Descartada: <strong>{p.quantidade} un</strong></span>
+                                  <span>Data: <strong>{formatDateToBR(p.dataValidade)}</strong></span>
+                                </div>
+                                <div className="text-[10px] text-red-700 font-semibold pt-0.5 flex items-center space-x-1">
+                                  <span>✓ Contabilizado nas perdas e no Resumo do Dono</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        } else if (p.type === 'divergencia') {
+                          return (
+                            <div key={idx} className="p-3 bg-amber-50 border border-amber-300 rounded-xl space-y-1.5 text-amber-950 shadow-xs">
+                              <div className="flex items-center space-x-1.5 font-black text-amber-800 border-b border-amber-200 pb-1">
+                                <Scale className="w-4 h-4 text-amber-600 shrink-0" />
+                                <span>Divergência de Estoque Registrada</span>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-lg border border-amber-200 flex flex-col space-y-1 shadow-2xs">
+                                <div className="flex justify-between items-center font-bold text-gray-900">
+                                  <span className="text-sm text-amber-950">{p.nome}</span>
+                                  <span className={`font-black px-2 py-0.5 rounded-md text-[11px] ${(p.varianceQuantity || 0) < 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                    Diferença: {(p.varianceQuantity || 0) > 0 ? `+${p.varianceQuantity}` : p.varianceQuantity} {p.unit || 'kg'}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center text-[11px] text-gray-600 pt-0.5">
+                                  <span>Físico: <strong>{p.physicalQuantity} {p.unit || 'kg'}</strong></span>
+                                  <span>Esperado: <strong>{p.expectedQuantity} {p.unit || 'kg'}</strong></span>
+                                </div>
+                                <div className="text-[10px] text-amber-800 font-semibold pt-0.5 flex items-center space-x-1">
+                                  <span>✓ Atualizado no módulo de Divergências e Estoque</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div key={idx} className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl space-y-1.5 text-emerald-950 shadow-xs">
+                            <div className="flex items-center space-x-1.5 font-black text-emerald-800 border-b border-emerald-200 pb-1">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span>Produto Cadastrado com Sucesso no Sistema</span>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-lg border border-emerald-200 flex flex-col space-y-1 shadow-2xs">
+                              <div className="flex justify-between items-center font-bold text-gray-900">
+                                <span className="text-sm">{p.nome}</span>
+                                <span className="text-emerald-700 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-md text-[11px]">
+                                  Lote Total: R$ {(p.valorTotal || 0).toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center text-[11px] text-gray-600 pt-0.5">
+                                <span>Qtd: <strong>{p.quantidade} un</strong> × R$ {(p.valorKg || 0).toFixed(2)}/un</span>
+                                <span>Validade: <strong>{formatDateToBR(p.dataValidade)}</strong></span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center text-[11px] text-gray-600 pt-0.5">
-                            <span>Qtd: <strong>{p.quantidade} un</strong> × R$ {(p.valorKg || 0).toFixed(2)}/un</span>
-                            <span>Validade: <strong>{formatDateToBR(p.dataValidade)}</strong></span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

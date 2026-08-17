@@ -128,17 +128,6 @@ export default function App() {
     window.open(`https://wa.me/5561996507712?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-10 h-10 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-sm font-semibold text-gray-500">Iniciando Padariaio...</span>
-        </div>
-      </div>
-    );
-  }
-
   // Check if current route is a Public Party Order Page (/cardapio/:slug, /kitfesta/:slug, /encomendas/:slug, /encomenda/:slug, /pedido-festa/:slug)
   const partyPrefixes = ['cardapio', 'kitfesta', 'kit-festa', 'encomendas', 'encomenda', 'pedido-festa'];
   const checkIsPartyRoute = (p: string) => {

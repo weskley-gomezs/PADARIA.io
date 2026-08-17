@@ -67,9 +67,32 @@ export const OwnerSummaryDashboard: React.FC<OwnerSummaryDashboardProps> = ({
   };
 
   // 1. Products Status
-  const expiredProducts = useMemo(() => products.filter((p) => p.status === 'vencido'), [products]);
-  const expiringProducts = useMemo(() => products.filter((p) => p.status === 'vencendo'), [products]);
-  const normalProducts = useMemo(() => products.filter((p) => p.status === 'normal'), [products]);
+  const expiredProducts = useMemo(() => {
+    return products.filter((p) => 
+      p.status === 'vencido' || 
+      p.motivo === 'Descarte' || 
+      p.motivo === 'descarte' || 
+      p.motivo === 'Perda' || 
+      p.motivo === 'Estragado' ||
+      (p.dataValidade && p.dataValidade <= todayStr && p.motivo !== 'Venda')
+    );
+  }, [products, todayStr]);
+
+  const expiringProducts = useMemo(() => {
+    return products.filter((p) => 
+      p.status === 'vencendo' && 
+      p.motivo !== 'Descarte' && 
+      p.motivo !== 'descarte' && 
+      p.motivo !== 'Perda' && 
+      p.motivo !== 'Estragado' &&
+      p.dataValidade && 
+      p.dataValidade > todayStr
+    );
+  }, [products, todayStr]);
+
+  const normalProducts = useMemo(() => {
+    return products.filter((p) => p.status === 'normal' && p.motivo !== 'Descarte' && p.motivo !== 'Perda');
+  }, [products]);
 
   const totalStockValue = useMemo(() => {
     return products.reduce((acc, p) => acc + (p.valorTotal || p.quantidade * (p.valorKg || 0)), 0);
@@ -274,6 +297,21 @@ export const OwnerSummaryDashboard: React.FC<OwnerSummaryDashboardProps> = ({
         badge: m.type === 'ENTRY' ? 'Entrada' : m.type === 'WASTE' ? 'Descarte' : 'Ajuste',
         badgeColor: m.type === 'ENTRY' ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-rose-100 text-rose-800 border-rose-300',
         value: movementVal > 0 ? `R$ ${movementVal.toFixed(2)}` : undefined
+      });
+    });
+
+    // Direct Expired / Discarded Products
+    expiredProducts.slice(0, 15).forEach((p) => {
+      const prodLossVal = p.valorTotal || (p.peso && p.valorKg ? p.peso * p.valorKg : p.quantidade * (p.valorKg || 12.0));
+      events.push({
+        id: `waste_prod_${p.id}`,
+        timestamp: p.dataCadastro ? (p.dataCadastro.includes('T') ? p.dataCadastro : `${p.dataCadastro}T12:00:00.000Z`) : new Date().toISOString(),
+        category: 'perdas',
+        title: `Descarte / Vencido: ${p.nome}`,
+        description: `${p.quantidade} un ${p.categoria ? `• Categoria: ${p.categoria}` : ''} • Motivo: ${p.motivo || 'Descarte'}`,
+        badge: 'Descarte',
+        badgeColor: 'bg-rose-100 text-rose-800 border-rose-300',
+        value: prodLossVal > 0 ? `- R$ ${prodLossVal.toFixed(2)}` : undefined
       });
     });
 

@@ -59,8 +59,85 @@ function getItem<T>(key: string, defaultValue: T): T {
 function setItem<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('padaria-data-changed', { detail: { key } }));
+    }
   } catch (e) {
     console.error('Error setting localStorage key:', key, e);
+  }
+}
+
+// In-memory Short-lived Cache isolated strictly by bakeryCode (TTL in seconds)
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  ttlMs: number;
+}
+
+const memoryCache = new Map<string, CacheEntry<any>>();
+
+function getCacheKey(type: string, bakeryCode: string): string {
+  return `${type}_${bakeryCode.trim().toUpperCase()}`;
+}
+
+export function getFromMemoryCache<T>(type: string, bakeryCode: string): T | null {
+  if (!bakeryCode) return null;
+  const key = getCacheKey(type, bakeryCode);
+  const entry = memoryCache.get(key);
+  if (!entry) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[PERF] cache miss: ${key}`);
+    }
+    return null;
+  }
+  const isExpired = Date.now() - entry.timestamp > entry.ttlMs;
+  if (isExpired) {
+    memoryCache.delete(key);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[PERF] cache miss (expired): ${key}`);
+    }
+    return null;
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[PERF] cache hit: ${key}`);
+  }
+  return entry.data as T;
+}
+
+export function setInMemoryCache<T>(type: string, bakeryCode: string, data: T, ttlSeconds: number): void {
+  if (!bakeryCode) return;
+  const key = getCacheKey(type, bakeryCode);
+  memoryCache.set(key, {
+    data,
+    timestamp: Date.now(),
+    ttlMs: ttlSeconds * 1000,
+  });
+}
+
+export function invalidateMemoryCache(type?: string, bakeryCode?: string): void {
+  if (!type && !bakeryCode) {
+    memoryCache.clear();
+    return;
+  }
+  if (type && bakeryCode) {
+    memoryCache.delete(getCacheKey(type, bakeryCode));
+    return;
+  }
+  if (bakeryCode) {
+    const clean = bakeryCode.trim().toUpperCase();
+    for (const key of memoryCache.keys()) {
+      if (key.endsWith(`_${clean}`)) {
+        memoryCache.delete(key);
+      }
+    }
+    return;
+  }
+  if (type) {
+    for (const key of memoryCache.keys()) {
+      if (key.startsWith(`${type}_`)) {
+        memoryCache.delete(key);
+      }
+    }
   }
 }
 
@@ -175,7 +252,8 @@ export class StorageService {
               deleteDoc(doc(db, 'products', d.id)).catch(() => {});
             } else {
               const daysRemaining = calculateDaysRemaining(p.dataValidade);
-              const status = getProductStatus(daysRemaining);
+              const isDiscardOrExpired = p.status === 'vencido' || p.motivo === 'Descarte' || p.motivo === 'descarte' || p.motivo === 'Perda' || p.motivo === 'Estragado' || daysRemaining <= 0;
+              const status: ProductStatus = isDiscardOrExpired ? 'vencido' : getProductStatus(daysRemaining);
               products.push({
                 ...p,
                 diasParaVencer: daysRemaining,
@@ -1261,7 +1339,8 @@ export class StorageService {
 
     const updatedProducts = allProducts.map((p) => {
       const daysRemaining = calculateDaysRemaining(p.dataValidade);
-      const status = getProductStatus(daysRemaining);
+      const isDiscardOrExpired = p.status === 'vencido' || p.motivo === 'Descarte' || p.motivo === 'descarte' || p.motivo === 'Perda' || p.motivo === 'Estragado' || daysRemaining <= 0;
+      const status: ProductStatus = isDiscardOrExpired ? 'vencido' : getProductStatus(daysRemaining);
       return {
         ...p,
         diasParaVencer: daysRemaining,
@@ -1304,6 +1383,9 @@ export class StorageService {
       ? valorTotal
       : (peso && valorKg ? Number((peso * valorKg).toFixed(2)) : (valorKg ? Number((quantidade * valorKg).toFixed(2)) : undefined));
 
+    const isDiscard = statusOverride === 'vencido' || motivo === 'Descarte' || motivo === 'descarte' || motivo === 'Perda' || daysRemaining <= 0;
+    const finalStatus: ProductStatus = statusOverride !== undefined ? statusOverride : (isDiscard ? 'vencido' : getProductStatus(daysRemaining));
+
     const newProduct: Product = {
       id: 'prod_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       bakeryCode: bakeryCode.trim().toUpperCase(),
@@ -1313,13 +1395,13 @@ export class StorageService {
       categoria: categoria ? categoria.trim() : 'Geral',
       dataCadastro: formatDateToISO(new Date()),
       diasParaVencer: daysRemaining,
-      status: statusOverride !== undefined ? statusOverride : getProductStatus(daysRemaining),
+      status: finalStatus,
       barcode: barcode ? barcode.trim() : '',
       peso: peso,
       valorKg: valorKg,
       dataFabricacao: dataFabricacao,
       valorTotal: calculatedValorTotal,
-      motivo: motivo ? motivo.trim() : 'Vencimento',
+      motivo: motivo ? motivo.trim() : (isDiscard ? 'Descarte' : 'Vencimento'),
       notas: notas ? notas.trim() : '',
     };
 
@@ -1730,12 +1812,16 @@ export class StorageService {
   }
 
   static async getProductsFromServer(bakeryCode: string): Promise<Product[]> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    const cached = getFromMemoryCache<Product[]>('products', cleanCode);
+    if (cached) return cached;
+
     if (!auth.currentUser) {
       console.warn('[DATA] getProductsFromServer skipped: user not authenticated');
-      return StorageService.getProducts(bakeryCode);
+      return StorageService.getProducts(cleanCode);
     }
     try {
-      const q = query(collection(db, 'products'), where('bakeryCode', '==', bakeryCode.trim().toUpperCase()));
+      const q = query(collection(db, 'products'), where('bakeryCode', '==', cleanCode));
       const snapshot = await getDocs(q);
       const products: Product[] = [];
       snapshot.forEach((d) => {
@@ -1746,7 +1832,8 @@ export class StorageService {
             !DEMO_PROD_IDS.includes(p.id)
           ) {
             const daysRemaining = calculateDaysRemaining(p.dataValidade);
-            const status = getProductStatus(daysRemaining);
+            const isDiscardOrExpired = p.status === 'vencido' || p.motivo === 'Descarte' || p.motivo === 'descarte' || p.motivo === 'Perda' || p.motivo === 'Estragado' || daysRemaining <= 0;
+            const status: ProductStatus = isDiscardOrExpired ? 'vencido' : getProductStatus(daysRemaining);
             products.push({
               ...p,
               diasParaVencer: daysRemaining,
@@ -1755,13 +1842,15 @@ export class StorageService {
           }
         }
       });
+      // Store in memory cache (30s TTL)
+      setInMemoryCache('products', cleanCode, products, 30);
       // Store only this tenant's products locally to isolate
-      setItem(`padarias_products_${bakeryCode.trim().toUpperCase()}`, products);
+      setItem(`padarias_products_${cleanCode}`, products);
       setItem(KEYS.PRODUCTS, products); // backward compatibility
       return products;
     } catch (e) {
       console.error('Error fetching products from Firestore:', e);
-      return StorageService.getProducts(bakeryCode);
+      return StorageService.getProducts(cleanCode);
     }
   }
 
@@ -1771,14 +1860,20 @@ export class StorageService {
     endDate?: string,
     limitCount = 300
   ): Promise<SaleHistoryItem[]> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    if (!startDate && !endDate) {
+      const cached = getFromMemoryCache<SaleHistoryItem[]>('salesHistory', cleanCode);
+      if (cached) return cached.slice(0, limitCount);
+    }
+
     if (!auth.currentUser) {
       console.warn('[DATA] getSalesHistoryFromServer skipped: user not authenticated');
-      return StorageService.getSalesHistory(bakeryCode);
+      return StorageService.getSalesHistory(cleanCode);
     }
     try {
       const q = query(
         collection(db, 'sales'),
-        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+        where('bakeryCode', '==', cleanCode)
       );
       const snapshot = await getDocs(q);
       let sales: SaleHistoryItem[] = [];
@@ -1802,25 +1897,33 @@ export class StorageService {
         sales = sales.filter((s) => s.dataVenda <= endDate + 'T23:59:59');
       }
 
-      const isolatedKey = `padarias_sales_history_${bakeryCode.trim().toUpperCase()}`;
+      if (!startDate && !endDate) {
+        setInMemoryCache('salesHistory', cleanCode, sales, 30);
+      }
+
+      const isolatedKey = `padarias_sales_history_${cleanCode}`;
       setItem(isolatedKey, sales);
       setItem(KEYS.SALES_HISTORY, sales); // backward compatibility
       return sales.slice(0, limitCount);
     } catch (e) {
       console.error('Error fetching sales history from server:', e);
-      return StorageService.getSalesHistory(bakeryCode);
+      return StorageService.getSalesHistory(cleanCode);
     }
   }
 
   static async getVipOffersFromServer(bakeryCode: string): Promise<VipOffer[]> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    const cached = getFromMemoryCache<VipOffer[]>('vipOffers', cleanCode);
+    if (cached) return cached;
+
     if (!auth.currentUser) {
       console.warn('[DATA] getVipOffersFromServer skipped: user not authenticated');
-      return StorageService.getVipOffers(bakeryCode);
+      return StorageService.getVipOffers(cleanCode);
     }
     try {
       const q = query(
         collection(db, 'vipOffers'),
-        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+        where('bakeryCode', '==', cleanCode)
       );
       const snapshot = await getDocs(q);
       const offers: VipOffer[] = [];
@@ -1833,25 +1936,30 @@ export class StorageService {
           });
         }
       });
-      const isolatedKey = `padarias_vip_offers_${bakeryCode.trim().toUpperCase()}`;
+      setInMemoryCache('vipOffers', cleanCode, offers, 30);
+      const isolatedKey = `padarias_vip_offers_${cleanCode}`;
       setItem(isolatedKey, offers);
       setItem(KEYS.VIP_OFFERS, offers); // backward compatibility
       return offers;
     } catch (e) {
       console.error('Error fetching VIP offers:', e);
-      return StorageService.getVipOffers(bakeryCode);
+      return StorageService.getVipOffers(cleanCode);
     }
   }
 
   static async getDailyClosingsFromServer(bakeryCode: string, limitCount = 90): Promise<DailyClosing[]> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    const cached = getFromMemoryCache<DailyClosing[]>('dailyClosings', cleanCode);
+    if (cached) return cached.slice(0, limitCount);
+
     if (!auth.currentUser) {
       console.warn('[DATA] getDailyClosingsFromServer skipped: user not authenticated');
-      return StorageService.getDailyClosings(bakeryCode);
+      return StorageService.getDailyClosings(cleanCode);
     }
     try {
       const q = query(
         collection(db, 'dailyClosings'),
-        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+        where('bakeryCode', '==', cleanCode)
       );
       const snapshot = await getDocs(q);
       const closings: DailyClosing[] = [];
@@ -1862,17 +1970,22 @@ export class StorageService {
         }
       });
       closings.sort((a, b) => new Date(b.dataFechamento).getTime() - new Date(a.dataFechamento).getTime());
-      const isolatedKey = `padarias_fechamentos_${bakeryCode.trim().toUpperCase()}`;
+      setInMemoryCache('dailyClosings', cleanCode, closings, 30);
+      const isolatedKey = `padarias_fechamentos_${cleanCode}`;
       setItem(isolatedKey, closings);
       setItem(KEYS.DAILY_CLOSINGS, closings); // backward compatibility
       return closings.slice(0, limitCount);
     } catch (e) {
       console.error('Error fetching daily closings:', e);
-      return StorageService.getDailyClosings(bakeryCode);
+      return StorageService.getDailyClosings(cleanCode);
     }
   }
 
   static async getTicketsFromServer(bakeryCode?: string): Promise<SupportTicket[]> {
+    const cleanCode = bakeryCode ? bakeryCode.trim().toUpperCase() : 'ADMIN_ALL';
+    const cached = getFromMemoryCache<SupportTicket[]>('tickets', cleanCode);
+    if (cached) return cached;
+
     if (!auth.currentUser) {
       console.warn('[DATA] getTicketsFromServer skipped: user not authenticated');
       return StorageService.getTickets(bakeryCode);
@@ -1880,7 +1993,7 @@ export class StorageService {
     try {
       let q: any = collection(db, 'tickets');
       if (bakeryCode) {
-        q = query(q, where('bakeryCode', '==', bakeryCode.trim().toUpperCase()));
+        q = query(q, where('bakeryCode', '==', cleanCode));
       }
       const snapshot = await getDocs(q);
       const tickets: SupportTicket[] = [];
@@ -1892,8 +2005,9 @@ export class StorageService {
           }
         }
       });
+      setInMemoryCache('tickets', cleanCode, tickets, 30);
       if (bakeryCode) {
-        const isolatedKey = `padarias_tickets_${bakeryCode.trim().toUpperCase()}`;
+        const isolatedKey = `padarias_tickets_${cleanCode}`;
         setItem(isolatedKey, tickets);
       }
       setItem(KEYS.TICKETS, tickets); // backward compatibility
@@ -1920,7 +2034,8 @@ export class StorageService {
             !DEMO_PROD_IDS.includes(p.id)
           ) {
             const daysRemaining = calculateDaysRemaining(p.dataValidade);
-            const status = getProductStatus(daysRemaining);
+            const isDiscardOrExpired = p.status === 'vencido' || p.motivo === 'Descarte' || p.motivo === 'descarte' || p.motivo === 'Perda' || p.motivo === 'Estragado' || daysRemaining <= 0;
+            const status: ProductStatus = isDiscardOrExpired ? 'vencido' : getProductStatus(daysRemaining);
             products.push({
               ...p,
               diasParaVencer: daysRemaining,
@@ -2154,14 +2269,18 @@ export class StorageService {
   }
 
   static async getInventoryMovementsFromServer(bakeryCode: string): Promise<InventoryMovement[]> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    const cached = getFromMemoryCache<InventoryMovement[]>('inventoryMovements', cleanCode);
+    if (cached) return cached;
+
     if (!auth.currentUser) {
       console.warn('[DATA] getInventoryMovementsFromServer skipped: user not authenticated');
-      return StorageService.getInventoryMovements(bakeryCode);
+      return StorageService.getInventoryMovements(cleanCode);
     }
     try {
       const q = query(
         collection(db, 'inventoryMovements'),
-        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+        where('bakeryCode', '==', cleanCode)
       );
       const snapshot = await getDocs(q);
       const list: InventoryMovement[] = [];
@@ -2170,12 +2289,13 @@ export class StorageService {
         if (item && item.id) list.push(item);
       });
       list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setItem(`padarias_movements_${bakeryCode.trim().toUpperCase()}`, list);
+      setInMemoryCache('inventoryMovements', cleanCode, list, 30);
+      setItem(`padarias_movements_${cleanCode}`, list);
       setItem(KEYS.INVENTORY_MOVEMENTS, list);
       return list;
     } catch (e) {
       console.error('Error fetching inventory movements from server:', e);
-      return StorageService.getInventoryMovements(bakeryCode);
+      return StorageService.getInventoryMovements(cleanCode);
     }
   }
 
@@ -2290,14 +2410,18 @@ export class StorageService {
   }
 
   static async getStockCountsFromServer(bakeryCode: string): Promise<StockCount[]> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    const cached = getFromMemoryCache<StockCount[]>('stockCounts', cleanCode);
+    if (cached) return cached;
+
     if (!auth.currentUser) {
       console.warn('[DATA] getStockCountsFromServer skipped: user not authenticated');
-      return StorageService.getStockCounts(bakeryCode);
+      return StorageService.getStockCounts(cleanCode);
     }
     try {
       const q = query(
         collection(db, 'stockCounts'),
-        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+        where('bakeryCode', '==', cleanCode)
       );
       const snapshot = await getDocs(q);
       const list: StockCount[] = [];
@@ -2306,12 +2430,13 @@ export class StorageService {
         if (item && item.id) list.push(item);
       });
       list.sort((a, b) => new Date(b.countedAt).getTime() - new Date(a.countedAt).getTime());
-      setItem(`padarias_counts_${bakeryCode.trim().toUpperCase()}`, list);
+      setInMemoryCache('stockCounts', cleanCode, list, 30);
+      setItem(`padarias_counts_${cleanCode}`, list);
       setItem(KEYS.STOCK_COUNTS, list);
       return list;
     } catch (e) {
       console.error('Error fetching stock counts from server:', e);
-      return StorageService.getStockCounts(bakeryCode);
+      return StorageService.getStockCounts(cleanCode);
     }
   }
 
@@ -2418,14 +2543,18 @@ export class StorageService {
   }
 
   static async getInventoryItemsFromServer(bakeryCode: string): Promise<InventoryItem[]> {
+    const cleanCode = bakeryCode.trim().toUpperCase();
+    const cached = getFromMemoryCache<InventoryItem[]>('inventoryItems', cleanCode);
+    if (cached) return cached;
+
     if (!auth.currentUser) {
       console.warn('[DATA] getInventoryItemsFromServer skipped: user not authenticated');
-      return StorageService.getInventoryItems(bakeryCode);
+      return StorageService.getInventoryItems(cleanCode);
     }
     try {
       const q = query(
         collection(db, 'inventoryItems'),
-        where('bakeryCode', '==', bakeryCode.trim().toUpperCase())
+        where('bakeryCode', '==', cleanCode)
       );
       const snapshot = await getDocs(q);
       const list: InventoryItem[] = [];
@@ -2434,12 +2563,13 @@ export class StorageService {
         if (item && item.id) list.push(item);
       });
       list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setItem(`padarias_inv_items_${bakeryCode.trim().toUpperCase()}`, list);
+      setInMemoryCache('inventoryItems', cleanCode, list, 30);
+      setItem(`padarias_inv_items_${cleanCode}`, list);
       setItem(KEYS.INVENTORY_ITEMS, list);
       return list;
     } catch (e) {
       console.error('Error fetching inventory items from server:', e);
-      return StorageService.getInventoryItems(bakeryCode);
+      return StorageService.getInventoryItems(cleanCode);
     }
   }
 
@@ -2457,6 +2587,9 @@ export class StorageService {
 
   static async getOperationalTasksFromServer(bakeryCode: string): Promise<OperationalTask[]> {
     const cleanCode = bakeryCode.trim().toUpperCase();
+    const cached = getFromMemoryCache<OperationalTask[]>('operationalTasks', cleanCode);
+    if (cached) return cached;
+
     if (!auth.currentUser) {
       return StorageService.getOperationalTasks(cleanCode);
     }
@@ -2478,6 +2611,7 @@ export class StorageService {
       }
 
       list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setInMemoryCache('operationalTasks', cleanCode, list, 15);
       setItem(`padarias_tasks_${cleanCode}`, list);
       setItem(KEYS.OPERATIONAL_TASKS, list);
       return list;

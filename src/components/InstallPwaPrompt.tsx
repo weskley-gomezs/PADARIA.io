@@ -31,13 +31,21 @@ export const InstallPwaPrompt: React.FC = () => {
     }
 
     // 3. Listen for native PWA beforeinstallprompt event
+    const handleAppInstalled = () => {
+      setDeferredPrompt(null);
+      setShowPopup(false);
+      setShowGuideModal(false);
+      setIsStandalone(true);
+    };
+
+    let popupTimer: NodeJS.Timeout | null = null;
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       // Auto show pop-up after 2.5 seconds if not installed and not dismissed before in this session
       const dismissed = sessionStorage.getItem('pwa_prompt_dismissed');
       if (!dismissed && !isInStandalone) {
-        setTimeout(() => setShowPopup(true), 2500);
+        popupTimer = setTimeout(() => setShowPopup(true), 2500);
       }
     };
 
@@ -49,29 +57,25 @@ export const InstallPwaPrompt: React.FC = () => {
       setShowGuideModal(true);
     };
     window.addEventListener('trigger-pwa-install', handleTriggerInstall);
-
-    // If app installed
-    window.addEventListener('appinstalled', () => {
-      setDeferredPrompt(null);
-      setShowPopup(false);
-      setShowGuideModal(false);
-      setIsStandalone(true);
-    });
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     // Auto prompt check for iOS / Mobile fallback
+    let fallbackTimer: NodeJS.Timeout | null = null;
     if (!isInStandalone) {
       const dismissed = sessionStorage.getItem('pwa_prompt_dismissed');
       if (!dismissed) {
-        const timer = setTimeout(() => {
+        fallbackTimer = setTimeout(() => {
           setShowPopup(true);
         }, 3000);
-        return () => clearTimeout(timer);
       }
     }
 
     return () => {
+      if (popupTimer) clearTimeout(popupTimer);
+      if (fallbackTimer) clearTimeout(fallbackTimer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('trigger-pwa-install', handleTriggerInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 

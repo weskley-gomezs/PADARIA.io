@@ -25,7 +25,7 @@ export function calculateDaysRemaining(targetDateStr: string): number {
  * < 0 days -> 'vencido' (red - past expiration date, must be discarded)
  */
 export function getProductStatus(daysRemaining: number): ProductStatus {
-  if (daysRemaining < 0) {
+  if (daysRemaining <= 0) {
     return 'vencido';
   } else if (daysRemaining <= 3) {
     return 'vencendo';

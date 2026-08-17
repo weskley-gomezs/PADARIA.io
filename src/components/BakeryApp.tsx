@@ -43,7 +43,9 @@ import {
   Layers,
   Cake,
   Activity,
-  Folder
+  Folder,
+  Menu,
+  X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BakeryCompany, Product, ProductStatus, SaleHistoryItem, VipOffer } from '../types';
@@ -107,7 +109,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'summary' | 'divergences' | 'routine' | 'party' | 'stock' | 'dashboard' | 'vip' | 'padeia' | 'relatorio' | 'config'>('summary');
+  const [activeTab, setActiveTab] = useState<BakeryTabType>('summary');
 
   useEffect(() => {
     const handleOpenPadeia = () => setActiveTab('padeia');
@@ -154,6 +156,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
   // Accordion UI state
   const [isSettingsExpanded, setIsSettingsExpanded] = useState<boolean>(false);
   const [showReminder, setShowReminder] = useState<boolean>(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   // Toast / Feedback State
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -754,139 +757,6 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
             </div>
           </div>
 
-          {/* Navigation Tabs Bar (Mobile / Tablet Only - Hidden on PC/Desktop because Sidebar is used) */}
-          <div className="lg:hidden flex items-center space-x-2 border-b border-gray-200/80 pb-2.5 overflow-x-auto no-scrollbar scroll-smooth px-0.5">
-            {/* 1. Resumo do Dono */}
-            <button
-              id="tab-btn-summary"
-              onClick={() => setActiveTab('summary')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-                activeTab === 'summary' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <Activity className="w-3.5 h-3.5 text-amber-400" />
-              <span>Resumo do Dono</span>
-            </button>
-
-            {/* 2. Divergências */}
-            <button
-              id="tab-btn-divergences"
-              onClick={() => setActiveTab('divergences')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-                activeTab === 'divergences' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <Scale className="w-3.5 h-3.5 text-amber-500" />
-              <span>Divergências</span>
-            </button>
-
-            {/* 3. Rotinas da Equipe */}
-            <button
-              id="tab-btn-routine"
-              onClick={() => setActiveTab('routine')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-                activeTab === 'routine' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <UserCheck className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Rotinas da Equipe</span>
-            </button>
-
-            {/* 4. Kit Festa & Encomendas */}
-            <button
-              id="tab-btn-party"
-              onClick={() => setActiveTab('party')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-                activeTab === 'party' ? 'bg-[#E8571A] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <Cake className={`w-3.5 h-3.5 ${activeTab === 'party' ? 'text-amber-200' : 'text-[#E8571A]'}`} />
-              <span>Kit Festa</span>
-              {newPartyOrdersCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-400 text-gray-950 animate-pulse">
-                  {newPartyOrdersCount} novo{newPartyOrdersCount > 1 ? 's' : ''}
-                </span>
-              )}
-            </button>
-
-            {/* 5. Controle de Estoque */}
-            <button
-              id="tab-btn-stock"
-              onClick={() => setActiveTab('stock')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-                activeTab === 'stock' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <Boxes className="w-3.5 h-3.5 text-[#FF6B00]" />
-              <span>Estoque</span>
-            </button>
-
-            {/* 6. Validades & Descartes */}
-            <button
-              id="tab-btn-dashboard"
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-                activeTab === 'dashboard' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
-              <span>Validades</span>
-            </button>
-
-            {/* 7. Clube VIP (Em Manutenção) */}
-            <button
-              id="tab-btn-vip"
-              onClick={() => setActiveTab('vip')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-                activeTab === 'vip' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <Crown className="w-3.5 h-3.5 text-amber-500" />
-              <span>Clube VIP</span>
-              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                Em Manutenção
-              </span>
-            </button>
-
-            {/* 8. PadeIA */}
-            <button
-              id="tab-btn-padeia"
-              onClick={() => setActiveTab('padeia')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-                activeTab === 'padeia'
-                  ? 'bg-gradient-to-r from-[#FF6B00] to-[#E8571A] text-white shadow-md ring-2 ring-orange-400/40'
-                  : 'bg-orange-50/80 text-[#E8571A] hover:bg-orange-100 border border-orange-200'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-              <span>PadeIA™</span>
-            </button>
-
-            {/* 9. Relatório */}
-            <button
-              id="tab-btn-relatorio"
-              onClick={() => setActiveTab('relatorio')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-                activeTab === 'relatorio' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Relatório</span>
-            </button>
-
-            {/* 10. Config */}
-            <button
-              id="tab-btn-config"
-              onClick={() => setActiveTab('config')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
-                activeTab === 'config' ? 'bg-[#1F2937] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              <Settings className="w-3.5 h-3.5" />
-              <span>Config</span>
-            </button>
-          </div>
-
       {activeTab === 'summary' && (
         <OwnerSummaryDashboard
           onNavigateTab={(tab) => setActiveTab(tab as any)}
@@ -937,7 +807,7 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
         />
       )}
 
-      {activeTab === 'dashboard' && (
+      {(activeTab === 'dashboard' || activeTab === 'waste' || activeTab === 'validity') && (
         <>
           {/* PadeIA Prominent Highlight Banner (Mobile Optimized) */}
           <div className="bg-gradient-to-r from-[#111111] via-[#1F2937] to-[#2C2C2C] text-white p-3.5 sm:p-5 rounded-2xl border border-gray-800 shadow-md">
@@ -1555,90 +1425,259 @@ export const BakeryApp: React.FC<BakeryAppProps> = ({ presetCode, onLogout }) =>
       {/* FIXED MOBILE BOTTOM APP TAB BAR (DOCK) */}
       <nav 
         aria-label="Navegação Principal Mobile"
-        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200/90 px-1 pt-1.5 pb-[max(0.6rem,env(safe-area-inset-bottom))] flex justify-around items-center shadow-2xl touch-manipulation select-none"
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200/90 px-2 pt-1.5 pb-[max(0.6rem,env(safe-area-inset-bottom))] flex justify-between items-center shadow-2xl touch-manipulation select-none"
       >
-        {/* 1. Resumo */}
+        {/* 1. Início (Resumo) */}
         <button
           type="button"
           id="mobile-nav-summary"
-          onClick={() => setActiveTab('summary')}
-          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
-            activeTab === 'summary' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          onClick={() => {
+            setActiveTab('summary');
+            setIsMobileMenuOpen(false);
+          }}
+          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 cursor-pointer ${
+            activeTab === 'summary' && !isMobileMenuOpen ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          <Activity className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 font-bold">Resumo</span>
+          <Activity className={`w-5 h-5 ${activeTab === 'summary' && !isMobileMenuOpen ? 'text-[#E8571A]' : 'text-gray-500'}`} />
+          <span className="text-[10px] mt-0.5 font-bold">Início</span>
         </button>
 
-        {/* 2. Divergências */}
-        <button
-          type="button"
-          id="mobile-nav-divergences"
-          onClick={() => setActiveTab('divergences')}
-          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
-            activeTab === 'divergences' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          <Scale className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 font-bold">Divergências</span>
-        </button>
-
-        {/* 3. Rotinas */}
-        <button
-          type="button"
-          id="mobile-nav-routine"
-          onClick={() => setActiveTab('routine')}
-          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
-            activeTab === 'routine' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          <UserCheck className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 font-bold">Rotinas</span>
-        </button>
-
-        {/* 4. PadeIA - Prominent Highlighted Center Action */}
-        <button
-          type="button"
-          id="mobile-nav-padeia"
-          onClick={() => setActiveTab('padeia')}
-          className={`min-h-[48px] flex flex-col items-center justify-center py-1 px-2.5 mx-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
-            activeTab === 'padeia'
-              ? 'bg-gradient-to-r from-[#FF6B00] to-[#E8571A] text-white font-black shadow-md ring-2 ring-orange-300'
-              : 'bg-orange-50 text-[#E8571A] font-extrabold border border-orange-200 shadow-xs'
-          }`}
-        >
-          <div className="flex items-center space-x-1">
-            <Sparkles className={`w-4 h-4 ${activeTab === 'padeia' ? 'text-amber-200 animate-pulse' : 'text-[#E8571A]'}`} />
-            <span className="text-[11px] font-black">PadeIA</span>
-          </div>
-        </button>
-
-        {/* 5. Estoque */}
+        {/* 2. Estoque */}
         <button
           type="button"
           id="mobile-nav-stock"
-          onClick={() => setActiveTab('stock')}
-          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
-            activeTab === 'stock' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          onClick={() => {
+            setActiveTab('stock');
+            setIsMobileMenuOpen(false);
+          }}
+          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 cursor-pointer ${
+            activeTab === 'stock' && !isMobileMenuOpen ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          <Boxes className="w-5 h-5" />
+          <Boxes className={`w-5 h-5 ${activeTab === 'stock' && !isMobileMenuOpen ? 'text-[#E8571A]' : 'text-gray-500'}`} />
           <span className="text-[10px] mt-0.5 font-bold">Estoque</span>
         </button>
 
-        {/* 6. Mais / Relatórios */}
+        {/* 3. PadeIA - Prominent Highlighted Center Action */}
         <button
           type="button"
-          id="mobile-nav-relatorio"
-          onClick={() => setActiveTab('relatorio')}
-          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-transform active:scale-95 cursor-pointer ${
-            activeTab === 'relatorio' ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          id="mobile-nav-padeia"
+          onClick={() => {
+            setActiveTab('padeia');
+            setIsMobileMenuOpen(false);
+          }}
+          className={`min-h-[46px] px-3 mx-1 flex items-center justify-center rounded-2xl transition-all active:scale-95 cursor-pointer shadow-md ${
+            activeTab === 'padeia' && !isMobileMenuOpen
+              ? 'bg-gradient-to-r from-[#FF6B00] to-[#E8571A] text-white font-black ring-2 ring-orange-300'
+              : 'bg-orange-500 text-white font-bold'
           }`}
         >
-          <Printer className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 font-bold">Relatórios</span>
+          <div className="flex items-center space-x-1">
+            <Sparkles className="w-4 h-4 text-amber-200" />
+            <span className="text-xs font-black">PadeIA</span>
+          </div>
+        </button>
+
+        {/* 4. Divergências */}
+        <button
+          type="button"
+          id="mobile-nav-divergences"
+          onClick={() => {
+            setActiveTab('divergences');
+            setIsMobileMenuOpen(false);
+          }}
+          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 cursor-pointer ${
+            activeTab === 'divergences' && !isMobileMenuOpen ? 'text-[#E8571A] font-extrabold' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Scale className={`w-5 h-5 ${activeTab === 'divergences' && !isMobileMenuOpen ? 'text-[#E8571A]' : 'text-gray-500'}`} />
+          <span className="text-[10px] mt-0.5 font-bold">Divergências</span>
+        </button>
+
+        {/* 5. Menu / Mais */}
+        <button
+          type="button"
+          id="mobile-nav-more"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className={`flex-1 min-h-[48px] flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 cursor-pointer relative ${
+            isMobileMenuOpen || ['party', 'routine', 'relatorio', 'config', 'vip'].includes(activeTab)
+              ? 'text-[#E8571A] font-extrabold'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <span className="text-[10px] mt-0.5 font-bold">
+            {isMobileMenuOpen ? 'Fechar' : 'Mais'}
+          </span>
+          {newPartyOrdersCount > 0 && !isMobileMenuOpen && (
+            <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          )}
         </button>
       </nav>
+
+      {/* MOBILE "MAIS" BOTTOM SHEET DRAWER */}
+      {isMobileMenuOpen && (
+        <div className="sm:hidden fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div 
+            className="bg-white rounded-t-3xl p-5 pb-24 shadow-2xl border-t border-gray-200 max-h-[85vh] overflow-y-auto space-y-4 animate-slide-up"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="text-base font-black text-gray-900">Mais Funcionalidades</h3>
+                <p className="text-xs text-gray-500">Acesso rápido a todos os módulos do sistema</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Menu Items Grid */}
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Kit Festa */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('party');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                  activeTab === 'party' ? 'bg-orange-50 border-orange-300 ring-2 ring-orange-200' : 'bg-gray-50/80 border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center">
+                    <Cake className="w-4 h-4" />
+                  </div>
+                  {newPartyOrdersCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-500 text-white animate-pulse">
+                      {newPartyOrdersCount} novo{newPartyOrdersCount > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2.5">
+                  <div className="text-xs font-black text-gray-900">Kit Festa</div>
+                  <div className="text-[10px] text-gray-500">Cardápio & Encomendas</div>
+                </div>
+              </button>
+
+              {/* Rotinas da Equipe */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('routine');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                  activeTab === 'routine' ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-200' : 'bg-gray-50/80 border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <div className="mt-2.5">
+                  <div className="text-xs font-black text-gray-900">Rotinas da Equipe</div>
+                  <div className="text-[10px] text-gray-500">Checklists diários</div>
+                </div>
+              </button>
+
+              {/* Relatório PDF */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPrintReportOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="p-3.5 rounded-2xl border border-gray-200 bg-gray-50/80 hover:bg-gray-100 text-left flex flex-col justify-between transition-all cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <Printer className="w-4 h-4" />
+                </div>
+                <div className="mt-2.5">
+                  <div className="text-xs font-black text-gray-900">Relatório de Perdas</div>
+                  <div className="text-[10px] text-gray-500">PDF & Impressão</div>
+                </div>
+              </button>
+
+              {/* Configurações */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('config');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                  activeTab === 'config' ? 'bg-gray-200 border-gray-400 ring-2 ring-gray-300' : 'bg-gray-50/80 border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                <div className="w-8 h-8 rounded-xl bg-gray-200 text-gray-800 flex items-center justify-center">
+                  <Settings className="w-4 h-4" />
+                </div>
+                <div className="mt-2.5">
+                  <div className="text-xs font-black text-gray-900">Categorias & Ajustes</div>
+                  <div className="text-[10px] text-gray-500">Configuração geral</div>
+                </div>
+              </button>
+
+              {/* Clube VIP */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('vip');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="p-3.5 rounded-2xl border border-gray-200 bg-gray-50/80 hover:bg-gray-100 text-left flex flex-col justify-between transition-all cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                  <Crown className="w-4 h-4" />
+                </div>
+                <div className="mt-2.5">
+                  <div className="text-xs font-black text-gray-900">Clube VIP</div>
+                  <div className="text-[10px] text-amber-700 font-bold">Em Manutenção</div>
+                </div>
+              </button>
+
+              {/* Suporte Técnico */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSupportOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="p-3.5 rounded-2xl border border-gray-200 bg-gray-50/80 hover:bg-gray-100 text-left flex flex-col justify-between transition-all cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-xl bg-orange-100 text-[#E8571A] flex items-center justify-center">
+                  <LifeBuoy className="w-4 h-4" />
+                </div>
+                <div className="mt-2.5">
+                  <div className="text-xs font-black text-gray-900">Suporte Técnico</div>
+                  <div className="text-[10px] text-gray-500">WhatsApp & Ajuda</div>
+                </div>
+              </button>
+            </div>
+
+            {/* Logout button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleLogout();
+                }}
+                className="w-full py-3 px-4 rounded-xl border border-red-200 bg-red-50 text-red-700 font-bold text-xs flex items-center justify-center space-x-2 cursor-pointer active:scale-98 transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sair da Conta ({company.empresa})</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -241,23 +241,142 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return 'landing';
   });
 
-  const [activeCode, setActiveCodeState] = useState<string | null>(null);
-  const [activeCompany, setActiveCompany] = useState<BakeryCompany | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [salesHistory, setSalesHistory] = useState<SaleHistoryItem[]>([]);
-  const [vipOffers, setVipOffers] = useState<VipOffer[]>([]);
-  const [dailyClosings, setDailyClosings] = useState<DailyClosing[]>([]);
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [inventoryMovements, setInventoryMovements] = useState<InventoryMovement[]>([]);
-  const [stockCounts, setStockCounts] = useState<StockCount[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [operationalTasks, setOperationalTasks] = useState<OperationalTask[]>([]);
-  const [partyKits, setPartyKits] = useState<PartyKit[]>([]);
-  const [partyOrders, setPartyOrders] = useState<PartyOrder[]>([]);
-  const [partyPublicConfig, setPartyPublicConfig] = useState<PartyBakeryPublicConfig | null>(null);
+  const [activeCode, setActiveCodeState] = useState<string | null>(() => {
+    try {
+      return StorageService.getActiveBakeryCode();
+    } catch {
+      return null;
+    }
+  });
+
+  const [activeCompany, setActiveCompany] = useState<BakeryCompany | null>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getCompanyByCode(code) || null : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getProducts(code) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [salesHistory, setSalesHistory] = useState<SaleHistoryItem[]>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getSalesHistory(code) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [vipOffers, setVipOffers] = useState<VipOffer[]>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getVipOffers(code) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [dailyClosings, setDailyClosings] = useState<DailyClosing[]>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getDailyClosings(code) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [tickets, setTickets] = useState<SupportTicket[]>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getTickets(code) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [inventoryMovements, setInventoryMovements] = useState<InventoryMovement[]>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getInventoryMovements(code) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [stockCounts, setStockCounts] = useState<StockCount[]>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getStockCounts(code) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getInventoryItems(code) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [operationalTasks, setOperationalTasks] = useState<OperationalTask[]>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getOperationalTasks(code) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [partyKits, setPartyKits] = useState<PartyKit[]>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getPartyKits(code) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [partyOrders, setPartyOrders] = useState<PartyOrder[]>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getPartyOrders(code) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [partyPublicConfig, setPartyPublicConfig] = useState<PartyBakeryPublicConfig | null>(() => {
+    try {
+      const code = StorageService.getActiveBakeryCode();
+      return code ? StorageService.getPartyPublicConfig(code) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
   const [authUser, setAuthUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Safety timer: unblock loading state immediately if any network latency occurs
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Sync state with path parameter
   const handleSetCurrentView = useCallback((view: 'landing' | 'app' | 'admin') => {
@@ -360,14 +479,31 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  // Load and cache tenant data on demand when tenant changes (with race condition prevention)
+  // Load and cache tenant data on demand when tenant changes (with concurrency lock & race condition prevention)
   const fetchGenerationRef = useRef(0);
+  const isRefreshingRef = useRef(false);
+  const pendingRefreshRef = useRef<{ code: string; showLoading: boolean } | null>(null);
+
   const refreshTenantData = useCallback(async (code: string, showLoading = false) => {
     if (!auth.currentUser) {
       console.warn('[DATA] Skipping refreshTenantData: auth.currentUser is null');
       return;
     }
     const cleanCode = code.trim().toUpperCase();
+
+    if (isRefreshingRef.current) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[PERF] refreshTenantData queued (already running for: ${cleanCode})`);
+      }
+      pendingRefreshRef.current = { code: cleanCode, showLoading };
+      return;
+    }
+
+    isRefreshingRef.current = true;
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[PERF] refreshTenantData started for: ${cleanCode}`);
+    }
+
     if (!isAdminEmail(auth.currentUser.email)) {
       await StorageService.setUserBakeryMapping(
         auth.currentUser.uid,
@@ -382,15 +518,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     try {
       const [prods, sales, vips, closings, ticks, movs, counts, invItems, tasks] = await Promise.all([
-        StorageService.getProductsFromServer(cleanCode),
-        StorageService.getSalesHistoryFromServer(cleanCode),
-        StorageService.getVipOffersFromServer(cleanCode),
-        StorageService.getDailyClosingsFromServer(cleanCode),
-        StorageService.getTicketsFromServer(cleanCode),
-        StorageService.getInventoryMovementsFromServer(cleanCode),
-        StorageService.getStockCountsFromServer(cleanCode),
-        StorageService.getInventoryItemsFromServer(cleanCode),
-        StorageService.getOperationalTasksFromServer(cleanCode)
+        StorageService.getProductsFromServer(cleanCode).catch(() => StorageService.getProducts(cleanCode)),
+        StorageService.getSalesHistoryFromServer(cleanCode).catch(() => StorageService.getSalesHistory(cleanCode)),
+        StorageService.getVipOffersFromServer(cleanCode).catch(() => StorageService.getVipOffers(cleanCode)),
+        StorageService.getDailyClosingsFromServer(cleanCode).catch(() => StorageService.getDailyClosings(cleanCode)),
+        StorageService.getTicketsFromServer(cleanCode).catch(() => StorageService.getTickets(cleanCode)),
+        StorageService.getInventoryMovementsFromServer(cleanCode).catch(() => StorageService.getInventoryMovements(cleanCode)),
+        StorageService.getStockCountsFromServer(cleanCode).catch(() => StorageService.getStockCounts(cleanCode)),
+        StorageService.getInventoryItemsFromServer(cleanCode).catch(() => StorageService.getInventoryItems(cleanCode)),
+        StorageService.getOperationalTasksFromServer(cleanCode).catch(() => StorageService.getOperationalTasks(cleanCode))
       ]);
       if (currentGen === fetchGenerationRef.current) {
         setProducts(prods);
@@ -410,6 +546,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       if (showLoading && currentGen === fetchGenerationRef.current) {
         setIsLoading(false);
+      }
+      isRefreshingRef.current = false;
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[PERF] refreshTenantData completed for: ${cleanCode}`);
+      }
+      if (pendingRefreshRef.current) {
+        const next = pendingRefreshRef.current;
+        pendingRefreshRef.current = null;
+        refreshTenantData(next.code, next.showLoading);
       }
     }
   }, []);
@@ -447,8 +592,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Error subscribing to company:', err);
       }
 
-      // Trigger server-side pull for other items immediately upon change
-      refreshTenantData(activeCode, true);
+      // Trigger server-side pull for other items immediately upon change (non-blocking background sync)
+      refreshTenantData(activeCode, false);
 
       // Party Kits, Orders, and Config Subscriptions
       try {
@@ -489,6 +634,37 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubs.forEach((unsub) => unsub());
     };
   }, [authUser, activeCode, refreshTenantData]);
+
+  // Listen to local data changes (e.g. from PadeIA, Scanner, Stock Counts) to keep React state in sync (Debounced 400ms)
+  useEffect(() => {
+    let debounceTimer: NodeJS.Timeout | null = null;
+    let eventCount = 0;
+
+    const handleDataChanged = () => {
+      if (!activeCode) return;
+      eventCount++;
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+        if (process.env.NODE_ENV !== 'production' && eventCount > 1) {
+          console.log(`[PERF] Debounce: grouping padaria-data-changed events (count: ${eventCount}) for: ${activeCode}`);
+        }
+      }
+      debounceTimer = setTimeout(() => {
+        eventCount = 0;
+        if (activeCode) {
+          refreshTenantData(activeCode, false);
+        }
+      }, 400);
+    };
+
+    window.addEventListener('padaria-data-changed', handleDataChanged);
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      window.removeEventListener('padaria-data-changed', handleDataChanged);
+    };
+  }, [activeCode, refreshTenantData]);
 
   // Load Admin Support Tickets on demand when viewing Admin or LoggedIn
   useEffect(() => {

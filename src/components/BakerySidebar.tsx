@@ -24,6 +24,8 @@ export type BakeryTabType =
   | 'party'
   | 'stock'
   | 'dashboard'
+  | 'waste'
+  | 'validity'
   | 'vip'
   | 'padeia'
   | 'relatorio'

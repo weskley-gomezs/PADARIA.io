@@ -52,8 +52,22 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
   const [pesoKg, setPesoKg] = useState<number>(1.0);
   const [precoKg, setPrecoKg] = useState<number>(25.0);
 
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const stopCurrentStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (_) {}
+      });
+      streamRef.current = null;
+    }
+  };
+
   const startCamera = async () => {
     setError('');
+    stopCurrentStream();
     try {
       let mediaStream: MediaStream;
       try {
@@ -63,6 +77,7 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
       } catch {
         mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
       }
+      streamRef.current = mediaStream;
       setStream(mediaStream);
       setCameraAvailable(true);
       if (videoRef.current) {
@@ -79,9 +94,8 @@ export const ImageScanner: React.FC<ImageScannerProps> = ({ bakeryCode, onScanRe
     startCamera();
 
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
+      stopCurrentStream();
+      setStream(null);
     };
   }, []);
 
